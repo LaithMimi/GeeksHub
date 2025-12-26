@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, Search, Filter, AlertCircle, CheckCircle, Clock, XCircle, ChevronLeft } from "lucide-react";
+import { FileText, Search, Filter, AlertCircle, CheckCircle, Clock, XCircle, ChevronLeft, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,8 @@ export default function UserUploads() {
         }
     };
 
+    const totalPoints = userRequests.reduce((acc, curr) => acc + (curr.points || 0), 0);
+
     return (
         <div className="animate-fade-in space-y-8 p-8 max-w-7xl mx-auto">
             {/* Header */}
@@ -37,8 +39,8 @@ export default function UserUploads() {
                 </Link>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Your Uploads</h1>
-                        <p className="text-muted-foreground mt-2">Track the status of your file contributions.</p>
+                        <h1 className="text-3xl font-bold tracking-tight">Your Contributions</h1>
+                        <p className="text-muted-foreground mt-2">Track your impact and file request status.</p>
                     </div>
                     <Button onClick={() => setIsRequestOpen(true)}>
                         <FileText className="me-2 h-4 w-4" />
@@ -48,15 +50,27 @@ export default function UserUploads() {
                 <RequestFileModal open={isRequestOpen} onOpenChange={setIsRequestOpen} />
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
+            {/* Impact Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="bg-primary/5 border-primary/20">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Uploads</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium text-primary">Community Score</CardTitle>
+                        <Zap className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{userRequests.length}</div>
+                        <div className="text-2xl font-bold text-primary">{totalPoints}</div>
+                        <p className="text-xs text-muted-foreground">Total impact points</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Approved</CardTitle>
+                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {userRequests.filter(f => f.status === "approved").length}
+                        </div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -72,12 +86,12 @@ export default function UserUploads() {
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Approved</CardTitle>
-                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {userRequests.filter(f => f.status === "approved").length}
+                            {userRequests.filter(f => f.status === "rejected").length}
                         </div>
                     </CardContent>
                 </Card>
@@ -119,6 +133,12 @@ export default function UserUploads() {
                                                 {getStatusIcon(file.status)}
                                                 <span className="ms-1.5">{file.status}</span>
                                             </Badge>
+                                            {file.status === "approved" && file.points && (
+                                                <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 gap-1">
+                                                    <Zap className="h-3 w-3 fill-primary text-primary" />
+                                                    +{file.points} pts
+                                                </Badge>
+                                            )}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
                                             {file.courseId.toUpperCase()} • {file.date}

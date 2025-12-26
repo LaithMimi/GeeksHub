@@ -1,19 +1,19 @@
 import { Link } from "react-router-dom";
-import { Brain, Clock, FileText, Sparkles, TrendingUp } from "lucide-react";
+import { Brain, Clock, FileText, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { coursesList } from "@/lib/data";
+import { coursesList, userRequests } from "@/lib/data";
 import { useRecentFiles } from "@/hooks/useRecentFiles";
 import { formatDistanceToNow } from "date-fns";
 
 export default function Dashboard() {
     const { recentFiles } = useRecentFiles();
+    const totalPoints = userRequests.reduce((acc, curr) => acc + (curr.points || 0), 0);
+
     return (
         <div className="space-y-8 animate-fade-in">
-            {/* Welcome Header */}
-            {/* Welcome Header */}
-            {/* Welcome Header / Continue Studying Hero */}
+            {/* ... (Welcome Header remains unchanged) ... */}
             <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 text-foreground transition-all duration-500 ease-in-out">
                 {recentFiles.length > 0 ? (
                     // Q1/Q2: Continue Studying State
@@ -74,7 +74,7 @@ export default function Dashboard() {
             </div>
 
             {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="hover-lift">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Study Time</CardTitle>
@@ -106,6 +106,16 @@ export default function Dashboard() {
                     <CardContent>
                         <div className="text-2xl font-bold">156</div>
                         <p className="text-xs text-muted-foreground mt-1">This semester</p>
+                    </CardContent>
+                </Card>
+                <Card className="hover-lift border-primary/20 bg-primary/5">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-primary">Community Impact</CardTitle>
+                        <Zap className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-primary">{totalPoints}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Points earned</p>
                     </CardContent>
                 </Card>
             </div>
