@@ -127,12 +127,12 @@ function AppSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Search (⌘K)">
+                                <SidebarMenuButton asChild tooltip="Search (/Ctrl + K)">
                                     <button onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}>
                                         <Search className="h-4 w-4" />
                                         <span>Search</span>
                                         <kbd className="ms-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                                            <span className="text-xs">⌘</span>K
+                                            <span className="text-xs">⌘/Ctrl + K</span>
                                         </kbd>
                                     </button>
                                 </SidebarMenuButton>
@@ -246,11 +246,15 @@ export default function AppShell() {
                     <Separator orientation="vertical" className="me-2 h-4" />
                     <Breadcrumbs />
                     <div className="ms-auto flex items-center gap-2">
-                        <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
-                            <Command className="h-4 w-4" />
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-2 text-muted-foreground"
+                            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+                        >
                             <span className="hidden sm:inline">Search...</span>
                             <kbd className="hidden sm:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                                ⌘K
+                                <span className="text-xs">⌘/Ctrl + K</span>
                             </kbd>
                         </Button>
                     </div>

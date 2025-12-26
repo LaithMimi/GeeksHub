@@ -87,7 +87,10 @@ export default function UserUploads() {
             <div className="flex items-center gap-4">
                 <div className="relative flex-1 max-w-sm">
                     <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search uploads..." className="ps-9" />
+                    <Input placeholder="Search uploads..." className="ps-9 pe-12" />
+                    <kbd className="absolute end-2.5 top-2.5 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                        <span className="text-xs">Ctrl</span> K
+                    </kbd>
                 </div>
                 <Button variant="outline" size="icon">
                     <Filter className="h-4 w-4" />

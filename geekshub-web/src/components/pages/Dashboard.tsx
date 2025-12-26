@@ -13,31 +13,64 @@ export default function Dashboard() {
         <div className="space-y-8 animate-fade-in">
             {/* Welcome Header */}
             {/* Welcome Header */}
-            <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 text-foreground">
-                <div className="relative z-10 max-w-2xl">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-muted/50 px-3 py-1 text-sm font-medium text-muted-foreground border border-border mb-6">
-                        <Sparkles className="h-4 w-4 text-primary fill-primary/20" />
-                        <span>AI-Powered Learning</span>
+            {/* Welcome Header / Continue Studying Hero */}
+            <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 text-foreground transition-all duration-500 ease-in-out">
+                {recentFiles.length > 0 ? (
+                    // Q1/Q2: Continue Studying State
+                    <div className="relative z-10 max-w-3xl">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-6 border border-primary/20">
+                            <Clock className="h-4 w-4" />
+                            <span>Continue Learning</span>
+                        </div>
+
+                        <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
+                            Pick up where you left off in <span className="text-primary block md:inline">{recentFiles[0].title}</span>
+                        </h1>
+
+                        <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-xl">
+                            You were studying <span className="font-semibold text-foreground">{recentFiles[0].type}</span> for <span className="font-semibold text-foreground uppercase">{recentFiles[0].courseId}</span>. <br className="hidden md:block" />
+                            Ready to jump back in?
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-4">
+                            <Button size="lg" className="shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-semibold text-lg px-6 py-4 h-auto group/btn" asChild>
+                                <Link to={`/courses/${recentFiles[0].courseId}/files/${recentFiles[0].id}`}>
+                                    <Brain className="me-3 h-6 w-6 group-hover/btn:rotate-12 transition-transform" />
+                                    Continue Studying
+                                </Link>
+                            </Button>
+                            <span className="text-sm text-muted-foreground">
+                                Last seen {formatDistanceToNow(new Date(recentFiles[0].viewedAt), { addSuffix: true })}
+                            </span>
+                        </div>
                     </div>
+                ) : (
+                    // Default Welcome State
+                    <div className="relative z-10 max-w-2xl">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-muted/50 px-3 py-1 text-sm font-medium text-muted-foreground border border-border mb-6">
+                            <Sparkles className="h-4 w-4 text-primary fill-primary/20" />
+                            <span>AI-Powered Learning</span>
+                        </div>
 
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
-                        Welcome back, <span className="text-primary">Student!</span>
-                    </h1>
+                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
+                            Welcome back, <span className="text-primary">Student!</span>
+                        </h1>
 
-                    <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-xl">
-                        Continue where you left off or explore new materials. Your AI study assistant is ready to help you master <span className="font-semibold text-foreground border-b border-primary/30">new concepts</span>.
-                    </p>
+                        <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-xl">
+                            Continue where you left off or explore new materials. Your AI study assistant is ready to help you master <span className="font-semibold text-foreground border-b border-primary/30">new concepts</span>.
+                        </p>
 
-                    <div className="flex flex-wrap items-center gap-4">
-                        <Button size="lg" className="shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-semibold group/btn">
-                            <Brain className="me-2 h-5 w-5 group-hover/btn:rotate-12 transition-transform" />
-                            Start AI Session
-                        </Button>
-                        <Button variant="outline" size="lg" className="transition-all hover:bg-muted">
-                            View All Courses
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-4">
+                            <Button size="lg" className="shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-semibold group/btn">
+                                <Brain className="me-2 h-5 w-5 group-hover/btn:rotate-12 transition-transform" />
+                                Start AI Session
+                            </Button>
+                            <Button variant="outline" size="lg" className="transition-all hover:bg-muted" asChild>
+                                <Link to="/courses">View All Courses</Link>
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* Stats Row */}
