@@ -49,7 +49,7 @@ export default function AssistantPanel() {
             const aiMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: `I understand you're asking about "${userMessage.content}". As an AI study assistant, I can help explain this concept based on the document content.`,
+                content: `I understand you're asking about "${userMessage.content}". As an AI study assistant, I can help explain this concept based on the document content.\n\nHere is the explanation...\n\n**Sources:**\n• Page 12: "Algorithm Complexity"\n• Page 45: "Big O Notation Examples"`,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, aiMessage]);

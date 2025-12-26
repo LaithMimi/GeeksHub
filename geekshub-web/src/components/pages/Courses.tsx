@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, File, FileText, FolderOpen } from "lucide-react";
+import { ChevronRight, FileText, FolderOpen, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import RequestFileModal from "@/components/features/RequestFileModal";
+
 import {
     majors,
     years,
@@ -24,6 +25,8 @@ export default function Courses() {
         lecturer: "",
         type: ""
     });
+
+    const [isRequestOpen, setIsRequestOpen] = useState(false);
 
     const isStepEnabled = (stepIndex: number) => {
         const keys = Object.keys(selections);
@@ -46,12 +49,37 @@ export default function Courses() {
 
     const isFullySelected = Object.values(selections).every(v => v !== "");
 
+    // Mock filtering logic - specifically looking for "pending" items too for demo
+    const filteredFiles = isFullySelected
+        ? allFiles.filter(f => f.status === "approved" || f.status === "pending" || f.status === "rejected") // Show all for demo visibility
+        : [];
+
+
+
     return (
         <div className="animate-fade-in space-y-8">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold mb-2">Course Library</h1>
-                <p className="text-muted-foreground">Browse materials by hierarchy</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold mb-2">Course Library</h1>
+                    <p className="text-muted-foreground">Browse materials by hierarchy</p>
+                </div>
+                <Button onClick={() => setIsRequestOpen(true)}>
+                    <Plus className="me-2 h-4 w-4" />
+                    Request File Add
+                </Button>
+                <RequestFileModal
+                    open={isRequestOpen}
+                    onOpenChange={setIsRequestOpen}
+                    initialData={{
+                        major: selections.major,
+                        year: selections.year,
+                        semester: selections.semester,
+                        course: selections.course,
+                        lecturer: selections.lecturer,
+                        type: selections.type || "Notes"
+                    }}
+                />
             </div>
 
             {/* Hierarchy Selectors */}
@@ -120,7 +148,7 @@ export default function Courses() {
 
                 <div className="space-y-2">
                     <label className="text-xs font-medium text-muted-foreground uppercase">Type</label>
-                    <Select value={selections.type} onValueChange={(v) => handleSelect("type", v)} disabled={!isStepEnabled(5)}>
+                    <Select value={selections.type} onValueChange={(v) => handleSelect("type", v)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Type" />
                         </SelectTrigger>
@@ -134,44 +162,60 @@ export default function Courses() {
             {/* Results Preview Panel */}
             {isFullySelected && (
                 <div className="animate-fade-in border rounded-xl overflow-hidden bg-card shadow-sm">
-                    <div className="p-4 border-b bg-muted/30 flex items-center gap-2">
-                        <FolderOpen className="h-5 w-5 text-primary" />
-                        <h3 className="font-semibold">
-                            {selections.course} / {selections.type}
-                        </h3>
-                        <Badge variant="secondary" className="ml-auto">
-                            {allFiles.length} files found
+                    <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <FolderOpen className="h-5 w-5 text-primary" />
+                            <h3 className="font-semibold">
+                                {selections.course} / {selections.type}
+                            </h3>
+                        </div>
+                        <Badge variant="secondary">
+                            {filteredFiles.length} files found
                         </Badge>
                     </div>
-                    <div className="divide-y">
-                        {allFiles.map((file) => (
-                            <div key={file.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors group">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                                        <FileText className="h-5 w-5" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-sm group-hover:text-primary transition-colors">{file.title}</p>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                                            <span>{file.lecturer}</span>
-                                            <span>•</span>
-                                            <span>{file.date}</span>
-                                            <span>•</span>
-                                            <span>{file.size}</span>
+                    {filteredFiles.length > 0 ? (
+                        <div className="divide-y">
+                            {filteredFiles.map((file) => (
+                                <div key={file.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                                            <FileText className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-medium text-sm group-hover:text-primary transition-colors">{file.title}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                                <span>{file.lecturer}</span>
+                                                <span>•</span>
+                                                <span>{file.date}</span>
+                                                <span>•</span>
+                                                <span>{file.size}</span>
+                                                {file.status === "rejected" && (
+                                                    <span className="text-red-500">• Reason: {file.rejectionReason}</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
+                                    <Button asChild size="sm" className="gap-2" disabled={file.status !== "approved"}>
+                                        <Link to={`/courses/cs101/files/${file.id}`}>
+                                            {file.status === "approved" ? "Open" : "View Details"}
+                                            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+                                        </Link>
+                                    </Button>
                                 </div>
-                                <Button asChild size="sm" className="gap-2">
-                                    <Link to={`/courses/cs101/files/${file.id}`}>
-                                        Open
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="p-12 text-center text-muted-foreground">
+                            <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-20" />
+                            <p>No materials found for this selection.</p>
+                            <Button variant="link" onClick={() => setIsRequestOpen(true)}>Request to add a file?</Button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
     );
 }
+

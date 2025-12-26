@@ -4,6 +4,9 @@ import CourseShell from "@/components/layout/CourseShell";
 import FileShell from "@/components/layout/FileShell";
 import FileViewer from "@/components/viewer/FileViewer";
 import Dashboard from "@/components/pages/Dashboard";
+import UserUploads from "@/components/pages/UserUploads";
+import Recent from "@/components/pages/Recent";
+import Settings from "@/components/pages/Settings";
 import Courses from "@/components/pages/Courses";
 
 // Materials View Component
@@ -36,6 +39,18 @@ export const router = createBrowserRouter([
             {
                 index: true,
                 element: <Dashboard />,
+            },
+            {
+                path: "uploads",
+                element: <UserUploads />
+            },
+            {
+                path: "recent",
+                element: <Recent />
+            },
+            {
+                path: "settings",
+                element: <Settings />
             },
             {
                 path: "courses",

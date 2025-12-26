@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Loader2 } from "lucide-react";
+import { useParams } from 'react-router-dom';
+import { useRecentFiles } from '@/hooks/useRecentFiles';
+import { allFiles } from '@/lib/data';
 
 declare global {
     interface Window {
@@ -8,9 +11,24 @@ declare global {
 }
 
 export default function FileViewer() {
+    const { courseId, fileId } = useParams();
+    const { addRecentFile } = useRecentFiles();
     const viewerInitialized = useRef(false);
 
     useEffect(() => {
+        // Track recent file access
+        if (fileId && courseId) {
+            const fileData = allFiles.find(f => f.id === fileId);
+            if (fileData) {
+                addRecentFile({
+                    id: fileData.id,
+                    title: fileData.title,
+                    courseId: courseId,
+                    type: fileData.type,
+                });
+            }
+        }
+
         // Prevent double initialization
         if (viewerInitialized.current) return;
 
@@ -35,10 +53,13 @@ export default function FileViewer() {
                 divId: "adobe-dc-view",
             });
 
+            const fileData = allFiles.find(f => f.id === fileId);
+            const fileName = fileData ? fileData.title : "Document.pdf";
+
             adobeDCView.previewFile(
                 {
                     content: { location: { url: "https://documentcloud.adobe.com/view-sdk-demo/PDFs/Bodea Brochure.pdf" } },
-                    metaData: { fileName: "Introduction to Algorithms.pdf" }
+                    metaData: { fileName: fileName }
                 },
                 {
                     embedMode: "SIZED_CONTAINER",
@@ -51,7 +72,7 @@ export default function FileViewer() {
         };
 
         loadAdobeSDK();
-    }, []);
+    }, [fileId, courseId]);
 
     return (
         <div className="h-full flex flex-col bg-background relative group">

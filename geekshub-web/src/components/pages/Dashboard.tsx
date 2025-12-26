@@ -1,39 +1,43 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Brain, Clock, FileText, Sparkles, TrendingUp } from "lucide-react";
+import { Brain, Clock, FileText, Sparkles, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { coursesList, recentFiles } from "@/lib/data";
+import { coursesList } from "@/lib/data";
+import { useRecentFiles } from "@/hooks/useRecentFiles";
+import { formatDistanceToNow } from "date-fns";
 
 export default function Dashboard() {
+    const { recentFiles } = useRecentFiles();
     return (
         <div className="space-y-8 animate-fade-in">
             {/* Welcome Header */}
-            <div className="relative overflow-hidden rounded-2xl gradient-bg p-8 text-white">
-                <div className="absolute inset-0 bg-black/10" />
-                <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="h-5 w-5" />
-                        <span className="text-sm font-medium opacity-90">AI-Powered Learning</span>
+            {/* Welcome Header */}
+            <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 text-foreground">
+                <div className="relative z-10 max-w-2xl">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-muted/50 px-3 py-1 text-sm font-medium text-muted-foreground border border-border mb-6">
+                        <Sparkles className="h-4 w-4 text-primary fill-primary/20" />
+                        <span>AI-Powered Learning</span>
                     </div>
-                    <h1 className="text-3xl font-bold mb-2">Welcome back, Student!</h1>
-                    <p className="text-white/80 max-w-lg">
-                        Continue where you left off or explore new materials. Your AI study assistant is ready to help.
+
+                    <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
+                        Welcome back, <span className="text-primary">Student!</span>
+                    </h1>
+
+                    <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-xl">
+                        Continue where you left off or explore new materials. Your AI study assistant is ready to help you master <span className="font-semibold text-foreground border-b border-primary/30">new concepts</span>.
                     </p>
-                    <div className="mt-6 flex gap-3">
-                        <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
-                            <Brain className="mr-2 h-4 w-4" />
+
+                    <div className="flex flex-wrap items-center gap-4">
+                        <Button size="lg" className="shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-semibold group/btn">
+                            <Brain className="me-2 h-5 w-5 group-hover/btn:rotate-12 transition-transform" />
                             Start AI Session
                         </Button>
-                        <Button variant="ghost" className="text-white hover:bg-white/10">
+                        <Button variant="outline" size="lg" className="transition-all hover:bg-muted">
                             View All Courses
                         </Button>
                     </div>
                 </div>
-
-                {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
-                <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-white/5 rounded-full blur-2xl" />
             </div>
 
             {/* Stats Row */}
@@ -109,31 +113,84 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            {/* Recent Files */}
-            <div>
-                <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">Recent Files</h2>
-                    <Button variant="ghost" size="sm">View All</Button>
+            {/* Recent Files & Requests Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Recent Files */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold">Recent Files</h2>
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link to="/recent">View All</Link>
+                        </Button>
+                    </div>
+                    <Card>
+                        <CardContent className="p-0">
+                            {recentFiles.length > 0 ? (
+                                recentFiles.slice(0, 5).map((file) => (
+                                    <Link
+                                        key={file.id}
+                                        to={`/courses/${file.courseId}/files/${file.id}`}
+                                        className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0 group"
+                                    >
+                                        <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                                            <FileText className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-medium truncate">{file.title}</p>
+                                            <p className="text-sm text-muted-foreground uppercase">{file.courseId}</p>
+                                        </div>
+                                        <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                            {formatDistanceToNow(new Date(file.viewedAt), { addSuffix: true })}
+                                        </span>
+                                    </Link>
+                                ))
+                            ) : (
+                                <div className="p-8 text-center text-muted-foreground">
+                                    <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                    <p>No recently viewed files</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
-                <Card>
-                    <CardContent className="p-0">
-                        {recentFiles.map((file, index) => (
-                            <div
-                                key={index}
-                                className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0"
-                            >
-                                <div className="p-2 bg-primary/10 rounded-lg">
-                                    <BookOpen className="h-5 w-5 text-primary" />
+
+                {/* File Requests */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-semibold">Your Requests</h2>
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link to="/uploads">View All</Link>
+                        </Button>
+                    </div>
+                    <Card>
+                        <CardContent className="p-0">
+                            <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0">
+                                <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                                    <Clock className="h-5 w-5" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-medium truncate">{file.name}</p>
-                                    <p className="text-sm text-muted-foreground">{file.course}</p>
+                                    <div className="flex items-center justify-between mb-1">
+                                        <p className="font-medium truncate">Midterm Review.pdf</p>
+                                        <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100">Pending</Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">CS101 • Requested 2 days ago</p>
                                 </div>
-                                <span className="text-sm text-muted-foreground whitespace-nowrap">{file.time}</span>
                             </div>
-                        ))}
-                    </CardContent>
-                </Card>
+                            <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer border-b last:border-b-0">
+                                <div className="p-2 bg-red-100 rounded-lg text-red-600">
+                                    <FileText className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <p className="font-medium truncate">Old Syllabus.docx</p>
+                                        <Badge variant="secondary" className="bg-red-100 text-red-700 hover:bg-red-100">Rejected</Badge>
+                                    </div>
+                                    <p className="text-xs text-red-500 mt-1">Reason: Outdated content</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );

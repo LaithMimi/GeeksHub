@@ -16,6 +16,8 @@ export interface FileData {
     date: string;
     size: string;
     courseId: string;
+    status: "approved" | "pending" | "rejected";
+    rejectionReason?: string;
 }
 
 // -- Lookup & Mock Data -- //
@@ -61,12 +63,17 @@ export const coursesHierarchy: Record<string, string[]> = {
 
 // Files List (Used in Courses Page & Dashboard)
 export const allFiles: FileData[] = [
-    { id: "123", title: "Introduction to Algorithms.pdf", type: "Notes", lecturer: "Dr. Smith", date: "Oct 24, 2024", size: "2.4 MB", courseId: "cs101" },
-    { id: "124", title: "Sorting Algorithms.pptx", type: "Slides", lecturer: "Dr. Smith", date: "Oct 26, 2024", size: "12 MB", courseId: "cs101" },
-    { id: "125", title: "Homework 3 Solutions.pdf", type: "Homeworks", lecturer: "TA. Mike", date: "Nov 01, 2024", size: "1.1 MB", courseId: "cs101" },
-    { id: "126", title: "Linear Algebra Notes.pdf", type: "Notes", lecturer: "Prof. Johnson", date: "5 hours ago", size: "1.8 MB", courseId: "math201" },
-    { id: "127", title: "Physics Lab Report.docx", type: "Homeworks", lecturer: "Dr. Emily Davis", date: "Yesterday", size: "3.5 MB", courseId: "phys101" },
+    { id: "123", title: "Introduction to Algorithms.pdf", type: "Notes", lecturer: "Dr. Smith", date: "Oct 24, 2024", size: "2.4 MB", courseId: "cs101", status: "approved" },
+    { id: "124", title: "Sorting Algorithms.pptx", type: "Slides", lecturer: "Dr. Smith", date: "Oct 26, 2024", size: "12 MB", courseId: "cs101", status: "approved" },
+    { id: "125", title: "Homework 3 Solutions.pdf", type: "Homeworks", lecturer: "TA. Mike", date: "Nov 01, 2024", size: "1.1 MB", courseId: "cs101", status: "approved" },
+    { id: "126", title: "Linear Algebra Notes.pdf", type: "Notes", lecturer: "Prof. Johnson", date: "5 hours ago", size: "1.8 MB", courseId: "math201", status: "approved" },
+    { id: "127", title: "Physics Lab Report.docx", type: "Homeworks", lecturer: "Dr. Emily Davis", date: "Yesterday", size: "3.5 MB", courseId: "phys101", status: "approved" },
+    // Mock user requests
+    { id: "req1", title: "Midterm Review.pdf", type: "Notes", lecturer: "Dr. Smith", date: "Pending", size: "1.5 MB", courseId: "cs101", status: "pending" },
+    { id: "req2", title: "Old Syllabus.docx", type: "Notes", lecturer: "Dr. Smith", date: "Rejected", size: "0.5 MB", courseId: "cs101", status: "rejected", rejectionReason: "Outdated content" },
 ];
+
+export const userRequests = allFiles.filter(f => f.status !== "approved");
 
 export const recentFiles = [
     { name: "Introduction to Algorithms.pdf", course: "CS101", time: "2 hours ago" },
