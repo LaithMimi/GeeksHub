@@ -1,4 +1,4 @@
-import { Home, Search, History, Settings, GraduationCap, Command } from "lucide-react";
+import { Home, Search, History, Settings, GraduationCap, Command, BookOpen } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
     Sidebar,
@@ -40,6 +40,9 @@ const Breadcrumbs = () => {
         return value.charAt(0).toUpperCase() + value.slice(1);
     };
 
+    // Paths that should not be clickable (folders/categories without index pages)
+    const nonClickablePaths = ["files"];
+
     return (
         <Breadcrumb>
             <BreadcrumbList>
@@ -53,11 +56,15 @@ const Breadcrumbs = () => {
                 {pathnames.map((value, index) => {
                     const to = `/${pathnames.slice(0, index + 1).join("/")}`;
                     const isLast = index === pathnames.length - 1;
+                    const isNonClickable = nonClickablePaths.includes(value);
+
                     return (
                         <div key={to} className="flex items-center gap-2">
                             <BreadcrumbItem>
-                                {isLast ? (
-                                    <BreadcrumbPage>{formatLabel(value)}</BreadcrumbPage>
+                                {isLast || isNonClickable ? (
+                                    <BreadcrumbPage className={isNonClickable ? "text-muted-foreground font-normal" : ""}>
+                                        {formatLabel(value)}
+                                    </BreadcrumbPage>
                                 ) : (
                                     <BreadcrumbLink href={to}>{formatLabel(value)}</BreadcrumbLink>
                                 )}
@@ -108,6 +115,14 @@ function AppSidebar() {
                                     <Link to="/">
                                         <Home className="h-4 w-4" />
                                         <span>Dashboard</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="Courses" isActive={isActive("/courses")}>
+                                    <Link to="/courses">
+                                        <BookOpen className="h-4 w-4" />
+                                        <span>Courses</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

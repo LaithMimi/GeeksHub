@@ -2,12 +2,7 @@ import { Link, Outlet, useParams, useLocation } from "react-router-dom";
 import { BookOpen, FileText, ClipboardList, ChevronRight, GraduationCap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-
-const courseData: Record<string, { name: string; term: string; color: string }> = {
-    cs101: { name: "Introduction to Algorithms", term: "Fall 2024", color: "from-violet-500 to-purple-600" },
-    math201: { name: "Linear Algebra", term: "Fall 2024", color: "from-blue-500 to-cyan-500" },
-    phys101: { name: "Classical Mechanics", term: "Fall 2024", color: "from-emerald-500 to-teal-500" },
-};
+import { courseDetails } from "@/lib/data";
 
 const navItems = [
     { path: "materials", label: "Materials", icon: BookOpen },
@@ -18,7 +13,7 @@ const navItems = [
 export default function CourseShell() {
     const { courseId } = useParams();
     const location = useLocation();
-    const course = courseData[courseId || ""] || { name: "Unknown Course", term: "", color: "from-gray-500 to-gray-600" };
+    const course = courseDetails[courseId || ""] || { id: "unknown", name: "Unknown Course", term: "", color: "from-gray-500 to-gray-600" };
 
     const isActive = (path: string) => {
         return location.pathname.includes(`/${path}`);

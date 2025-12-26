@@ -4,6 +4,7 @@ import CourseShell from "@/components/layout/CourseShell";
 import FileShell from "@/components/layout/FileShell";
 import FileViewer from "@/components/viewer/FileViewer";
 import Dashboard from "@/components/pages/Dashboard";
+import Courses from "@/components/pages/Courses";
 
 // Materials View Component
 function MaterialsView() {
@@ -37,42 +38,47 @@ export const router = createBrowserRouter([
                 element: <Dashboard />,
             },
             {
-                path: "courses/:courseId",
-                element: <CourseShell />,
-                errorElement: <div className="p-8">Something went wrong (CourseShell Error Boundary)</div>,
+                path: "courses",
                 children: [
                     {
                         index: true,
-                        element: <Navigate to="materials" replace />,
+                        element: <Courses />
                     },
                     {
-                        path: "materials",
-                        element: <MaterialsView />,
-                    },
-                    {
-                        path: "notes",
-                        element: <div>Notes View</div>,
-                    },
-                    {
-                        path: "files/:fileId",
-                        element: <FileShell />,
+                        path: ":courseId",
+                        element: <CourseShell />,
+                        errorElement: <div className="p-8">Something went wrong (CourseShell Error Boundary)</div>,
                         children: [
                             {
                                 index: true,
-                                element: <FileViewer />
+                                element: <Navigate to="materials" replace />,
+                            },
+                            {
+                                path: "materials",
+                                element: <MaterialsView />,
+                            },
+                            {
+                                path: "notes",
+                                element: <div>Notes View</div>,
+                            },
+                            {
+                                path: "exams",
+                                element: <div>Past Exams View</div>,
+                            },
+                            {
+                                path: "files/:fileId",
+                                element: <FileShell />,
+                                children: [
+                                    {
+                                        index: true,
+                                        element: <FileViewer />
+                                    }
+                                ]
                             }
-                        ]
-                    }
+                        ],
+                    },
                 ],
             },
-            {
-                path: "recent",
-                element: <div>Recent Activity</div>,
-            },
-            {
-                path: "settings",
-                element: <div>Settings</div>
-            }
         ],
     },
 ]);

@@ -3,9 +3,66 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Send, Sparkles, FileText, MessageCircle, StickyNote } from "lucide-react";
+import { Bot, Send, Sparkles, FileText, MessageCircle, StickyNote, User } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+
+interface Message {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: Date;
+}
 
 export default function AssistantPanel() {
+    const [messages, setMessages] = useState<Message[]>([
+        {
+            id: '1',
+            role: 'assistant',
+            content: "Hello! 👋 I can help you study this file. Here's what I can do:\n\n• Summarize key concepts\n• Explain complex topics\n• Quiz you on the material\n• Answer specific questions",
+            timestamp: new Date()
+        }
+    ]);
+    const [inputValue, setInputValue] = useState("");
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages]);
+
+    const handleSendMessage = () => {
+        if (!inputValue.trim()) return;
+
+        const userMessage: Message = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: inputValue,
+            timestamp: new Date()
+        };
+
+        setMessages(prev => [...prev, userMessage]);
+        setInputValue("");
+
+        // Simulate AI response
+        setTimeout(() => {
+            const aiMessage: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: `I understand you're asking about "${userMessage.content}". As an AI study assistant, I can help explain this concept based on the document content.`,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, aiMessage]);
+        }, 1000);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
+        }
+    };
+
     return (
         <div className="flex h-full flex-col bg-gradient-to-b from-background to-muted/30">
             <Tabs defaultValue="chat" className="flex-1 flex flex-col">
@@ -25,61 +82,41 @@ export default function AssistantPanel() {
                 <TabsContent value="chat" className="flex-1 flex flex-col m-0 p-0 overflow-hidden">
                     <ScrollArea className="flex-1 p-4">
                         <div className="space-y-4">
-                            {/* AI Message */}
-                            <div className="flex gap-3 animate-fade-in">
-                                <div className="shrink-0 w-8 h-8 rounded-full gradient-bg flex items-center justify-center">
-                                    <Bot className="h-4 w-4 text-white" />
-                                </div>
-                                <div className="flex-1 space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium text-sm">GeeksHub AI</span>
-                                        <Badge variant="secondary" className="text-xs">
-                                            <Sparkles className="h-3 w-3 mr-1" />
-                                            GPT-4
-                                        </Badge>
-                                    </div>
-                                    <div className="bg-muted/50 p-4 rounded-2xl rounded-tl-md text-sm leading-relaxed">
-                                        <p>Hello! 👋 I can help you study this file. Here's what I can do:</p>
-                                        <ul className="mt-2 space-y-1 text-muted-foreground">
-                                            <li>• Summarize key concepts</li>
-                                            <li>• Explain complex topics</li>
-                                            <li>• Quiz you on the material</li>
-                                            <li>• Answer specific questions</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
+                            {messages.map((message) => (
+                                <div key={message.id} className={`flex gap-3 animate-fade-in ${message.role === 'user' ? 'justify-end' : ''}`}>
+                                    {message.role === 'assistant' && (
+                                        <div className="shrink-0 w-8 h-8 rounded-full gradient-bg flex items-center justify-center">
+                                            <Bot className="h-4 w-4 text-white" />
+                                        </div>
+                                    )}
 
-                            {/* User Message */}
-                            <div className="flex gap-3 justify-end animate-fade-in">
-                                <div className="max-w-[80%]">
-                                    <div className="bg-primary text-primary-foreground p-4 rounded-2xl rounded-tr-md text-sm">
-                                        <p>What is the main topic of page 3?</p>
-                                    </div>
-                                </div>
-                            </div>
+                                    <div className={`flex-1 space-y-2 max-w-[85%] ${message.role === 'user' ? 'min-w-0' : ''}`}>
+                                        {message.role === 'assistant' && (
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-medium text-sm">GeeksHub AI</span>
+                                                <Badge variant="secondary" className="text-xs">
+                                                    <Sparkles className="h-3 w-3 mr-1" />
+                                                    GPT-4
+                                                </Badge>
+                                            </div>
+                                        )}
 
-                            {/* AI Response */}
-                            <div className="flex gap-3 animate-fade-in">
-                                <div className="shrink-0 w-8 h-8 rounded-full gradient-bg flex items-center justify-center">
-                                    <Bot className="h-4 w-4 text-white" />
-                                </div>
-                                <div className="flex-1 space-y-2">
-                                    <div className="bg-muted/50 p-4 rounded-2xl rounded-tl-md text-sm leading-relaxed">
-                                        <p>Page 3 covers <strong>Asymptotic Notation</strong>, specifically:</p>
-                                        <ul className="mt-2 space-y-1 text-muted-foreground">
-                                            <li>• Big-O notation (O)</li>
-                                            <li>• Big-Omega notation (Ω)</li>
-                                            <li>• Big-Theta notation (Θ)</li>
-                                        </ul>
-                                        <p className="mt-3">It explains how these notations help describe algorithm efficiency.</p>
-                                        <div className="mt-3 p-2 bg-background rounded-lg flex items-center gap-2 text-xs text-muted-foreground">
-                                            <FileText className="h-3 w-3" />
-                                            Source: Page 3, Lines 15-42
+                                        <div className={`${message.role === 'user'
+                                            ? 'bg-primary text-primary-foreground rounded-2xl rounded-tr-sm ml-auto'
+                                            : 'bg-muted/50 rounded-2xl rounded-tl-sm'
+                                            } p-4 text-sm leading-relaxed whitespace-pre-wrap`}>
+                                            <p>{message.content}</p>
                                         </div>
                                     </div>
+
+                                    {message.role === 'user' && (
+                                        <div className="shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                                            <User className="h-4 w-4 text-primary-foreground" />
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
+                            ))}
+                            <div ref={scrollRef} />
                         </div>
                     </ScrollArea>
 
@@ -89,10 +126,15 @@ export default function AssistantPanel() {
                             <Textarea
                                 placeholder="Ask about this file..."
                                 className="min-h-[80px] resize-none pr-14 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary rounded-xl"
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={handleKeyDown}
                             />
                             <Button
                                 size="icon"
                                 className="absolute right-2 bottom-2 h-10 w-10 rounded-full gradient-bg hover:opacity-90 transition-opacity"
+                                onClick={handleSendMessage}
+                                disabled={!inputValue.trim()}
                             >
                                 <Send className="h-4 w-4" />
                             </Button>

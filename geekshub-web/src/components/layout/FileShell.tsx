@@ -1,6 +1,6 @@
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Bot, MessageSquare } from "lucide-react";
+import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Outlet } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -46,12 +46,12 @@ export default function FileShell() {
 
     return (
         <div className="h-[calc(100vh-4rem)]">
-            <ResizablePanelGroup direction="horizontal" autoSaveId="file-shell-layout">
+            <ResizablePanelGroup direction="horizontal">
                 <ResizablePanel defaultSize={70} minSize={30}>
                     <Outlet />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
-                <ResizablePanel defaultSize={30} minSize={20} collapsible={true}>
+                <ResizablePanel defaultSize={30} minSize={20}>
                     <div className="flex h-full flex-col border-l">
                         <div className="flex h-12 items-center border-b px-4">
                             <span className="font-semibold text-sm flex items-center gap-2">
@@ -68,3 +68,4 @@ export default function FileShell() {
         </div>
     );
 }
+

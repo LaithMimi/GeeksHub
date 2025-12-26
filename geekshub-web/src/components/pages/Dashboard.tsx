@@ -3,36 +3,7 @@ import { BookOpen, Brain, Clock, FileText, Sparkles, TrendingUp } from "lucide-r
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-const courses = [
-    {
-        id: "cs101",
-        name: "Introduction to Algorithms",
-        term: "Fall 2024",
-        progress: 65,
-        color: "from-violet-500 to-purple-600"
-    },
-    {
-        id: "math201",
-        name: "Linear Algebra",
-        term: "Fall 2024",
-        progress: 42,
-        color: "from-blue-500 to-cyan-500"
-    },
-    {
-        id: "phys101",
-        name: "Classical Mechanics",
-        term: "Fall 2024",
-        progress: 88,
-        color: "from-emerald-500 to-teal-500"
-    }
-];
-
-const recentFiles = [
-    { name: "Introduction to Algorithms.pdf", course: "CS101", time: "2 hours ago" },
-    { name: "Linear Algebra Notes.pdf", course: "MATH201", time: "5 hours ago" },
-    { name: "Physics Lab Report.docx", course: "PHYS101", time: "Yesterday" },
-];
+import { coursesList, recentFiles } from "@/lib/data";
 
 export default function Dashboard() {
     return (
@@ -109,7 +80,7 @@ export default function Dashboard() {
                     <Button variant="ghost" size="sm">View All</Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {courses.map((course) => (
+                    {coursesList.map((course) => (
                         <Link key={course.id} to={`/courses/${course.id}`}>
                             <Card className="hover-lift cursor-pointer group overflow-hidden">
                                 <div className={`h-2 bg-gradient-to-r ${course.color}`} />
