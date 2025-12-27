@@ -21,6 +21,15 @@ export interface FileData {
     points?: number;
 }
 
+export interface Contributor {
+    id: string;
+    name: string;
+    avatar: string; // URL or initials
+    points: number;
+    badge: "Gold" | "Silver" | "Bronze" | "Contributor";
+    major: string;
+}
+
 // -- Lookup & Mock Data -- //
 
 export const majors = ["Computer Science", "Mathematics", "Physics"];
@@ -83,6 +92,14 @@ export const recentFiles = [
     { name: "Introduction to Algorithms.pdf", course: "CS101", time: "2 hours ago" },
     { name: "Linear Algebra Notes.pdf", course: "MATH201", time: "5 hours ago" },
     { name: "Physics Lab Report.docx", course: "PHYS101", time: "Yesterday" },
+];
+
+export const topContributors: Contributor[] = [
+    { id: "c1", name: "Alex Chen", avatar: "AC", points: 1250, badge: "Gold", major: "Computer Science" },
+    { id: "c2", name: "Sarah Jones", avatar: "SJ", points: 980, badge: "Silver", major: "Mathematics" },
+    { id: "c3", name: "Mike Ross", avatar: "MR", points: 850, badge: "Bronze", major: "Physics" },
+    { id: "c4", name: "Emily White", avatar: "EW", points: 720, badge: "Contributor", major: "Computer Science" },
+    { id: "c5", name: "David Kim", avatar: "DK", points: 690, badge: "Contributor", major: "Mathematics" },
 ];
 
 // Helper to get course list array

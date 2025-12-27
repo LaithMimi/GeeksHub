@@ -1,8 +1,8 @@
 import { Link, Outlet, useParams, useLocation } from "react-router-dom";
-import { BookOpen, FileText, ClipboardList, ChevronRight, GraduationCap } from "lucide-react";
+import { BookOpen, FileText, ClipboardList, GraduationCap, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { courseDetails } from "@/lib/data";
+import { useCourse } from "@/queries/useCatalog";
 
 const navItems = [
     { path: "materials", label: "Materials", icon: BookOpen },
@@ -13,22 +13,44 @@ const navItems = [
 export default function CourseShell() {
     const { courseId } = useParams();
     const location = useLocation();
-    const course = courseDetails[courseId || ""] || { id: "unknown", name: "Unknown Course", term: "", color: "from-gray-500 to-gray-600" };
+
+    // Fetch course details
+    const { data: course, isLoading } = useCourse(courseId || "");
 
     const isActive = (path: string) => {
         return location.pathname.includes(`/${path}`);
     };
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (!course) {
+        return (
+            <div className="p-8 text-center">
+                <h2 className="text-xl font-bold">Course Not Found</h2>
+                <p>The requested course "{courseId}" does not exist.</p>
+                <div className="mt-4">
+                    <Link to="/courses" className="text-primary hover:underline">Back to Courses</Link>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="animate-fade-in">
             {/* Course Header */}
-            <div className={`relative overflow-hidden rounded-xl bg-gradient-to-r ${course.color} p-6 mb-6 text-white`}>
+            <div className={`relative overflow-hidden rounded-xl bg-gradient-to-r ${course.color || "from-gray-500 to-gray-600"} p-6 mb-6 text-white`}>
                 <div className="absolute inset-0 bg-black/10" />
                 <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-2">
                         <Badge variant="secondary" className="bg-white/20 text-white border-0">
                             <GraduationCap className="h-3 w-3 mr-1" />
-                            {courseId?.toUpperCase()}
+                            {course.id.toUpperCase()}
                         </Badge>
                         <span className="text-white/80 text-sm">{course.term}</span>
                     </div>

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { useParams } from 'react-router-dom';
-import { useRecentFiles } from '@/hooks/useRecentFiles';
-import { allFiles } from '@/lib/data';
+import { useFile, useAddRecentFile } from '@/queries/useFiles';
+import { Button } from '@/components/ui/button';
 
 declare global {
     interface Window {
@@ -12,24 +12,23 @@ declare global {
 
 export default function FileViewer() {
     const { courseId, fileId } = useParams();
-    const { addRecentFile } = useRecentFiles();
+    const { data: file, isLoading, isError } = useFile(fileId || "");
+    const { mutate: addToRecent } = useAddRecentFile();
     const viewerInitialized = useRef(false);
 
     useEffect(() => {
-        // Track recent file access
-        if (fileId && courseId) {
-            const fileData = allFiles.find(f => f.id === fileId);
-            if (fileData) {
-                addRecentFile({
-                    id: fileData.id,
-                    title: fileData.title,
-                    courseId: courseId,
-                    type: fileData.type,
-                });
-            }
+        if (file && courseId) {
+            addToRecent({
+                id: file.id,
+                title: file.title,
+                courseId: courseId,
+                type: file.type,
+            });
         }
+    }, [file, courseId, addToRecent]);
 
-        // Prevent double initialization
+    useEffect(() => {
+        if (!file) return;
         if (viewerInitialized.current) return;
 
         const loadAdobeSDK = () => {
@@ -53,13 +52,10 @@ export default function FileViewer() {
                 divId: "adobe-dc-view",
             });
 
-            const fileData = allFiles.find(f => f.id === fileId);
-            const fileName = fileData ? fileData.title : "Document.pdf";
-
             adobeDCView.previewFile(
                 {
                     content: { location: { url: "https://documentcloud.adobe.com/view-sdk-demo/PDFs/Bodea Brochure.pdf" } },
-                    metaData: { fileName: fileName }
+                    metaData: { fileName: file.title }
                 },
                 {
                     embedMode: "SIZED_CONTAINER",
@@ -72,17 +68,31 @@ export default function FileViewer() {
         };
 
         loadAdobeSDK();
-    }, [fileId, courseId]);
+    }, [file]);
+
+    if (isLoading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <span className="sr-only">Loading file...</span>
+            </div>
+        );
+    }
+
+    if (isError || !file) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center">
+                <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+                <h2 className="text-xl font-semibold">File not found</h2>
+                <p className="text-muted-foreground mt-2">The requested file could not be loaded.</p>
+                <Button variant="link" onClick={() => window.history.back()}>Go Back</Button>
+            </div>
+        );
+    }
 
     return (
         <div className="h-full flex flex-col bg-background relative group">
-            {/* Adobe View Container - fills the parent */}
             <div id="adobe-dc-view" className="h-full w-full" />
-
-            {/* Loading Skeleton (visible before PDF loads over it) */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { UploadCloud } from "lucide-react";
+import { UploadCloud, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -12,14 +12,13 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-    majors,
-    years,
-    semesters,
-    coursesHierarchy,
-    lecturers,
-    types,
-} from "@/lib/data";
+
+import { useMajors, useYears, useSemesters, useCourses, useLecturers } from "@/queries/useCatalog";
+import { useCreateRequest } from "@/queries/useRequests";
+import type { MaterialType } from "@/types/domain";
+
+const DEMO_TYPES: MaterialType[] = ["Slides", "Homeworks", "Past Papers", "Notes"];
+const DEMO_USER_ID = "u1";
 
 interface RequestFileModalProps {
     open: boolean;
@@ -47,6 +46,16 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
 
     const [requestForm, setRequestForm] = useState(defaultForm);
 
+    // Queries
+    const { data: majors } = useMajors();
+    const { data: years } = useYears(requestForm.major);
+    const { data: semesters } = useSemesters(requestForm.major);
+    // Only fetch courses if major is selected
+    const { data: courses, isLoading: loadingCourses } = useCourses({ majorId: requestForm.major });
+    const { data: lecturers } = useLecturers({ courseId: requestForm.course });
+
+    const { mutate: submitRequest, isPending: isSubmitting } = useCreateRequest();
+
     useEffect(() => {
         if (open) {
             if (initialData) {
@@ -56,7 +65,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                     semester: initialData.semester || "",
                     course: initialData.course || "",
                     lecturer: initialData.lecturer || "",
-                    type: initialData.type || "Notes",
+                    type: initialData.type || "",
                     description: ""
                 });
             } else {
@@ -78,8 +87,18 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
         requestForm.type;
 
     const handleSubmit = () => {
-        console.log("Submitting Request:", requestForm);
-        onOpenChange(false);
+        submitRequest({
+            userId: DEMO_USER_ID,
+            courseId: requestForm.course,
+            lecturerId: requestForm.lecturer, // In real app, name lookup or ID
+            type: requestForm.type as MaterialType,
+            title: "New Request", // Title isn't in form? Adding default or need input
+            notes: requestForm.description
+        }, {
+            onSuccess: () => {
+                onOpenChange(false);
+            }
+        });
     };
 
     return (
@@ -101,18 +120,18 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                     <SelectValue placeholder="Major" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {majors.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                    {majors?.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
                             <Label>Year</Label>
-                            <Select value={requestForm.year} onValueChange={(v) => handleRequestSelect("year", v)}>
+                            <Select value={requestForm.year} onValueChange={(v) => handleRequestSelect("year", v)} disabled={!requestForm.major}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Year" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                                    {years?.map(y => <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -121,24 +140,24 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Semester</Label>
-                            <Select value={requestForm.semester} onValueChange={(v) => handleRequestSelect("semester", v)}>
+                            <Select value={requestForm.semester} onValueChange={(v) => handleRequestSelect("semester", v)} disabled={!requestForm.major}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Semester" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {semesters.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    {semesters?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Course</Label>
-                            <Select value={requestForm.course} onValueChange={(v) => handleRequestSelect("course", v)} disabled={!requestForm.major}>
+                            <Label>Course {loadingCourses && <Loader2 className="h-3 w-3 animate-spin inline" />}</Label>
+                            <Select value={requestForm.course} onValueChange={(v) => handleRequestSelect("course", v)} disabled={!requestForm.major || loadingCourses}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder={requestForm.major ? "Select Course" : "Select Major First"} />
+                                    <SelectValue placeholder="Select Course" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {requestForm.major && coursesHierarchy[requestForm.major as keyof typeof coursesHierarchy]?.map(c => (
-                                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                                    {courses?.map(c => (
+                                        <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -148,12 +167,12 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Lecturer</Label>
-                            <Select value={requestForm.lecturer} onValueChange={(v) => handleRequestSelect("lecturer", v)}>
+                            <Select value={requestForm.lecturer} onValueChange={(v) => handleRequestSelect("lecturer", v)} disabled={!requestForm.course}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Lecturer" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {lecturers.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                                    {lecturers?.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -164,7 +183,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                     <SelectValue placeholder="Type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {types.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                    {DEMO_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -188,9 +207,10 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                 <DialogFooter>
                     <Button
                         type="submit"
-                        disabled={!isRequestValid}
+                        disabled={!isRequestValid || isSubmitting}
                         onClick={handleSubmit}
                     >
+                        {isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
                         Submit Request
                     </Button>
                 </DialogFooter>

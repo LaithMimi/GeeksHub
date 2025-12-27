@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { FileText, Search, Filter, AlertCircle, CheckCircle, Clock, XCircle, ChevronLeft, Zap } from "lucide-react";
+import { FileText, Search, Filter, AlertCircle, CheckCircle, Clock, XCircle, ChevronLeft, Zap, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { userRequests } from "@/lib/data";
+import { useMyRequests } from "@/queries/useRequests";
 import RequestFileModal from "@/components/features/RequestFileModal";
+import { formatDistanceToNow } from "date-fns";
+
+const DEMO_USER_ID = "u1";
 
 export default function UserUploads() {
     const [isRequestOpen, setIsRequestOpen] = useState(false);
+    const { data: userRequests, isLoading, isError } = useMyRequests(DEMO_USER_ID);
 
     const getStatusIcon = (status: string) => {
         switch (status) {
@@ -26,6 +30,24 @@ export default function UserUploads() {
             default: return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20";
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="h-[50vh] flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (isError || !userRequests) {
+        return (
+            <div className="h-[50vh] flex flex-col items-center justify-center text-red-500">
+                <AlertCircle className="h-8 w-8 mb-2" />
+                <p>Failed to load requests.</p>
+                <Button variant="link" onClick={() => window.location.reload()}>Retry</Button>
+            </div>
+        )
+    }
 
     const totalPoints = userRequests.reduce((acc, curr) => acc + (curr.points || 0), 0);
 
@@ -102,9 +124,6 @@ export default function UserUploads() {
                 <div className="relative flex-1 max-w-sm">
                     <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input placeholder="Search uploads..." className="ps-9 pe-12" />
-                    <kbd className="absolute end-2.5 top-2.5 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                        <span className="text-xs">Ctrl</span> K
-                    </kbd>
                 </div>
                 <Button variant="outline" size="icon">
                     <Filter className="h-4 w-4" />
@@ -141,7 +160,7 @@ export default function UserUploads() {
                                             )}
                                         </div>
                                         <div className="text-sm text-muted-foreground">
-                                            {file.courseId.toUpperCase()} • {file.date}
+                                            {file.courseId.toUpperCase()} • {formatDistanceToNow(new Date(file.createdAt || new Date()), { addSuffix: true })}
                                         </div>
                                         {file.status === "rejected" && file.rejectionReason && (
                                             <div className="flex items-center gap-2 text-sm text-red-500 bg-red-500/5 px-2 py-1 rounded w-fit mt-2">
@@ -158,7 +177,7 @@ export default function UserUploads() {
                                         </Button>
                                     ) : (
                                         <Button variant="outline" size="sm" asChild>
-                                            <Link to={`/courses/cs101/files/${file.id}`}>View</Link>
+                                            <Link to={`/courses/${file.courseId}/files/123` /* Mock link for now */}>View</Link>
                                         </Button>
                                     )}
                                 </div>

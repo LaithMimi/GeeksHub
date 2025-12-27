@@ -1,15 +1,24 @@
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
-import { BookOpen, Clock, FileText, Trash2 } from "lucide-react";
+import { BookOpen, Clock, FileText, Trash2, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useRecentFiles } from "@/hooks/useRecentFiles";
+import { useRecentFiles, useClearRecentFiles } from "@/queries/useFiles";
 import { Badge } from "@/components/ui/badge";
 
 export default function Recent() {
-    const { recentFiles, clearHistory } = useRecentFiles();
+    const { data: recentFiles, isLoading } = useRecentFiles();
+    const { mutate: clearHistory } = useClearRecentFiles();
 
-    if (recentFiles.length === 0) {
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[50vh]">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        )
+    }
+
+    if (!recentFiles || recentFiles.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-4 animate-fade-in">
                 <div className="p-4 bg-muted/50 rounded-full">
@@ -37,7 +46,7 @@ export default function Recent() {
                         Pick up where you left off
                     </p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={clearHistory} className="text-muted-foreground hover:text-destructive">
+                <Button variant="ghost" size="sm" onClick={() => clearHistory()} className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4 me-2" />
                     Clear History
                 </Button>

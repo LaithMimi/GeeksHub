@@ -1,21 +1,41 @@
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Bot } from "lucide-react";
+import { Bot, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Outlet } from "react-router-dom";
+import { Outlet, useParams } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AssistantPanel from "@/components/assistant/AssistantPanel";
 import { useState } from "react";
+import { useFile } from "@/queries/useFiles";
 
 export default function FileShell() {
     const isMobile = useIsMobile();
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
+    // Fetch file data here to ensure it exists before showing content (optional, but good for error boundary)
+    const { fileId } = useParams();
+    const { isLoading, isError } = useFile(fileId || "");
+
+    const Content = () => {
+        if (isLoading) return (
+            <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+        );
+        if (isError) return (
+            <div className="h-full flex flex-col items-center justify-center text-red-500">
+                <AlertCircle className="h-8 w-8 mb-2" />
+                <p>Error loading file.</p>
+            </div>
+        )
+        return <Outlet />;
+    }
+
     if (isMobile) {
         return (
             <div className="flex h-[calc(100vh-4rem)] flex-col relative">
                 <div className="flex-1 overflow-auto">
-                    <Outlet />
+                    <Content />
                 </div>
 
                 {/* Floating Action Button for Assistant */}
@@ -48,7 +68,7 @@ export default function FileShell() {
         <div className="h-[calc(100vh-4rem)]">
             <ResizablePanelGroup direction="horizontal">
                 <ResizablePanel defaultSize={70} minSize={30}>
-                    <Outlet />
+                    <Content />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
                 <ResizablePanel defaultSize={30} minSize={20}>
@@ -68,4 +88,3 @@ export default function FileShell() {
         </div>
     );
 }
-
