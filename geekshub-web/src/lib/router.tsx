@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, Link, useParams } from "react-router-dom";
 import AppShell from "@/components/layout/AppShell";
+import AdminShell from "@/components/layout/AdminShell";
 import CourseShell from "@/components/layout/CourseShell";
 import FileShell from "@/components/layout/FileShell";
 import FileViewer from "@/components/viewer/FileViewer";
@@ -8,6 +9,10 @@ import UserUploads from "@/components/pages/UserUploads";
 import Recent from "@/components/pages/Recent";
 import Settings from "@/components/pages/Settings";
 import Courses from "@/components/pages/Courses";
+// Admin Pages
+import AdminHome from "@/components/pages/admin/AdminHome";
+import ModerationQueue from "@/components/pages/admin/ModerationQueue";
+import AuditLog from "@/components/pages/admin/AuditLog";
 
 // Materials View Component
 function MaterialsView() {
@@ -93,6 +98,26 @@ export const router = createBrowserRouter([
                         ],
                     },
                 ],
+            },
+        ],
+    },
+    // Admin Routes
+    {
+        path: "/admin",
+        element: <AdminShell />,
+        errorElement: <div className="p-8">Something went wrong (Admin Error Boundary)</div>,
+        children: [
+            {
+                index: true,
+                element: <AdminHome />,
+            },
+            {
+                path: "requests",
+                element: <ModerationQueue />,
+            },
+            {
+                path: "audit",
+                element: <AuditLog />,
             },
         ],
     },

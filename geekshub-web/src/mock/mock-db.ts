@@ -6,7 +6,8 @@ import type {
     Semester,
     Lecturer,
     Contributor,
-    PointsTransaction
+    PointsTransaction,
+    AuditLogEntry
 } from "@/types/domain";
 
 /**
@@ -177,10 +178,15 @@ export const files: File[] = [
 ];
 
 export const fileRequests: FileRequest[] = [
-    { id: "req1", userId: "u1", title: "Midterm Review.pdf", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-10-24", status: "pending", courseId: "cs101" },
-    { id: "req2", userId: "u1", title: "Old Syllabus.docx", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-10-20", status: "rejected", rejectionReason: "Outdated content", courseId: "cs101" },
-    { id: "req3", userId: "u1", title: "Calculus Cheat Sheet.pdf", type: "Notes", lecturerName: "Prof. Johnson", lecturerId: "l2", createdAt: "2024-10-20", status: "approved", points: 25, courseId: "math201" },
-    { id: "req4", userId: "u1", title: "Physics Lab Data.xlsx", type: "Homeworks", lecturerName: "Dr. Emily Davis", lecturerId: "l3", createdAt: "2024-10-22", status: "approved", points: 15, courseId: "phys101" },
+    { id: "req1", userId: "u1", uploaderName: "John Doe", title: "Midterm Review.pdf", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-27T10:00:00Z", status: "pending", courseId: "cs101" },
+    { id: "req2", userId: "u1", uploaderName: "John Doe", title: "Old Syllabus.docx", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-20T09:00:00Z", status: "rejected", rejectionReason: "OUTDATED", rejectionNote: "This syllabus is from 2020", courseId: "cs101" },
+    { id: "req3", userId: "u1", uploaderName: "John Doe", title: "Calculus Cheat Sheet.pdf", type: "Notes", lecturerName: "Prof. Johnson", lecturerId: "l2", createdAt: "2024-12-20T14:00:00Z", status: "approved", pointsAwarded: 25, reviewedAt: "2024-12-21T10:00:00Z", reviewedById: "admin1", courseId: "math201" },
+    { id: "req4", userId: "u1", uploaderName: "John Doe", title: "Physics Lab Data.xlsx", type: "Homeworks", lecturerName: "Dr. Emily Davis", lecturerId: "l3", createdAt: "2024-12-22T11:00:00Z", status: "approved", pointsAwarded: 15, reviewedAt: "2024-12-23T09:00:00Z", reviewedById: "admin1", courseId: "phys101" },
+    // Additional pending requests for admin testing
+    { id: "req5", userId: "u2", uploaderName: "Jane Smith", title: "Algorithm Complexity Notes.pdf", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-26T14:30:00Z", status: "pending", courseId: "cs101" },
+    { id: "req6", userId: "u3", uploaderName: "Bob Wilson", title: "Sorting Visualizations.pptx", type: "Slides", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-26T16:00:00Z", status: "pending", courseId: "cs101" },
+    { id: "req7", userId: "u2", uploaderName: "Jane Smith", title: "Matrix Operations Guide.pdf", type: "Notes", lecturerName: "Prof. Johnson", lecturerId: "l2", createdAt: "2024-12-27T08:00:00Z", status: "pending", courseId: "math201" },
+    { id: "req8", userId: "u4", uploaderName: "Alice Brown", title: "Past Exam 2023.pdf", type: "Past Papers", lecturerName: "Dr. Emily Davis", lecturerId: "l3", createdAt: "2024-12-27T09:30:00Z", status: "pending", courseId: "phys101" },
 ];
 
 export const topContributors: Contributor[] = [
@@ -193,5 +199,16 @@ export const topContributors: Contributor[] = [
 
 export const pointsTransactions: PointsTransaction[] = [];
 
+// Audit log for admin actions
+export const auditLog: AuditLogEntry[] = [];
+
 // Recent Files (In-memory session storage)
-export const recentFiles: any[] = []; // Explicitly any[] to allow extended properties like viewedAt without complex types for now
+export const recentFiles: any[] = [];
+
+// Demo admin user
+export const DEMO_ADMIN = {
+    id: "admin1",
+    name: "Admin User",
+    role: "ADMIN" as const
+};
+

@@ -20,61 +20,65 @@
  * 2. Replace function bodies with fetch calls:
  * 
  *    createFileRequest(payload) → POST /api/file-requests
- *    - Backend: INSERT INTO file_requests (...) VALUES (...)
- *    - Return the created request with server-generated ID
- *    - Handle file upload to S3/GCS if file is attached
- * 
  *    listMyRequests(userId) → GET /api/me/file-requests
- *    - Backend: SELECT * FROM file_requests WHERE user_id = :currentUserId
- *    - ⚠️ SECURITY: Backend MUST filter by authenticated user, never trust client userId
- *    - Add pagination: ?page=1&limit=20&status=pending
- * 
  *    withdrawRequest(requestId) → DELETE /api/me/file-requests/:requestId
- *    - Backend: UPDATE file_requests SET status = 'withdrawn' WHERE id = ? AND user_id = :currentUserId
- *    - ⚠️ SECURITY: Always verify ownership before deleting
- * 
- *    listPendingRequests() → GET /api/admin/file-requests?status=pending
- *    - Backend: SELECT * FROM file_requests WHERE status = 'pending' (admin only)
- *    - Requires admin authorization middleware
- * 
+ *    listAllRequests(filters) → GET /api/admin/file-requests
  *    approveRequest(requestId, adminId) → PATCH /api/admin/file-requests/:requestId/approve
- *    - Backend: 
- *      1. UPDATE file_requests SET status = 'approved', reviewed_by = ?, reviewed_at = NOW()
- *      2. INSERT INTO points_transactions (...) - IDEMPOTENT (check if already awarded)
- *    - Use database transaction for atomicity
+ *    rejectRequest(...) → PATCH /api/admin/file-requests/:requestId/reject
+ *    bulkApprove(ids, adminId) → POST /api/admin/file-requests/bulk-approve
+ *    bulkReject(ids, adminId, reason) → POST /api/admin/file-requests/bulk-reject
+ *    getRequestStats() → GET /api/admin/file-requests/stats
+ *    undoApprove(requestId) → POST /api/admin/file-requests/:requestId/undo-approve
+ *    undoReject(requestId) → POST /api/admin/file-requests/:requestId/undo-reject
  * 
- * 3. Example real implementation:
- *    ```ts
- *    export const createFileRequest = async (payload: CreateRequestPayload): Promise<FileRequest> => {
- *        return api<FileRequest>("/api/file-requests", {
- *            method: "POST",
- *            body: JSON.stringify(payload)
- *        });
- *    };
- *    
- *    export const listMyRequests = async (): Promise<FileRequest[]> => {
- *        // No userId param needed - backend uses session/JWT
- *        return api<FileRequest[]>("/api/me/file-requests");
- *    };
- *    ```
- * 
- * 4. Key security notes for backend:
+ * 3. Key security notes for backend:
  *    - Never expose other users' requests
  *    - Points awarding must be idempotent (use request_id as unique key)
  *    - Admin endpoints require role check middleware
- * 
- * 5. Keep function signatures unchanged - TanStack Query hooks won't need updates.
+ *    - All mutations must write to audit_logs table
  * ============================================================================
  */
 
-import { fileRequests, randomDelay, pointsTransactions } from "@/mock/mock-db";
-import type { FileRequest, MaterialType } from "@/types/domain";
+import { fileRequests, randomDelay, pointsTransactions, auditLog, DEMO_ADMIN } from "@/mock/mock-db";
+import type { FileRequest, MaterialType, RejectReason, RequestStats, AuditLogEntry, FileStatus } from "@/types/domain";
+
+// Helper to generate mock IDs
+const generateId = () => Math.random().toString(36).substring(7);
+
+// Helper to check if date is today
+const isToday = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
+};
+
+// Helper to write audit log
+const writeAuditLog = (
+    action: AuditLogEntry["action"],
+    targetIds: string[],
+    actorId: string,
+    actorName: string,
+    metadata: AuditLogEntry["metadata"]
+) => {
+    auditLog.push({
+        id: generateId(),
+        timestamp: new Date().toISOString(),
+        actorId,
+        actorName,
+        action,
+        targetType: "FileRequest",
+        targetIds,
+        metadata
+    });
+};
+
+// ============================================================================
+// USER FUNCTIONS
+// ============================================================================
 
 /**
  * Creates a new file upload request.
- * @param payload - Request details (userId, courseId, lecturerId, type, title, notes)
  * @backend POST /api/file-requests
- * @returns The created FileRequest with server-generated ID
  */
 export const createFileRequest = async (payload: {
     userId: string;
@@ -84,14 +88,15 @@ export const createFileRequest = async (payload: {
     title: string;
     notes?: string;
 }): Promise<FileRequest> => {
-    await randomDelay(500, 1000); // Slower write
+    await randomDelay(500, 1000);
 
     const newRequest: FileRequest = {
-        id: Math.random().toString(36).substring(7), // Mock ID - backend generates this
+        id: generateId(),
         userId: payload.userId,
+        uploaderName: "Current User", // Backend would look up from auth
         courseId: payload.courseId,
         lecturerId: payload.lecturerId,
-        lecturerName: "Unknown Lecturer", // Backend should look up from lecturerId
+        lecturerName: "Unknown Lecturer",
         type: payload.type,
         title: payload.title,
         notes: payload.notes,
@@ -99,16 +104,13 @@ export const createFileRequest = async (payload: {
         createdAt: new Date().toISOString()
     };
 
-    // In-memory mutation
     fileRequests.push(newRequest);
     return newRequest;
 };
 
 /**
  * Lists all file requests for a specific user.
- * @param userId - The user ID to filter by
  * @backend GET /api/me/file-requests
- * @security Backend MUST filter by authenticated session, not client-provided userId
  */
 export const listMyRequests = async (userId: string): Promise<FileRequest[]> => {
     await randomDelay();
@@ -117,16 +119,12 @@ export const listMyRequests = async (userId: string): Promise<FileRequest[]> => 
 
 /**
  * Withdraws/deletes a pending file request.
- * @param requestId - The request ID to withdraw
- * @param userId - The user ID (for ownership verification)
  * @backend DELETE /api/me/file-requests/:requestId
- * @security Backend MUST verify ownership before deletion
  */
 export const withdrawRequest = async (requestId: string, userId: string): Promise<void> => {
     await randomDelay();
     const index = fileRequests.findIndex(r => r.id === requestId);
     if (index !== -1 && fileRequests[index].userId === userId) {
-        // Ideally change status to withdrawn or delete
         fileRequests.splice(index, 1);
     }
 };
@@ -136,45 +134,269 @@ export const withdrawRequest = async (requestId: string, userId: string): Promis
 // ============================================================================
 
 /**
- * Lists all pending file requests (admin only).
+ * Lists all file requests with optional filters (admin only).
+ * @backend GET /api/admin/file-requests
+ */
+export const listAllRequests = async (filters?: { status?: FileStatus }): Promise<FileRequest[]> => {
+    await randomDelay();
+    let result = [...fileRequests];
+    if (filters?.status) {
+        result = result.filter(r => r.status === filters.status);
+    }
+    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+};
+
+/**
+ * Lists pending file requests (admin only).
  * @backend GET /api/admin/file-requests?status=pending
- * @security Requires ADMIN or MODERATOR role
  */
 export const listPendingRequests = async (): Promise<FileRequest[]> => {
-    await randomDelay();
-    return fileRequests.filter(r => r.status === "pending");
+    return listAllRequests({ status: "pending" });
+};
+
+/**
+ * Gets request stats for admin dashboard.
+ * @backend GET /api/admin/file-requests/stats
+ */
+export const getRequestStats = async (): Promise<RequestStats> => {
+    await randomDelay(200, 400);
+    return {
+        pending: fileRequests.filter(r => r.status === "pending").length,
+        approvedToday: fileRequests.filter(r => r.status === "approved" && r.reviewedAt && isToday(r.reviewedAt)).length,
+        rejectedToday: fileRequests.filter(r => r.status === "rejected" && r.reviewedAt && isToday(r.reviewedAt)).length
+    };
 };
 
 /**
  * Approves a file request and awards points (admin only).
- * @param requestId - The request ID to approve
- * @param adminId - The admin user ID who approved
+ * IDEMPOTENT: If already approved, returns without double-awarding.
  * @backend PATCH /api/admin/file-requests/:requestId/approve
- * @security Requires ADMIN role
- * @note Points awarding is IDEMPOTENT - backend checks if already awarded
  */
-export const approveRequest = async (requestId: string, adminId: string): Promise<void> => {
-    await randomDelay(400, 800);
+export const approveRequest = async (requestId: string, adminId: string, adminName: string = DEMO_ADMIN.name): Promise<FileRequest | null> => {
+    await randomDelay(300, 600);
     const request = fileRequests.find(r => r.id === requestId);
 
-    if (request && request.status === "pending") {
-        request.status = "approved";
-        request.reviewedBy = adminId;
-        request.reviewedAt = new Date().toISOString();
-        request.points = 10;
+    if (!request) return null;
 
-        // Award points transaction (Idempotency check: simplified)
-        // Backend: INSERT INTO points_transactions (...) ON CONFLICT (request_id) DO NOTHING
-        const existingTx = pointsTransactions.find(t => t.requestId === requestId);
+    // IDEMPOTENCY: Skip if already approved
+    if (request.status === "approved") {
+        return request;
+    }
+
+    const previousStatus = request.status;
+    const pointsToAward = 10;
+
+    request.status = "approved";
+    request.reviewedById = adminId;
+    request.reviewedAt = new Date().toISOString();
+    request.pointsAwarded = pointsToAward;
+
+    // Award points (idempotent check)
+    const existingTx = pointsTransactions.find(t => t.requestId === requestId);
+    if (!existingTx) {
+        pointsTransactions.push({
+            id: generateId(),
+            userId: request.userId,
+            amount: pointsToAward,
+            reason: "File Approved",
+            date: new Date().toISOString(),
+            requestId: requestId
+        });
+    }
+
+    // Write audit log
+    writeAuditLog("APPROVE", [requestId], adminId, adminName, {
+        previousStatus,
+        newStatus: "approved",
+        pointsAwarded: pointsToAward
+    });
+
+    return request;
+};
+
+/**
+ * Rejects a file request with reason (admin only).
+ * @backend PATCH /api/admin/file-requests/:requestId/reject
+ */
+export const rejectRequest = async (
+    requestId: string,
+    adminId: string,
+    reason: RejectReason,
+    note?: string,
+    adminName: string = DEMO_ADMIN.name
+): Promise<FileRequest | null> => {
+    await randomDelay(300, 600);
+    const request = fileRequests.find(r => r.id === requestId);
+
+    if (!request || request.status !== "pending") return null;
+
+    const previousStatus = request.status;
+
+    request.status = "rejected";
+    request.reviewedById = adminId;
+    request.reviewedAt = new Date().toISOString();
+    request.rejectionReason = reason;
+    request.rejectionNote = note;
+
+    // Write audit log
+    writeAuditLog("REJECT", [requestId], adminId, adminName, {
+        previousStatus,
+        newStatus: "rejected",
+        reason,
+        note
+    });
+
+    return request;
+};
+
+/**
+ * Bulk approve requests (admin only).
+ * IDEMPOTENT: Skips already-approved requests.
+ * @backend POST /api/admin/file-requests/bulk-approve
+ */
+export const bulkApprove = async (requestIds: string[], adminId: string, adminName: string = DEMO_ADMIN.name): Promise<{ approved: number; skipped: number }> => {
+    await randomDelay(500, 1000);
+
+    let approved = 0;
+    let skipped = 0;
+    const approvedIds: string[] = [];
+
+    for (const id of requestIds) {
+        const request = fileRequests.find(r => r.id === id);
+        if (!request) {
+            skipped++;
+            continue;
+        }
+        if (request.status !== "pending") {
+            skipped++;
+            continue;
+        }
+
+        request.status = "approved";
+        request.reviewedById = adminId;
+        request.reviewedAt = new Date().toISOString();
+        request.pointsAwarded = 10;
+
+        // Award points (idempotent)
+        const existingTx = pointsTransactions.find(t => t.requestId === id);
         if (!existingTx) {
             pointsTransactions.push({
-                id: Math.random().toString(36).substring(7),
+                id: generateId(),
                 userId: request.userId,
                 amount: 10,
-                reason: "File Approved",
+                reason: "File Approved (Bulk)",
                 date: new Date().toISOString(),
-                requestId: requestId
+                requestId: id
             });
         }
+
+        approved++;
+        approvedIds.push(id);
     }
+
+    if (approvedIds.length > 0) {
+        writeAuditLog("BULK_APPROVE", approvedIds, adminId, adminName, {
+            newStatus: "approved",
+            pointsAwarded: 10
+        });
+    }
+
+    return { approved, skipped };
+};
+
+/**
+ * Bulk reject requests (admin only).
+ * @backend POST /api/admin/file-requests/bulk-reject
+ */
+export const bulkReject = async (
+    requestIds: string[],
+    adminId: string,
+    reason: RejectReason,
+    adminName: string = DEMO_ADMIN.name
+): Promise<{ rejected: number; skipped: number }> => {
+    await randomDelay(500, 1000);
+
+    let rejected = 0;
+    let skipped = 0;
+    const rejectedIds: string[] = [];
+
+    for (const id of requestIds) {
+        const request = fileRequests.find(r => r.id === id);
+        if (!request || request.status !== "pending") {
+            skipped++;
+            continue;
+        }
+
+        request.status = "rejected";
+        request.reviewedById = adminId;
+        request.reviewedAt = new Date().toISOString();
+        request.rejectionReason = reason;
+
+        rejected++;
+        rejectedIds.push(id);
+    }
+
+    if (rejectedIds.length > 0) {
+        writeAuditLog("BULK_REJECT", rejectedIds, adminId, adminName, {
+            newStatus: "rejected",
+            reason
+        });
+    }
+
+    return { rejected, skipped };
+};
+
+/**
+ * Undo approval (admin only) - reverts to pending and removes points.
+ * @backend POST /api/admin/file-requests/:requestId/undo-approve
+ */
+export const undoApprove = async (requestId: string, adminId: string, adminName: string = DEMO_ADMIN.name): Promise<boolean> => {
+    await randomDelay(300, 600);
+    const request = fileRequests.find(r => r.id === requestId);
+
+    if (!request || request.status !== "approved") return false;
+
+    // Remove points transaction
+    const txIndex = pointsTransactions.findIndex(t => t.requestId === requestId);
+    if (txIndex !== -1) {
+        pointsTransactions.splice(txIndex, 1);
+    }
+
+    const previousStatus = request.status;
+    request.status = "pending";
+    request.reviewedById = undefined;
+    request.reviewedAt = undefined;
+    request.pointsAwarded = undefined;
+
+    writeAuditLog("UNDO_APPROVE", [requestId], adminId, adminName, {
+        previousStatus,
+        newStatus: "pending"
+    });
+
+    return true;
+};
+
+/**
+ * Undo rejection (admin only) - reverts to pending.
+ * @backend POST /api/admin/file-requests/:requestId/undo-reject
+ */
+export const undoReject = async (requestId: string, adminId: string, adminName: string = DEMO_ADMIN.name): Promise<boolean> => {
+    await randomDelay(300, 600);
+    const request = fileRequests.find(r => r.id === requestId);
+
+    if (!request || request.status !== "rejected") return false;
+
+    const previousStatus = request.status;
+    request.status = "pending";
+    request.reviewedById = undefined;
+    request.reviewedAt = undefined;
+    request.rejectionReason = undefined;
+    request.rejectionNote = undefined;
+
+    writeAuditLog("UNDO_REJECT", [requestId], adminId, adminName, {
+        previousStatus,
+        newStatus: "pending"
+    });
+
+    return true;
 };

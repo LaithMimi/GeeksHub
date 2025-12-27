@@ -4,7 +4,7 @@
  * ============================================================================
  * 
  * TanStack Query hooks for file request operations (create, list, withdraw,
- * admin approval). Includes both queries and mutations with toast notifications.
+ * admin approval/rejection). Includes queries and mutations with toast + undo.
  * 
  * ============================================================================
  * BACKEND MIGRATION GUIDE
@@ -12,48 +12,35 @@
  * 
  * ✅ MOSTLY NO CHANGES NEEDED when backend is implemented!
  * 
- * The only change you may need:
- * 
- * 1. REMOVE userId PARAMETER from useMyRequests:
- *    When the backend uses authentication (JWT/session), it will identify
- *    the current user automatically. You can simplify:
- *    
- *    BEFORE (mock):
- *    ```ts
- *    export const useMyRequests = (userId: string) => useQuery({
- *        queryKey: ['my-requests', userId],
- *        queryFn: () => listMyRequests(userId),
- *        enabled: !!userId
- *    });
- *    ```
- *    
- *    AFTER (real backend):
- *    ```ts
- *    export const useMyRequests = () => useQuery({
- *        queryKey: ['my-requests'],
- *        queryFn: listMyRequests, // No userId, backend uses auth
- *    });
- *    ```
- *    
- *    Then update components that call useMyRequests() to not pass userId.
- * 
- * 2. INVALIDATION: After approving a request, you may want to invalidate
- *    the user's reputation query. The backend should return the affected
- *    userId so you can invalidate: ['reputation', userId]
- * 
- * 3. ADMIN HOOKS: usePendingRequests and useApproveRequest should only be
- *    called from admin pages. Consider adding role checks in components.
+ * The only change: Remove userId parameters when backend uses JWT auth.
  * ============================================================================
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { createFileRequest, listMyRequests, listPendingRequests, approveRequest, withdrawRequest } from "@/services/requestService";
+import {
+    createFileRequest,
+    listMyRequests,
+    listAllRequests,
+    listPendingRequests,
+    approveRequest,
+    rejectRequest,
+    bulkApprove,
+    bulkReject,
+    withdrawRequest,
+    getRequestStats,
+    undoApprove,
+    undoReject
+} from "@/services/requestService";
 import { toast } from "sonner";
+import type { RejectReason, FileStatus } from "@/types/domain";
+import { DEMO_ADMIN } from "@/mock/mock-db";
+
+// ============================================================================
+// USER HOOKS
+// ============================================================================
 
 /**
  * Fetches the current user's file requests.
- * @param userId - User ID to filter by (will be removed when backend uses auth)
- * @backend When authenticated, backend filters by session user automatically
  */
 export const useMyRequests = (userId: string) => useQuery({
     queryKey: ['my-requests', userId],
@@ -63,7 +50,6 @@ export const useMyRequests = (userId: string) => useQuery({
 
 /**
  * Mutation to create a new file request.
- * Shows success/error toast and invalidates my-requests query.
  */
 export const useCreateRequest = () => {
     const queryClient = useQueryClient();
@@ -81,47 +67,149 @@ export const useCreateRequest = () => {
 
 /**
  * Mutation to withdraw a pending file request.
- * Only the owner can withdraw their own requests.
  */
 export const useWithdrawRequest = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ({ requestId, userId }: { requestId: string, userId: string }) => withdrawRequest(requestId, userId),
-        onSuccess: (data, variables) => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['my-requests', variables.userId] });
             toast.success("Request withdrawn");
         }
     });
-}
+};
 
 // ============================================================================
 // ADMIN HOOKS
 // ============================================================================
-// These hooks are for admin/moderator use only.
-// Ensure the calling components check user role before rendering.
 
 /**
- * Fetches all pending file requests (admin only).
- * @security Only call from admin pages that verify user role
+ * Fetches all file requests with optional status filter (admin only).
+ */
+export const useAllRequests = (filters?: { status?: FileStatus }) => useQuery({
+    queryKey: ['admin-requests', filters],
+    queryFn: () => listAllRequests(filters)
+});
+
+/**
+ * Fetches pending file requests (admin only).
  */
 export const usePendingRequests = () => useQuery({
-    queryKey: ['pending-requests'],
+    queryKey: ['admin-requests', { status: 'pending' }],
     queryFn: listPendingRequests
 });
 
 /**
- * Mutation to approve a file request and award points (admin only).
- * @security Backend must verify admin role before processing
+ * Fetches request stats for admin dashboard.
+ */
+export const useRequestStats = () => useQuery({
+    queryKey: ['admin-request-stats'],
+    queryFn: getRequestStats,
+    refetchInterval: 30000 // Refresh every 30s
+});
+
+/**
+ * Mutation to approve a file request with undo support.
  */
 export const useApproveRequest = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ requestId, adminId }: { requestId: string, adminId: string }) => approveRequest(requestId, adminId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['pending-requests'] });
-            // TODO: When backend returns affected userId, also invalidate:
-            // queryClient.invalidateQueries({ queryKey: ['reputation', userId] });
-            toast.success("Request approved");
+        mutationFn: ({ requestId }: { requestId: string }) =>
+            approveRequest(requestId, DEMO_ADMIN.id, DEMO_ADMIN.name),
+        onSuccess: (result, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+
+            if (result) {
+                toast.success(`Approved "${result.title}"`, {
+                    action: {
+                        label: "Undo",
+                        onClick: async () => {
+                            await undoApprove(variables.requestId, DEMO_ADMIN.id, DEMO_ADMIN.name);
+                            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
+                            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
+                            toast.info("Approval undone");
+                        }
+                    }
+                });
+            }
+        },
+        onError: () => {
+            toast.error("Failed to approve request");
         }
     });
-}
+};
+
+/**
+ * Mutation to reject a file request with undo support.
+ */
+export const useRejectRequest = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ requestId, reason, note }: { requestId: string; reason: RejectReason; note?: string }) =>
+            rejectRequest(requestId, DEMO_ADMIN.id, reason, note, DEMO_ADMIN.name),
+        onSuccess: (result, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+
+            if (result) {
+                toast.success(`Rejected "${result.title}"`, {
+                    action: {
+                        label: "Undo",
+                        onClick: async () => {
+                            await undoReject(variables.requestId, DEMO_ADMIN.id, DEMO_ADMIN.name);
+                            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
+                            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
+                            toast.info("Rejection undone");
+                        }
+                    }
+                });
+            }
+        },
+        onError: () => {
+            toast.error("Failed to reject request");
+        }
+    });
+};
+
+/**
+ * Mutation to bulk approve requests.
+ */
+export const useBulkApprove = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (requestIds: string[]) =>
+            bulkApprove(requestIds, DEMO_ADMIN.id, DEMO_ADMIN.name),
+        onSuccess: (result) => {
+            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+            toast.success(`Approved ${result.approved} request(s)${result.skipped > 0 ? ` (${result.skipped} skipped)` : ''}`);
+        },
+        onError: () => {
+            toast.error("Failed to bulk approve");
+        }
+    });
+};
+
+/**
+ * Mutation to bulk reject requests.
+ */
+export const useBulkReject = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ requestIds, reason }: { requestIds: string[]; reason: RejectReason }) =>
+            bulkReject(requestIds, DEMO_ADMIN.id, reason, DEMO_ADMIN.name),
+        onSuccess: (result) => {
+            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
+            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+            toast.success(`Rejected ${result.rejected} request(s)${result.skipped > 0 ? ` (${result.skipped} skipped)` : ''}`);
+        },
+        onError: () => {
+            toast.error("Failed to bulk reject");
+        }
+    });
+};

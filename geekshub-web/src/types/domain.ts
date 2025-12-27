@@ -169,6 +169,7 @@ export interface File {
 export interface FileRequest {
     id: string;
     userId: string; // FK to users table
+    uploaderName?: string; // Denormalized for admin display
     courseId: string;
     lecturerId: string; // ID or custom name
     lecturerName: string; // Denormalized for display
@@ -178,9 +179,12 @@ export interface FileRequest {
     status: FileStatus;
     createdAt: string; // ISO timestamp
     reviewedAt?: string; // When admin reviewed
-    reviewedBy?: string; // Admin user ID
-    rejectionReason?: string;
-    points?: number; // Points awarded if approved
+    reviewedBy?: string; // Admin user ID (deprecated, use reviewedById)
+    reviewedById?: string; // Admin user ID
+    rejectionReason?: RejectReason;
+    rejectionNote?: string; // Free-text note for rejection
+    points?: number; // Legacy: Points awarded if approved
+    pointsAwarded?: number; // Actual points awarded (distinct from proposed)
 }
 
 // ============================================================================
@@ -224,3 +228,44 @@ export interface PointsTransaction {
     date: string; // ISO timestamp
     requestId?: string; // Link to file request that earned this
 }
+
+// ============================================================================
+// ADMIN / AUDIT TYPES
+// ============================================================================
+
+/** Actions that can be performed by admins */
+export type AuditAction = "APPROVE" | "REJECT" | "BULK_APPROVE" | "BULK_REJECT" | "WITHDRAW" | "UNDO_APPROVE" | "UNDO_REJECT";
+
+/** Standardized rejection reasons */
+export type RejectReason = "DUPLICATE" | "OUTDATED" | "INCORRECT_COURSE" | "BAD_QUALITY" | "OTHER";
+
+/**
+ * Audit log entry for tracking admin decisions.
+ * @backend Table: audit_logs
+ */
+export interface AuditLogEntry {
+    id: string;
+    timestamp: string; // ISO
+    actorId: string;
+    actorName: string;
+    action: AuditAction;
+    targetType: "FileRequest";
+    targetIds: string[];
+    metadata: {
+        reason?: RejectReason;
+        note?: string;
+        pointsAwarded?: number;
+        previousStatus?: FileStatus;
+        newStatus?: FileStatus;
+    };
+}
+
+/**
+ * Stats for admin dashboard KPIs.
+ */
+export interface RequestStats {
+    pending: number;
+    approvedToday: number;
+    rejectedToday: number;
+}
+
