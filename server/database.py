@@ -8,7 +8,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # The Engine is the "manager" of the connection
 # echo=True to see the SQL commands in your console
-engine = create_engine(DATABASE_URL, echo=False)
+engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
 
 #  This function provides a session for FastAPI routes to use
 def get_session():
