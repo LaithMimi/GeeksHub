@@ -4,3 +4,4 @@ sqlmodel
 python-dotenv
 psycopg2-binary
 uvicorn
+auth0-fastapi-api==1.0.0b5
