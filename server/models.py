@@ -29,6 +29,7 @@ class Course(SQLModel, table=True):
     name: str
     major_id: UUID = Field(foreign_key="major.id")
     year_id: int # 1, 2, 3, 4
+    semester: int
 
 # Reference Data
 class MaterialType(SQLModel, table=True):
@@ -44,6 +45,7 @@ class FileRequest(SQLModel, table=True):
     course_id: str = Field(foreign_key="course.id")
     type_id: str = Field(foreign_key="material_types.id")
     title: str
+    lecturer: str = Field(index=True)
     storage_path: str
     status: str = "PENDING"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -53,6 +55,7 @@ class FileUploadCreate(BaseModel):
     course_id: str
     type_id: str
     title: str
+    lecturer: str
     # We will handle the actual file binary via Google Cloud Storage later
 
 class UserSignUp(BaseModel):

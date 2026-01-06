@@ -107,6 +107,7 @@ def create_file_request(
         user_id=current_user.id,
         course_id=payload.course_id,
         type_id=payload.type_id,
+        lecturer=payload.lecturer, 
         title=payload.title,
         storage_path="pending_upload/",
     )
