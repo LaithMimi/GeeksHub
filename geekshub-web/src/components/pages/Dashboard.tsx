@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRecentFiles } from "@/queries/useFiles";
-import { useCourses } from "@/queries/useCatalog";
 import { useReputation } from "@/queries/useReputation";
 import { useMyRequests } from "@/queries/useRequests";
 import { formatDistanceToNow } from "date-fns";
@@ -14,19 +13,13 @@ const DEMO_USER_ID = "u1"; // Mock Logged-in User
 
 export default function Dashboard() {
     const { data: recentFiles, isLoading: isLoadingRecent, isError: isErrorRecent } = useRecentFiles();
-    const { data: courses, isLoading: isLoadingCourses } = useCourses({});
     const { data: reputation, isLoading: isLoadingRep } = useReputation(DEMO_USER_ID);
     const { data: requests, isLoading: isLoadingRequests } = useMyRequests(DEMO_USER_ID);
 
-    const isLoading = isLoadingRecent || isLoadingCourses || isLoadingRep || isLoadingRequests;
+    const isLoading = isLoadingRecent || isLoadingRep || isLoadingRequests;
 
     // Derived state
     const totalPoints = reputation ? reputation.totalPoints : 0;
-    // For demo, we just take the first 3 courses
-    const myCourses = courses ? courses.slice(0, 3) : [];
-    // Recent specific logic
-    const hasResumeItem = recentFiles && recentFiles.length > 0;
-    const resumeItem = hasResumeItem ? recentFiles[0] : null;
 
     if (isLoading) {
         return <DashboardSkeleton />;
@@ -141,31 +134,52 @@ export default function Dashboard() {
                 </Card>
             </div>
 
-            {/* Courses Grid */}
+            {/* Recent Opened Files */}
             <div>
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-semibold">Your Courses</h2>
-                    <Button variant="ghost" size="sm" asChild><Link to="/courses">View All</Link></Button>
+                    <h2 className="text-xl font-semibold">Recent Opened Files</h2>
+                    <Button variant="ghost" size="sm" asChild><Link to="/recent">View All</Link></Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {myCourses.map((course) => (
-                        <Link key={course.id} to={`/courses/${course.id}`}>
-                            <Card className="hover-lift cursor-pointer group overflow-hidden h-full">
-                                <div className={`h-2 bg-gradient-to-r ${course.color}`} />
-                                <CardHeader>
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                                                {course.name}
-                                            </CardTitle>
-                                            <CardDescription>{course.term}</CardDescription>
+                    {recentFiles && recentFiles.length > 0 ? (
+                        recentFiles.slice(0, 3).map((file) => (
+                            <Link key={file.id} to={`/courses/${file.courseId}/files/${file.id}`}>
+                                <Card className="hover-lift cursor-pointer group overflow-hidden h-full">
+                                    <div className="h-2 bg-gradient-to-r from-primary to-primary/50" />
+                                    <CardHeader>
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1 min-w-0">
+                                                <CardTitle className="text-lg group-hover:text-primary transition-colors truncate">
+                                                    {file.title}
+                                                </CardTitle>
+                                                <CardDescription className="flex items-center gap-2 mt-1">
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        {file.type}
+                                                    </Badge>
+                                                    <span className="text-xs uppercase">{file.courseId}</span>
+                                                </CardDescription>
+                                            </div>
                                         </div>
-                                        <Badge variant="secondary">{course.progress || 0}%</Badge>
-                                    </div>
-                                </CardHeader>
+                                        <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                            <Clock className="h-3 w-3" />
+                                            {formatDistanceToNow(new Date(file.viewedAt), { addSuffix: true })}
+                                        </p>
+                                    </CardHeader>
+                                </Card>
+                            </Link>
+                        ))
+                    ) : (
+                        <div className="col-span-full">
+                            <Card className="p-8 text-center">
+                                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                <p className="text-muted-foreground">No recent files yet</p>
+                                <p className="text-sm text-muted-foreground mt-2">Files you view will appear here</p>
+                                <Button className="mt-4" asChild>
+                                    <Link to="/courses">Browse Courses</Link>
+                                </Button>
                             </Card>
-                        </Link>
-                    ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
