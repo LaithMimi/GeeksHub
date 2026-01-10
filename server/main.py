@@ -1,5 +1,6 @@
+import datetime
 import os
-from fastapi import FastAPI, Depends, HTTPException, Security
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from contextlib import asynccontextmanager
 from sqlmodel import Session, select
 from typing import List, Optional
@@ -9,6 +10,10 @@ from models import FileRequest, FileUploadCreate, Major, User, Course, UserSignU
 from auth_utils import get_verified_user
 from database import get_session, init_db
 from uuid import UUID
+from google.cloud import storage
+
+storage_client = storage.Client()
+bucket_name = os.getenv("BUCKET_NAME")
 
 # Admin Helper
 def get_auth0_admin():
@@ -141,3 +146,65 @@ def search_courses(
 
     results = session.exec(statement).all()
     return results
+
+# --- FILE STORAGE ROUTES ---
+
+@app.post("/api/v1/courses/{course_id}/upload")
+async def upload_file(
+    course_id: UUID,
+    title: str,
+    type_id: str,
+    lecturer: str,
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    # 1. Create a unique filename to prevent overwriting
+    file_ext = file.filename.split(".")[-1]
+    unique_filename = f"{UUID}.{file_ext}"
+    gcs_path = f"{course_id}/{unique_filename}"
+
+    # 2. Upload to GCS
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(gcs_path)
+    
+    content = await file.read()
+    blob.upload_from_string(content, content_type=file.content_type)
+
+    # 3. Save Metadata to Neon
+    new_request = FileRequest(
+        user_id=current_user.id,
+        course_id=course_id,
+        type_id=type_id,
+        title=title,
+        lecturer=lecturer,
+        storage_path=gcs_path,
+        status="APPROVED" 
+    )
+    session.add(new_request)
+    session.commit()
+    
+    return {"message": "Upload successful", "storage_path": gcs_path}
+
+@app.get("/api/v1/files/{file_id}/download")
+def get_file_download_url(
+    file_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    # 1. Get the storage path from Neon
+    file_record = session.get(FileRequest, file_id)
+    if not file_record:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # 2. Generate a Signed URL (valid for 15 minutes)
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(file_record.storage_path)
+
+    url = blob.generate_signed_url(
+        version="v4",
+        expiration=datetime.timedelta(minutes=15),
+        method="GET",
+    )
+
+    return {"download_url": url}
