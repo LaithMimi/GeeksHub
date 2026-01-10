@@ -107,8 +107,8 @@ export default function Dashboard() {
                     <CardContent>
                         <div className="text-2xl font-bold">12.5 hrs</div>
                         <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                            <TrendingUp className="h-3 w-3 text-emerald-500" />
-                            <span className="text-emerald-500">+2.5 hrs</span> from last week
+                            <TrendingUp className="h-3 w-3 text-green-500" />
+                            <span className="text-green-500">+2.5 hrs</span> from last week
                         </p>
                     </CardContent>
                 </Card>

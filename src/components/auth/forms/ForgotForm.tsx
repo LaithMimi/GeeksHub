@@ -62,7 +62,7 @@ export default function ForgotForm({ onBack }: ForgotFormProps) {
                     name="email"
                     type="email"
                     placeholder="m@example.com"
-                    className="bg-gray-100 border-none outline-none text-sm w-full py-3 h-10"
+                    className="h-10"
                     required
                     autoFocus
                 />

@@ -50,7 +50,7 @@ export default function SignUpForm() {
                     name="name"
                     type="text"
                     placeholder="Name"
-                    className="bg-gray-100 border-none outline-none text-sm w-full py-3 h-10"
+                    className="h-10"
                     required
                     autoFocus
                 />
@@ -58,14 +58,14 @@ export default function SignUpForm() {
                     name="email"
                     type="email"
                     placeholder="Email"
-                    className="bg-gray-100 border-none outline-none text-sm w-full py-3 h-10"
+                    className="h-10"
                     required
                 />
                 <Input
                     name="password"
                     type="password"
                     placeholder="Password"
-                    className="bg-gray-100 border-none outline-none text-sm w-full py-3 h-10"
+                    className="h-10"
                     required
                     minLength={8}
                 />

@@ -53,7 +53,7 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
                     name="email"
                     type="email"
                     placeholder="Email"
-                    className="bg-gray-100 border-none outline-none text-sm w-full py-3 h-10"
+                    className="h-10"
                     required
                     autoFocus
                 />
@@ -61,7 +61,7 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
                     name="password"
                     type="password"
                     placeholder="Password"
-                    className="bg-gray-100 border-none outline-none text-sm w-full py-3 h-10"
+                    className="h-10"
                     required
                 />
             </div>
