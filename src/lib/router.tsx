@@ -9,6 +9,7 @@ import UserUploads from "@/components/pages/UserUploads";
 import Recent from "@/components/pages/Recent";
 import Settings from "@/components/pages/Settings";
 import Courses from "@/components/pages/Courses";
+import AuthPage from "@/pages/Auth/AuthPage";
 // Admin Pages
 import AdminHome from "@/components/pages/admin/AdminHome";
 import ModerationQueue from "@/components/pages/admin/ModerationQueue";
@@ -37,10 +38,15 @@ function MaterialsView() {
 
 export const router = createBrowserRouter([
     {
+        path: "/auth",
+        element: <AuthPage />,
+    },
+    {
         path: "/",
         element: <AppShell />,
         errorElement: <div className="p-8">Something went wrong (AppShell Error Boundary)</div>,
         children: [
+
             {
                 index: true,
                 element: <Dashboard />,
