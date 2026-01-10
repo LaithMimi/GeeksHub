@@ -2,16 +2,15 @@ import os
 from fastapi import FastAPI, Depends, HTTPException, Security
 from contextlib import asynccontextmanager
 from sqlmodel import Session, select
-from typing import List
+from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-
-# Local imports
-from models import FileRequest, FileUploadCreate, Major, User, UserSignUp, UserSignIn
+from models import FileRequest, FileUploadCreate, Major, User, Course, UserSignUp, UserSignIn
 from auth_utils import get_verified_user
 from database import get_session, init_db
+from uuid import UUID
 
-# 1. Admin Helper (Same as before)
+# Admin Helper
 def get_auth0_admin():
     try:
         domain = os.getenv("AUTH0_DOMAIN")
@@ -117,3 +116,28 @@ def create_file_request(
     session.commit()
     session.refresh(new_request)
     return {"message": "Request created!", "id": new_request.id}
+
+@app.get("/api/v1/courses", response_model=List[Course])
+def search_courses(
+    major_id: Optional[UUID] = None,
+    year_id: Optional[int] = None,
+    query: Optional[str] = None,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    # Start with a base query
+    statement = select(Course)
+
+    # Apply filters if provided
+    if major_id:
+        statement = statement.where(Course.major_id == major_id)
+    if year_id:
+        statement = statement.where(Course.year_id == year_id)
+    if query:
+        # Search by both name and code (case-insensitive)
+        statement = statement.where(
+            (Course.name.ilike(f"%{query}%")) | (Course.code.ilike(f"%{query}%"))
+        )
+
+    results = session.exec(statement).all()
+    return results
