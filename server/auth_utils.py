@@ -9,7 +9,8 @@ from database import get_session
 
 token_auth_scheme = HTTPBearer()
 
-def get_verified_user(auth_credentials: HTTPAuthorizationCredentials = Security(token_auth_scheme), session: Session = Depends(get_session)):
+def get_verified_user(auth_credentials: HTTPAuthorizationCredentials = Security(token_auth_scheme),
+     session: Session = Depends(get_session)):
     token = auth_credentials.credentials
     domain = os.getenv("AUTH0_DOMAIN")
     audience = os.getenv("AUTH0_AUDIENCE")

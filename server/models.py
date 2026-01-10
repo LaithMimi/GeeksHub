@@ -27,7 +27,7 @@ class Course(SQLModel, table=True):
     id: str = Field(primary_key=True) # e.g. 'cs101'
     code: str = Field(index=True, unique=True)
     name: str
-    major_id: UUID = Field(foreign_key="major.id")
+    major_id: UUID = Field(foreign_key="majors.id")
     year_id: int # 1, 2, 3, 4
     semester: int
 
@@ -41,8 +41,8 @@ class MaterialType(SQLModel, table=True):
 class FileRequest(SQLModel, table=True):
     __tablename__ = "file_requests"
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_id: UUID = Field(foreign_key="user.id")
-    course_id: str = Field(foreign_key="course.id")
+    user_id: UUID = Field(foreign_key="users.id")
+    course_id: str = Field(foreign_key="courses.id")
     type_id: str = Field(foreign_key="material_types.id")
     title: str
     lecturer: str = Field(index=True)
@@ -83,3 +83,7 @@ class UserSignUp(BaseModel):
         if self.password != self.password_confirm:
             raise ValueError('Passwords do not match')
         return self    
+    
+class UserSignIn(BaseModel):
+    email: str
+    password: str    

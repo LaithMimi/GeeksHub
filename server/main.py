@@ -7,7 +7,7 @@ from auth0.authentication import GetToken
 from auth0.management import Auth0
 
 # Local imports
-from models import FileRequest, FileUploadCreate, Major, User, UserSignUp
+from models import FileRequest, FileUploadCreate, Major, User, UserSignUp, UserSignIn
 from auth_utils import get_verified_user
 from database import get_session, init_db
 
@@ -35,8 +35,10 @@ app = FastAPI(title="GeeksHub API", lifespan=lifespan)
 
 @app.post("/api/v1/signup")
 def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
+    # lowercase and trim email for consistency
+    clean_email = payload.email.lower().strip()
     # Check Neon DB first
-    existing_user = session.exec(select(User).where(User.email == payload.email)).first()
+    existing_user = session.exec(select(User).where(User.email == clean_email)).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="An account with this email already exists.")
 
@@ -47,7 +49,7 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
     
     try:
         auth0_user = admin.users.create({
-            "email": payload.email,
+            "email": clean_email,
             "password": payload.password,
             "nickname": payload.username,
             "connection": "Username-Password-Authentication"
@@ -65,9 +67,10 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/v1/signin")
-def sign_in(payload: UserSignUp, session: Session = Depends(get_session)):
+def sign_in(payload: UserSignIn, session: Session = Depends(get_session)):
+    clean_email = payload.email.lower().strip()
     # Use payload.email and payload.password instead of email/password
-    user = session.exec(select(User).where(User.email == payload.email)).first()
+    user = session.exec(select(User).where(User.email == clean_email)).first()
     if not user:
         raise HTTPException(status_code=404, detail="No account found. Please sign up.")
 
@@ -75,17 +78,16 @@ def sign_in(payload: UserSignUp, session: Session = Depends(get_session)):
     try:
         get_token = GetToken(domain, os.getenv("AUTH0_M2M_ID"), client_secret=os.getenv("AUTH0_M2M_SECRET"))
         token = get_token.login(
-            client_id=os.getenv("AUTH0_M2M_ID"),
-            client_secret=os.getenv("AUTH0_M2M_SECRET"),
-            username=payload.email,    # Updated
+            username=clean_email,    # Updated
             password=payload.password, # Updated
             scope="openid profile email",
             audience=os.getenv("AUTH0_AUDIENCE"),
             realm="Username-Password-Authentication"
         )
         return token
-    except Exception:
-        raise HTTPException(status_code=401, detail="Incorrect password.")
+    except Exception as e:
+        print(f"Auth0 Login Error: {e}") 
+        raise HTTPException(status_code=401, detail=str(e))
 
 # --- PROTECTED ROUTES ---
 
