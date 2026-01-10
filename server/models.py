@@ -24,7 +24,7 @@ class Major(SQLModel, table=True):
 
 class Course(SQLModel, table=True):
     __tablename__ = "courses"
-    id: str = Field(primary_key=True) # e.g. 'cs101'
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     code: str = Field(index=True, unique=True)
     name: str
     major_id: UUID = Field(foreign_key="majors.id")
@@ -42,7 +42,7 @@ class FileRequest(SQLModel, table=True):
     __tablename__ = "file_requests"
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id")
-    course_id: str = Field(foreign_key="courses.id")
+    course_id: UUID = Field(foreign_key="courses.id")
     type_id: str = Field(foreign_key="material_types.id")
     title: str
     lecturer: str = Field(index=True)
