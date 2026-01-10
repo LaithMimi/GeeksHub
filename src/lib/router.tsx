@@ -10,6 +10,7 @@ import Recent from "@/components/pages/Recent";
 import Settings from "@/components/pages/Settings";
 import Courses from "@/components/pages/Courses";
 import AuthPage from "@/pages/Auth/AuthPage";
+import ResetPasswordPage from "@/pages/Auth/ResetPasswordPage";
 // Admin Pages
 import AdminHome from "@/components/pages/admin/AdminHome";
 import ModerationQueue from "@/components/pages/admin/ModerationQueue";
@@ -40,6 +41,10 @@ export const router = createBrowserRouter([
     {
         path: "/auth",
         element: <AuthPage />,
+    },
+    {
+        path: "/auth/reset-password",
+        element: <ResetPasswordPage />,
     },
     {
         path: "/",
