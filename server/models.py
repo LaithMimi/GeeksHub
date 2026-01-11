@@ -28,7 +28,7 @@ class Course(SQLModel, table=True):
     code: str = Field(index=True, unique=True)
     name: str
     major_id: UUID = Field(foreign_key="majors.id")
-    year_id: int # 1, 2, 3, 4
+    year_id: int 
     semester: int
 
 # Reference Data
