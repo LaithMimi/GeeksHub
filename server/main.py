@@ -150,7 +150,7 @@ def search_courses(
 # --- FILE STORAGE ROUTES ---
 
 @app.post("/api/v1/courses/{course_id}/upload")
-async def upload_file(
+async def request_upload(
     course_id: UUID,
     title: str,
     type_id: str,
@@ -159,32 +159,73 @@ async def upload_file(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_verified_user)
 ):
-    # 1. Create a unique filename to prevent overwriting
+    # 1. Create a unique filename for the "Temp" area
     file_ext = file.filename.split(".")[-1]
     unique_filename = f"{UUID}.{file_ext}"
-    gcs_path = f"{course_id}/{unique_filename}"
+    # Put it in a 'pending' folder in GCS
+    temp_gcs_path = f"pending/{unique_filename}"
 
     # 2. Upload to GCS
     bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(gcs_path)
+    blob = bucket.blob(temp_gcs_path)
     
     content = await file.read()
     blob.upload_from_string(content, content_type=file.content_type)
 
-    # 3. Save Metadata to Neon
+    # 3. Save to Neon with PENDING status
     new_request = FileRequest(
         user_id=current_user.id,
         course_id=course_id,
         type_id=type_id,
         title=title,
         lecturer=lecturer,
-        storage_path=gcs_path,
-        status="APPROVED" 
+        storage_path=temp_gcs_path,
+        status="PENDING" # <--- Initial State
     )
     session.add(new_request)
     session.commit()
     
-    return {"message": "Upload successful", "storage_path": gcs_path}
+    return {"message": "Request submitted for admin approval.", "request_id": new_request.id}
+
+
+@app.post("/api/v1/admin/requests/{request_id}/approve")
+def approve_file(
+    request_id: UUID,
+    approve: bool, # True to approve, False to reject
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    # SECURITY: Check if user is actually an admin
+    if current_user.role != "ADMIN":
+        raise HTTPException(status_code=403, detail="Admin privileges required.")
+
+    request = session.get(FileRequest, request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found.")
+
+    bucket = storage_client.bucket(bucket_name)
+    temp_blob = bucket.blob(request.storage_path)
+
+    if approve:
+        # 1. Move file from 'pending/' to the final course folder
+        new_path = f"{request.course_id}/{request.storage_path.split('/')[-1]}"
+        new_blob = bucket.rename_blob(temp_blob, new_path)
+        
+        # 2. In a real app, you might move this to a 'Materials' table.
+        # But if you want to delete from Neon as requested:
+        session.delete(request)
+        session.commit()
+        return {"message": "File approved and moved to course storage."}
+    
+    else:
+        # 1. If rejected, delete the file from GCS
+        temp_blob.delete()
+        
+        # 2. Delete the request from Neon
+        session.delete(request)
+        session.commit()
+        return {"message": "Request rejected and file deleted."}
+
 
 @app.get("/api/v1/files/{file_id}/download")
 def get_file_download_url(
