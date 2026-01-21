@@ -42,6 +42,8 @@
 import { fileRequests, randomDelay, pointsTransactions, auditLog, DEMO_ADMIN } from "@/mock/mock-db";
 import type { FileRequest, MaterialType, RejectReason, RequestStats, AuditLogEntry, FileStatus } from "@/types/domain";
 
+// const API_URL = "http://localhost:8000/api/v1";
+
 // Helper to generate mock IDs
 const generateId = () => Math.random().toString(36).substring(7);
 
@@ -87,7 +89,27 @@ export const createFileRequest = async (payload: {
     type: MaterialType;
     title: string;
     notes?: string;
+    file?: File; // Added optional file for backend compatibility context
 }): Promise<FileRequest> => {
+    // --- REAL IMPLEMENTATION ---
+    // // Backend expects Multipart Form Data
+    // const formData = new FormData();
+    // formData.append("title", payload.title);
+    // formData.append("type_id", payload.type);
+    // formData.append("lecturer", payload.lecturerId); // Backend assumes lecturer name/string currently?
+    // if (payload.file) {
+    //    formData.append("file", payload.file);
+    // }
+    // 
+    // const response = await fetch(`${API_URL}/courses/${payload.courseId}/upload`, {
+    //     method: 'POST',
+    //     body: formData, // No Content-Type header (browser sets it)
+    // });
+    // if (!response.ok) throw new Error("Upload failed");
+    // const result = await response.json();
+    // return { ...payload, id: result.request_id, status: 'pending' } as any;
+    // ---------------------------
+
     await randomDelay(500, 1000);
 
     const newRequest: FileRequest = {
@@ -173,6 +195,16 @@ export const getRequestStats = async (): Promise<RequestStats> => {
  * @backend PATCH /api/admin/file-requests/:requestId/approve
  */
 export const approveRequest = async (requestId: string, adminId: string, adminName: string = DEMO_ADMIN.name): Promise<FileRequest | null> => {
+    // --- REAL IMPLEMENTATION ---
+    // const response = await fetch(`${API_URL}/admin/requests/${requestId}/approve?approve=true`, {
+    //     method: 'POST'
+    // });
+    // if (!response.ok) throw new Error("Approval failed");
+    // // Backend currently deletes the request from DB, so we can't return the updated request object from DB.
+    // // We might return a success status manually.
+    // return { id: requestId, status: 'approved' } as any; 
+    // ---------------------------
+
     await randomDelay(300, 600);
     const request = fileRequests.find(r => r.id === requestId);
 
@@ -225,6 +257,14 @@ export const rejectRequest = async (
     note?: string,
     adminName: string = DEMO_ADMIN.name
 ): Promise<FileRequest | null> => {
+    // --- REAL IMPLEMENTATION ---
+    // const response = await fetch(`${API_URL}/admin/requests/${requestId}/approve?approve=false`, {
+    //     method: 'POST'
+    // });
+    // if (!response.ok) throw new Error("Rejection failed");
+    // return { id: requestId, status: 'rejected' } as any;
+    // ---------------------------
+
     await randomDelay(300, 600);
     const request = fileRequests.find(r => r.id === requestId);
 

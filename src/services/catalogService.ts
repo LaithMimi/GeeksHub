@@ -62,6 +62,12 @@ import type { Course, Lecturer, Major, Semester, AcademicYear } from "@/types/do
  * @backend GET /api/majors
  */
 export const listMajors = async (): Promise<Major[]> => {
+    // --- REAL IMPLEMENTATION ---
+    // const response = await fetch(`${API_URL}/majors`); // /api/v1/majors
+    // if (!response.ok) throw new Error("Failed to fetch majors");
+    // return await response.json();
+    // ---------------------------
+
     await randomDelay();
     return majors;
 };
@@ -93,6 +99,18 @@ export const listSemesters = async (majorId?: string): Promise<Semester[]> => {
  * @backend GET /api/courses?majorId=...&semesterId=...
  */
 export const listCourses = async (filters: { majorId?: string, yearId?: string, semesterId?: string }): Promise<Course[]> => {
+    // --- REAL IMPLEMENTATION ---
+    // const params = new URLSearchParams();
+    // if (filters.majorId) params.append("major_id", filters.majorId);
+    // if (filters.yearId) params.append("year_id", filters.yearId);
+    // // Backend doesn't support semesterId yet
+    // // if (filters.semesterId) params.append("semester_id", filters.semesterId);
+    // 
+    // const response = await fetch(`${API_URL}/courses?${params.toString()}`);
+    // if (!response.ok) throw new Error("Failed to fetch courses");
+    // return await response.json();
+    // ---------------------------
+
     await randomDelay(500, 1500); // Longer delay for "heavy" query
 
     return courses.filter(c => {
@@ -108,6 +126,14 @@ export const listCourses = async (filters: { majorId?: string, yearId?: string, 
  * @backend GET /api/courses/:courseId
  */
 export const getCourse = async (courseId: string): Promise<Course | undefined> => {
+    // --- REAL IMPLEMENTATION ---
+    // // Note: Backend currently only has search_courses, so we might need to filter client-side or add GET /courses/:id
+    // // Hypothetical implementation:
+    // const response = await fetch(`${API_URL}/courses/${courseId}`);
+    // if (!response.ok) return undefined;
+    // return await response.json();
+    // ---------------------------
+
     await randomDelay();
     return courses.find(c => c.id === courseId);
 }
