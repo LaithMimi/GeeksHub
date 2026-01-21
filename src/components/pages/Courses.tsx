@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, FileText, FolderOpen, Plus, Sparkles, Loader2, AlertCircle } from "lucide-react";
+import { ChevronRight, FileText, FolderOpen, Plus, Sparkles, Loader2, AlertCircle, Star } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import RequestFileModal from "@/components/features/RequestFileModal";
 
 import { useMajors, useYears, useSemesters, useCourses, useLecturers } from "@/queries/useCatalog";
 import { useFiles, useTopContributors } from "@/queries/useFiles";
+import { usePinnedCourses } from "@/hooks/usePinnedCourses";
 import type { MaterialType } from "@/types/domain";
 
 const DEMO_TYPES: MaterialType[] = ["Slides", "Homeworks", "Past Papers", "Notes"];
@@ -24,6 +25,7 @@ export default function Courses() {
     });
 
     const [isRequestOpen, setIsRequestOpen] = useState(false);
+    const { togglePin, isPinned } = usePinnedCourses();
 
     // -- Queries --
     const { data: majors, isLoading: bgMajors } = useMajors();
@@ -201,6 +203,14 @@ export default function Courses() {
                             <h3 className="font-semibold">
                                 {selections.course} / {selections.type || "All"}
                             </h3>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => togglePin(selections.course)}
+                                className={isPinned(selections.course) ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground hover:text-amber-500"}
+                            >
+                                <Star className={isPinned(selections.course) ? "fill-current h-5 w-5" : "h-5 w-5"} />
+                            </Button>
                         </div>
                         <Badge variant="secondary">
                             {files?.length || 0} files found
