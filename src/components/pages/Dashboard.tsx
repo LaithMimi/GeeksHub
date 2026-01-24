@@ -31,8 +31,9 @@ export default function Dashboard() {
         return (
             <div className="p-12 text-center">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Failed to load dashboard</h2>
-                <Button onClick={() => window.location.reload()}>Retry</Button>
+                <h2 className="text-xl font-semibold mb-2">Hmm, we couldn't load your dashboard</h2>
+                <p className="text-muted-foreground mb-4">Mind trying again? Sometimes things just need a refresh.</p>
+                <Button onClick={() => window.location.reload()}>Try Again</Button>
             </div>
         )
     }
@@ -83,108 +84,26 @@ export default function Dashboard() {
                         </h1>
 
                         <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-xl">
-                            Continue where you left off or explore new materials. Your AI study assistant is ready to help you master <span className="font-semibold text-foreground border-b border-primary/30">new concepts</span>.
+                            Your AI study assistant is ready to help you master new concepts. Start by browsing your courses or open a recent file.
                         </p>
 
                         <div className="flex flex-wrap items-center gap-4">
-                            <Button size="lg" className="shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-semibold group/btn">
-                                <Brain className="me-2 h-5 w-5 group-hover/btn:rotate-12 transition-transform" />
-                                Start AI Session
-                            </Button>
-                            <Button variant="outline" size="lg" className="transition-all hover:bg-muted" asChild>
-                                <Link to="/courses">View All Courses</Link>
+                            <Button size="lg" className="shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-semibold group/btn" asChild>
+                                <Link to="/courses">
+                                    <FileText className="me-2 h-5 w-5" />
+                                    Browse Courses
+                                </Link>
                             </Button>
                         </div>
                     </div>
                 )}
             </div>
 
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Study Time</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">12.5 hrs</div>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                            <TrendingUp className="h-3 w-3 text-green-500" />
-                            <span className="text-green-500">+2.5 hrs</span> from last week
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Files</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{recentFiles?.length || 0}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Recently viewed</p>
-                    </CardContent>
-                </Card>
-                <Card className="hover-lift border-primary/20 bg-primary/5">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-primary">Reputation</CardTitle>
-                        <Zap className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-primary">{totalPoints}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Points earned</p>
-                    </CardContent>
-                </Card>
-            </div>
 
             {/* Dashboard Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Recent Files & Pinned */}
-                <div className="lg:col-span-2 space-y-8">
-
-                    {/* Pinned Courses (New) */}
-                    {pinnedIds.length > 0 && (
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-semibold flex items-center gap-2">
-                                    <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
-                                    Pinned Courses
-                                </h2>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {pinnedIds.map(id => (
-                                    <Link key={id} to={`/courses/${id}`}>
-                                        <Card className="hover:border-primary/50 transition-colors cursor-pointer group">
-                                            <CardHeader className="p-4">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-10 w-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                                                            <Bookmark className="h-5 w-5" />
-                                                        </div>
-                                                        <div>
-                                                            <CardTitle className="text-sm font-bold group-hover:text-primary transition-colors">
-                                                                {id.toUpperCase()}
-                                                                {/* Ideally we'd look up the name, but ID suffices for now */}
-                                                            </CardTitle>
-                                                            <CardDescription className="text-xs">
-                                                                Quick Access
-                                                            </CardDescription>
-                                                        </div>
-                                                    </div>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-amber-500" onClick={(e) => {
-                                                        e.preventDefault();
-                                                        togglePin(id);
-                                                    }}>
-                                                        <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                                                    </Button>
-                                                </div>
-                                            </CardHeader>
-                                        </Card>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
+                {/* Left Column: Recent Files */}
+                <div className="lg:col-span-2">
                     {/* Recent Opened Files */}
                     <div>
                         <div className="flex items-center justify-between mb-4">
@@ -193,7 +112,7 @@ export default function Dashboard() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {recentFiles && recentFiles.length > 0 ? (
-                                recentFiles.slice(0, 4).map((file) => (
+                                recentFiles.slice(0, 6).map((file) => (
                                     <Link key={file.id} to={`/courses/${file.courseId}/files/${file.id}`}>
                                         <Card className="hover-lift cursor-pointer group overflow-hidden h-full">
                                             <div className="h-2 bg-gradient-to-r from-primary to-primary/50" />
@@ -223,9 +142,9 @@ export default function Dashboard() {
                                 <div className="col-span-full">
                                     <Card className="p-8 text-center bg-muted/20 border-dashed">
                                         <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
-                                        <p className="text-sm text-muted-foreground">No recent files</p>
+                                        <p className="text-sm text-muted-foreground">You haven't opened any files yet. Ready to start learning?</p>
                                         <Button variant="link" size="sm" asChild className="mt-2">
-                                            <Link to="/courses">Browse</Link>
+                                            <Link to="/courses">Browse Courses</Link>
                                         </Button>
                                     </Card>
                                 </div>
@@ -234,44 +153,61 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Right Column: Requests & Sidebar items */}
+                {/* Right Column: Requests */}
                 <div className="space-y-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-semibold">Your Requests</h2>
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link to="/uploads">View All</Link>
-                        </Button>
-                    </div>
-                    <Card>
-                        <CardContent className="p-0">
-                            {requests && requests.length > 0 ? (
-                                requests.slice(0, 5).map(req => (
-                                    <div key={req.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors border-b last:border-b-0">
-                                        <div className="p-2 bg-muted rounded-lg">
-                                            {req.status === 'pending' && <Clock className="h-5 w-5 text-amber-500" />}
-                                            {req.status === 'approved' && <Sparkles className="h-5 w-5 text-green-500" />}
-                                            {req.status === 'rejected' && <AlertCircle className="h-5 w-5 text-red-500" />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <p className="font-medium truncate">{req.title}</p>
-                                                <Badge variant="outline" className={
-                                                    req.status === 'pending' ? 'text-amber-600 bg-amber-50' :
-                                                        req.status === 'approved' ? 'text-green-600 bg-green-50' :
-                                                            'text-red-600 bg-red-50'
-                                                }>{req.status}</Badge>
-                                            </div>
-                                            <p className="text-sm text-muted-foreground">{req.courseId} • {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}</p>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="p-8 text-center text-muted-foreground">
-                                    <p>No active requests</p>
-                                </div>
-                            )}
+                    {/* Reputation Card */}
+                    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Zap className="h-5 w-5 text-primary" />
+                                Your Reputation
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-4xl font-bold text-primary mb-1">{totalPoints}</div>
+                            <p className="text-sm text-muted-foreground">Points earned</p>
                         </CardContent>
                     </Card>
+
+                    {/* Your Requests */}
+                    <div>
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-semibold">Your Requests</h2>
+                            <Button variant="ghost" size="sm" asChild>
+                                <Link to="/uploads">View All</Link>
+                            </Button>
+                        </div>
+                        <Card>
+                            <CardContent className="p-0">
+                                {requests && requests.length > 0 ? (
+                                    requests.slice(0, 5).map(req => (
+                                        <div key={req.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors border-b last:border-b-0">
+                                            <div className="p-2 bg-muted rounded-lg">
+                                                {req.status === 'pending' && <Clock className="h-5 w-5 text-amber-500" />}
+                                                {req.status === 'approved' && <Sparkles className="h-5 w-5 text-green-500" />}
+                                                {req.status === 'rejected' && <AlertCircle className="h-5 w-5 text-red-500" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <p className="font-medium truncate">{req.title}</p>
+                                                    <Badge variant="outline" className={
+                                                        req.status === 'pending' ? 'text-amber-600 bg-amber-50' :
+                                                            req.status === 'approved' ? 'text-green-600 bg-green-50' :
+                                                                'text-red-600 bg-red-50'
+                                                    }>{req.status}</Badge>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">{req.courseId} • {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="p-8 text-center text-muted-foreground">
+                                        <p>No active requests</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
         </div>

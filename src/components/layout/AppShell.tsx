@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Home, Search, History, Settings, GraduationCap, Command, BookOpen, FileText, ChevronRight } from "lucide-react";
+import { Home, History, Settings, GraduationCap, BookOpen } from "lucide-react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
     Sidebar,
@@ -12,18 +12,10 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarMenuSubItem,
     SidebarProvider,
     SidebarTrigger,
     SidebarInset,
 } from "@/components/ui/sidebar";
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
 import {
     Breadcrumb,
@@ -127,29 +119,10 @@ function AppSidebar() {
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Search (/Ctrl + K)">
-                                    <button onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}>
-                                        <Search className="h-4 w-4" />
-                                        <span>Search</span>
-                                        <kbd className="ms-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                                            <span className="text-xs">⌘/Ctrl + K</span>
-                                        </kbd>
-                                    </button>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
                                 <SidebarMenuButton asChild tooltip="Dashboard" isActive={isActive("/")}>
                                     <Link to="/">
                                         <Home className="h-4 w-4" />
                                         <span>Dashboard</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Recent" isActive={isActive("/recent")}>
-                                    <Link to="/recent">
-                                        <History className="h-4 w-4" />
-                                        <span>Recent</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -161,35 +134,14 @@ function AppSidebar() {
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
-                            <Collapsible asChild defaultOpen className="group/collapsible">
-                                <SidebarMenuItem>
-                                    <CollapsibleTrigger asChild>
-                                        <SidebarMenuButton tooltip="File Requests">
-                                            <FileText className="h-4 w-4" />
-                                            <span>File Requests</span>
-                                            <ChevronRight className="ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180" />
-                                        </SidebarMenuButton>
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent>
-                                        <SidebarMenuSub>
-                                            <SidebarMenuSubItem>
-                                                <SidebarMenuSubButton asChild isActive={isActive("/uploads")}>
-                                                    <Link to="/uploads">
-                                                        <span>My Uploads</span>
-                                                    </Link>
-                                                </SidebarMenuSubButton>
-                                            </SidebarMenuSubItem>
-                                            <SidebarMenuSubItem>
-                                                <SidebarMenuSubButton asChild>
-                                                    <Link to="/uploads">
-                                                        <span>Recent Requests</span>
-                                                    </Link>
-                                                </SidebarMenuSubButton>
-                                            </SidebarMenuSubItem>
-                                        </SidebarMenuSub>
-                                    </CollapsibleContent>
-                                </SidebarMenuItem>
-                            </Collapsible>
+                            <SidebarMenuItem>
+                                <SidebarMenuButton asChild tooltip="Recent" isActive={isActive("/recent")}>
+                                    <Link to="/recent">
+                                        <History className="h-4 w-4" />
+                                        <span>Recent</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>

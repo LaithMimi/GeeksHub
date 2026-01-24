@@ -182,7 +182,7 @@ export default function Courses() {
 
                 {/* Type */}
                 <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase">Type</label>
+                    <label className="text-xs font-medium text-muted-foreground uppercase flex items-center">Type</label>
                     <Select value={selections.type} onValueChange={(v) => handleSelect("type", v)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Select Type" />
@@ -230,10 +230,11 @@ export default function Courses() {
                             ))}
                         </div>
                     ) : isErrorFiles ? (
-                        <div className="p-12 text-center text-red-500">
-                            <AlertCircle className="h-10 w-10 mx-auto mb-2" />
-                            <p>Failed to load files.</p>
-                            <Button variant="link" onClick={() => window.location.reload()}>Retry</Button>
+                        <div className="p-12 text-center">
+                            <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
+                            <p className="font-semibold mb-1">Couldn't load materials right now</p>
+                            <p className="text-sm text-muted-foreground mb-4">Mind giving it another try?</p>
+                            <Button variant="link" onClick={() => window.location.reload()}>Refresh</Button>
                         </div>
                     ) : files && files.length > 0 ? (
                         <div className="divide-y">
@@ -271,8 +272,8 @@ export default function Courses() {
                     ) : (
                         <div className="p-12 text-center text-muted-foreground">
                             <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                            <p>No materials found for this selection.</p>
-                            <Button variant="link" onClick={() => setIsRequestOpen(true)}>Request to add a file?</Button>
+                            <p className="font-semibold mb-1">We don't have materials for this yet</p>
+                            <Button variant="link" onClick={() => setIsRequestOpen(true)}>Want to request them?</Button>
                         </div>
                     )}
                 </div>
