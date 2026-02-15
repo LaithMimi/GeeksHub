@@ -658,7 +658,7 @@ const progressGlows: Record<string, string> = {
 export default function Dashboard() {
     const { data: recentFiles, isLoading: isLoadingRecent, isError: isErrorRecent } = useRecentFiles();
     const { data: reputation, isLoading: isLoadingRep } = useReputation(DEMO_USER_ID);
-    const { data: requests, isLoading: isLoadingRequests } = useMyRequests(DEMO_USER_ID);
+    const { data: _requests, isLoading: isLoadingRequests } = useMyRequests(DEMO_USER_ID);
     usePinnedCourses();
 
     const { tasks, taskDates, addTask, toggleTask, deleteTask } = useTasks();

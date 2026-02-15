@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, FileText, FolderOpen, Plus, Sparkles, Loader2, AlertCircle, Star, ChevronDown, Pin } from "lucide-react";
+import { ChevronRight, FileText, FolderOpen, Plus, Sparkles, Loader2, AlertCircle, Star } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -132,8 +132,8 @@ export default function Courses() {
                                     });
                                 }}
                                 className={`group relative liquid-glass rounded-xl p-4 text-left hover:bg-white/[0.06] transition-all duration-200 border ${selections.course === course.id
-                                        ? "border-purple-500/40 bg-purple-500/[0.08]"
-                                        : "border-white/[0.06] hover:border-white/[0.12]"
+                                    ? "border-purple-500/40 bg-purple-500/[0.08]"
+                                    : "border-white/[0.06] hover:border-white/[0.12]"
                                     }`}
                             >
                                 {/* Color accent bar */}
