@@ -109,7 +109,7 @@ export default function Settings() {
     return (
         <div className="animate-fade-in max-w-3xl mx-auto pb-20">
             {/* Header */}
-            <div className="sticky top-0 z-20 py-4 mb-8 flex items-center justify-between">
+            <div className="top-0 z-20 py-4 mb-8 flex items-center justify-between">
                 <div>
                     <h1 className="text-[28px] font-display font-bold text-white tracking-[-0.03em]">Settings</h1>
                     <p className="text-[13px] text-white/40 mt-0.5">Manage your preferences and defaults</p>
