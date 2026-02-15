@@ -77,7 +77,7 @@ export const listMajors = async (): Promise<Major[]> => {
  * @param majorId - Optional filter (currently unused in mock)
  * @backend GET /api/years
  */
-export const listYears = async (majorId?: string): Promise<AcademicYear[]> => {
+export const listYears = async (_majorId?: string): Promise<AcademicYear[]> => {
     await randomDelay();
     // In a real app, years might be filtered by major, but for now return all
     return years;
@@ -88,7 +88,7 @@ export const listYears = async (majorId?: string): Promise<AcademicYear[]> => {
  * @param majorId - Optional filter (currently unused in mock)
  * @backend GET /api/semesters
  */
-export const listSemesters = async (majorId?: string): Promise<Semester[]> => {
+export const listSemesters = async (_majorId?: string): Promise<Semester[]> => {
     await randomDelay();
     return semesters;
 }
@@ -143,7 +143,7 @@ export const getCourse = async (courseId: string): Promise<Course | undefined> =
  * @param filters - Filter by courseId
  * @backend GET /api/lecturers?courseId=...
  */
-export const listLecturers = async (filters: { courseId?: string }): Promise<Lecturer[]> => {
+export const listLecturers = async (_filters: { courseId?: string }): Promise<Lecturer[]> => {
     await randomDelay();
     return lecturers;
 }

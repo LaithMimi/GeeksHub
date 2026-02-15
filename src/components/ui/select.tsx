@@ -22,7 +22,7 @@ interface SelectProps {
     disabled?: boolean
 }
 
-const Select = ({ value, onValueChange, children, disabled }: SelectProps) => {
+const Select = ({ value, onValueChange, children }: SelectProps) => {
     const [open, setOpen] = React.useState(false)
 
     return (
@@ -72,7 +72,7 @@ SelectValue.displayName = "SelectValue"
 
 const SelectContent = React.forwardRef<
     React.ElementRef<typeof DropdownMenuContent>,
-    React.ComponentPropsWithoutRef<typeof DropdownMenuContent>
+    React.ComponentPropsWithoutRef<typeof DropdownMenuContent> & { position?: "popper" | "item-aligned" }
 >(({ className, children, position = "popper", ...props }, ref) => (
     <DropdownMenuContent
         ref={ref}
@@ -81,7 +81,6 @@ const SelectContent = React.forwardRef<
             position === "popper" && "translate-y-1",
             className
         )}
-        position={position}
         {...props}
     >
         <div className="w-full p-1">

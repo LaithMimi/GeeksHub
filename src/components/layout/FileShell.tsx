@@ -64,9 +64,13 @@ export default function FileShell() {
         );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const PanelGroup = ResizablePanelGroup as any;
+
     return (
         <div className="h-[calc(100vh-4rem)]">
-            <ResizablePanelGroup direction="horizontal">
+
+            <PanelGroup direction="horizontal">
                 <ResizablePanel defaultSize={70} minSize={30}>
                     <Content />
                 </ResizablePanel>
@@ -84,7 +88,7 @@ export default function FileShell() {
                         </div>
                     </div>
                 </ResizablePanel>
-            </ResizablePanelGroup>
+            </PanelGroup>
         </div>
     );
 }

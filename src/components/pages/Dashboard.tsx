@@ -1,215 +1,1028 @@
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { Brain, Clock, FileText, Sparkles, TrendingUp, Zap, AlertCircle, Star, Bookmark } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Clock,
+    FileText,
+    Zap,
+    AlertCircle,
+    ArrowRight,
+    BookOpen,
+    ChevronLeft,
+    ChevronRight,
+    Plus,
+    PlayCircle,
+    Calendar,
+    X,
+    Check,
+    Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRecentFiles } from "@/queries/useFiles";
 import { useReputation } from "@/queries/useReputation";
 import { useMyRequests } from "@/queries/useRequests";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
-import { formatDistanceToNow } from "date-fns";
+import { useTasks, type Task } from "@/hooks/useTasks";
+import {
+    formatDistanceToNow, format, isToday, isTomorrow, isPast,
+    startOfMonth, endOfMonth, eachDayOfInterval, getDay,
+    addMonths, subMonths, isSameMonth,
+    startOfWeek, addDays, addWeeks,
+} from "date-fns";
 
-const DEMO_USER_ID = "u1"; // Mock Logged-in User
+const DEMO_USER_ID = "u1";
 
+// Metric card data
+const metrics = [
+    { label: "Study Hours", value: "128h", change: "+12.5%", positive: true, hero: true },
+    { label: "Courses Active", value: "12", change: "+3", positive: true },
+    { label: "Completion Rate", value: "78%", change: "+5.2%", positive: true },
+    { label: "XP Earned", value: "2,350", change: "+240", positive: true },
+];
+
+// Activity data
+const weeklyActivity = [
+    { day: "Mon", value: 60 },
+    { day: "Tue", value: 85 },
+    { day: "Wed", value: 40 },
+    { day: "Thu", value: 95 },
+    { day: "Fri", value: 70 },
+    { day: "Sat", value: 30 },
+    { day: "Sun", value: 20 },
+];
+
+// Color palette for task blocks on the schedule
+const BLOCK_COLORS = [
+    { bg: "bg-rose-500/70", border: "border-rose-400/30", glow: "shadow-[0_0_10px_rgba(244,63,94,0.25)]" },
+    { bg: "bg-blue-500/70", border: "border-blue-400/30", glow: "shadow-[0_0_10px_rgba(59,130,246,0.25)]" },
+    { bg: "bg-amber-500/70", border: "border-amber-400/30", glow: "shadow-[0_0_10px_rgba(245,158,11,0.25)]" },
+    { bg: "bg-purple-500/70", border: "border-purple-400/30", glow: "shadow-[0_0_10px_rgba(139,92,246,0.25)]" },
+    { bg: "bg-emerald-500/70", border: "border-emerald-400/30", glow: "shadow-[0_0_10px_rgba(16,185,129,0.25)]" },
+    { bg: "bg-pink-500/70", border: "border-pink-400/30", glow: "shadow-[0_0_10px_rgba(236,72,153,0.25)]" },
+];
+
+// Assign a consistent color per unique task title
+function getBlockColor(title: string, colorMap: Map<string, number>): typeof BLOCK_COLORS[0] {
+    if (!colorMap.has(title)) {
+        colorMap.set(title, colorMap.size % BLOCK_COLORS.length);
+    }
+    return BLOCK_COLORS[colorMap.get(title)!];
+}
+
+// ────────────────────────────────────────────
+// Learning Plan Component
+// ────────────────────────────────────────────
+function LearningPlan({ tasks, onAddTask }: {
+    tasks: Task[];
+    onAddTask: (title: string, date: string, priority: Task["priority"], startHour: number, duration: number) => void;
+}) {
+    const [weekOffset, setWeekOffset] = useState(0);
+    const [view, setView] = useState<"week" | "day">("week");
+    const [now, setNow] = useState(new Date());
+
+    // ── Drag-to-create state ──
+    const [dragState, setDragState] = useState<{
+        dateStr: string;
+        startHour: number;
+        endHour: number;
+    } | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    // After drag completes, show inline input
+    const [newBlock, setNewBlock] = useState<{
+        dateStr: string;
+        startHour: number;
+        duration: number;
+    } | null>(null);
+    const [newBlockTitle, setNewBlockTitle] = useState("");
+    const inlineInputRef = useRef<HTMLInputElement>(null);
+
+    // Focus the inline input when a new block appears
+    useEffect(() => {
+        if (newBlock && inlineInputRef.current) {
+            inlineInputRef.current.focus();
+        }
+    }, [newBlock]);
+
+    // Auto-update every 60 seconds so the "now" line moves
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 60_000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const currentWeekStart = startOfWeek(
+        weekOffset === 0 ? now : addWeeks(startOfWeek(now, { weekStartsOn: 0 }), weekOffset),
+        { weekStartsOn: 0 }
+    );
+
+    const weekDays = view === "week"
+        ? [1, 2, 3, 4, 5].map(d => addDays(currentWeekStart, d))
+        : [now];
+
+    const currentHour = now.getHours();
+    const currentMinutes = now.getMinutes();
+    const incompleteTasks = tasks.filter(t => !t.completed);
+
+    const baseMinHour = currentHour;
+    const baseMaxHour = currentHour + 8;
+    const minHour = incompleteTasks.length > 0
+        ? Math.min(baseMinHour, ...incompleteTasks.map(t => t.startHour))
+        : baseMinHour;
+    const maxHour = incompleteTasks.length > 0
+        ? Math.max(baseMaxHour, ...incompleteTasks.map(t => t.startHour + t.duration))
+        : baseMaxHour;
+
+    const hours = Array.from({ length: maxHour - minHour }, (_, i) => minHour + i);
+    const totalSlots = maxHour - minHour;
+
+    const nowFraction = (currentHour + currentMinutes / 60 - minHour) / totalSlots;
+    const showNowLine = weekOffset === 0 && nowFraction >= 0 && nowFraction <= 1;
+
+    const colorMap = new Map<string, number>();
+
+    const tasksByDate = new Map<string, Task[]>();
+    for (const task of incompleteTasks) {
+        const key = task.date;
+        if (!tasksByDate.has(key)) tasksByDate.set(key, []);
+        tasksByDate.get(key)!.push(task);
+    }
+
+    // ── Drag helpers ──
+    // Convert mouse X within a row container to an hour value, snapped to 30-min
+    const xToHour = useCallback((clientX: number, rowEl: HTMLElement): number => {
+        const rect = rowEl.getBoundingClientRect();
+        const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        const rawHour = minHour + fraction * totalSlots;
+        // Snap to nearest 0.5h
+        return Math.round(rawHour * 2) / 2;
+    }, [minHour, totalSlots]);
+
+    const handleMouseDown = useCallback((e: React.MouseEvent, dateStr: string) => {
+        if (e.button !== 0) return; // left click only
+        if (newBlock) return;       // don't start drag while naming
+        const row = e.currentTarget as HTMLElement;
+        const hour = xToHour(e.clientX, row);
+        setDragState({ dateStr, startHour: hour, endHour: hour + 0.5 });
+        setIsDragging(true);
+        e.preventDefault();
+    }, [xToHour, newBlock]);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent, dateStr: string) => {
+        if (!isDragging || !dragState || dragState.dateStr !== dateStr) return;
+        const row = e.currentTarget as HTMLElement;
+        const hour = xToHour(e.clientX, row);
+        setDragState(prev => prev ? {
+            ...prev,
+            endHour: Math.max(prev.startHour + 0.5, hour),
+        } : prev);
+    }, [isDragging, dragState, xToHour]);
+
+    const handleMouseUp = useCallback(() => {
+        if (!isDragging || !dragState) return;
+        const start = Math.min(dragState.startHour, dragState.endHour);
+        const end = Math.max(dragState.startHour, dragState.endHour);
+        const duration = Math.max(0.5, end - start);
+        setNewBlock({ dateStr: dragState.dateStr, startHour: start, duration });
+        setNewBlockTitle("");
+        setDragState(null);
+        setIsDragging(false);
+    }, [isDragging, dragState]);
+
+    // Global mouseup to handle release outside the row
+    useEffect(() => {
+        if (!isDragging) return;
+        const handler = () => handleMouseUp();
+        window.addEventListener("mouseup", handler);
+        return () => window.removeEventListener("mouseup", handler);
+    }, [isDragging, handleMouseUp]);
+
+    const confirmNewBlock = useCallback(() => {
+        if (!newBlock) return;
+        const title = newBlockTitle.trim() || "Untitled";
+        onAddTask(title, newBlock.dateStr, "normal", newBlock.startHour, newBlock.duration);
+        setNewBlock(null);
+        setNewBlockTitle("");
+    }, [newBlock, newBlockTitle, onAddTask]);
+
+    const cancelNewBlock = useCallback(() => {
+        setNewBlock(null);
+        setNewBlockTitle("");
+    }, []);
+
+    return (
+        <div className="liquid-glass rounded-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+                <div>
+                    <h3 className="text-[18px] font-display font-bold text-white">
+                        Learning Plan
+                    </h3>
+                    <p className="text-[11px] text-white/25 mt-0.5">Drag on a row to add a task</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    {/* Week Navigation */}
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={() => setWeekOffset(p => p - 1)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                            onClick={() => setWeekOffset(0)}
+                            className="text-[12px] text-white/40 hover:text-white/70 px-2 py-1 rounded-md hover:bg-white/[0.06] transition-all"
+                        >
+                            Today
+                        </button>
+                        <button
+                            onClick={() => setWeekOffset(p => p + 1)}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                        >
+                            <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                    {/* View Toggle */}
+                    <div className="flex rounded-lg overflow-hidden border border-white/[0.08]">
+                        <button
+                            onClick={() => setView("day")}
+                            className={`text-[12px] px-3 py-1.5 font-medium transition-all ${view === "day" ? "bg-white/[0.08] text-white" : "text-white/40 hover:text-white/60"
+                                }`}
+                        >
+                            Day
+                        </button>
+                        <button
+                            onClick={() => setView("week")}
+                            className={`text-[12px] px-3 py-1.5 font-medium transition-all border-l border-white/[0.08] ${view === "week" ? "bg-white/[0.08] text-white" : "text-white/40 hover:text-white/60"
+                                }`}
+                        >
+                            Week
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Schedule Grid */}
+            <div className="p-5 overflow-x-auto">
+                <div className="min-w-[600px]">
+                    {/* Time Headers */}
+                    <div className="grid gap-0" style={{ gridTemplateColumns: `60px repeat(${hours.length}, 1fr)` }}>
+                        <div /> {/* Spacer for day label column */}
+                        {hours.map(h => (
+                            <div key={h} className="text-[11px] text-white/30 text-center pb-3 font-medium">
+                                {h === 0 ? "12:00 am" : h < 12 ? `${h}:00 am` : h === 12 ? "12:00 pm" : `${h - 12}:00 pm`}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Day Rows */}
+                    {weekDays.map(day => {
+                        const dateStr = format(day, "yyyy-MM-dd");
+                        const dayLabel = format(day, "EEE");
+                        const dayTasks = tasksByDate.get(dateStr) || [];
+                        const isTodayRow = isToday(day);
+
+                        // Drag preview for this row
+                        const showDragPreview = isDragging && dragState?.dateStr === dateStr;
+                        const dragLeft = showDragPreview
+                            ? ((Math.min(dragState!.startHour, dragState!.endHour) - minHour) / totalSlots) * 100
+                            : 0;
+                        const dragWidth = showDragPreview
+                            ? (Math.abs(dragState!.endHour - dragState!.startHour) / totalSlots) * 100
+                            : 0;
+
+                        // Inline input block for this row
+                        const showNewBlock = newBlock?.dateStr === dateStr;
+                        const newBlockLeft = showNewBlock
+                            ? ((newBlock!.startHour - minHour) / totalSlots) * 100
+                            : 0;
+                        const newBlockWidth = showNewBlock
+                            ? (newBlock!.duration / totalSlots) * 100
+                            : 0;
+
+                        return (
+                            <div
+                                key={dateStr}
+                                className="grid gap-0 border-t border-white/[0.04] min-h-[52px]"
+                                style={{ gridTemplateColumns: `60px repeat(${hours.length}, 1fr)` }}
+                            >
+                                {/* Day Label */}
+                                <div className={`flex items-center text-[13px] font-medium pr-3 ${isTodayRow ? "text-purple-400" : "text-white/40"
+                                    }`}>
+                                    {dayLabel}
+                                </div>
+
+                                {/* Time Grid — relative container for task blocks */}
+                                <div
+                                    className={`relative col-span-full ${isDragging ? "cursor-col-resize" : "cursor-crosshair"
+                                        }`}
+                                    style={{
+                                        gridColumn: `2 / -1`,
+                                        minHeight: "52px",
+                                        userSelect: "none",
+                                    }}
+                                    onMouseDown={(e) => handleMouseDown(e, dateStr)}
+                                    onMouseMove={(e) => handleMouseMove(e, dateStr)}
+                                    onMouseUp={handleMouseUp}
+                                >
+                                    {/* Grid lines */}
+                                    <div className="absolute inset-0 grid pointer-events-none" style={{ gridTemplateColumns: `repeat(${hours.length}, 1fr)` }}>
+                                        {hours.map(h => (
+                                            <div key={h} className="border-l border-white/[0.04] h-full" />
+                                        ))}
+                                    </div>
+
+                                    {/* Current-time indicator line */}
+                                    {showNowLine && isTodayRow && (
+                                        <div
+                                            className="absolute top-0 bottom-0 z-20 pointer-events-none"
+                                            style={{ left: `${nowFraction * 100}%` }}
+                                        >
+                                            <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
+                                            <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-red-500/80 shadow-[0_0_6px_rgba(239,68,68,0.4)]" />
+                                        </div>
+                                    )}
+
+                                    {/* Drag Preview Ghost */}
+                                    {showDragPreview && dragWidth > 0 && (
+                                        <div
+                                            className="absolute top-1.5 bottom-1.5 rounded-lg bg-purple-500/30 border border-purple-400/40 border-dashed z-10 pointer-events-none animate-pulse"
+                                            style={{
+                                                left: `${dragLeft}%`,
+                                                width: `${Math.max(dragWidth, 1)}%`,
+                                            }}
+                                        />
+                                    )}
+
+                                    {/* Inline New Block (after drag) */}
+                                    {showNewBlock && (
+                                        <div
+                                            className="absolute top-1.5 bottom-1.5 rounded-lg bg-purple-500/50 border border-purple-400/50 shadow-[0_0_14px_rgba(139,92,246,0.35)] z-30 flex items-center px-2"
+                                            style={{
+                                                left: `${newBlockLeft}%`,
+                                                width: `${newBlockWidth}%`,
+                                            }}
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                        >
+                                            <input
+                                                ref={inlineInputRef}
+                                                value={newBlockTitle}
+                                                onChange={(e) => setNewBlockTitle(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === "Enter") confirmNewBlock();
+                                                    if (e.key === "Escape") cancelNewBlock();
+                                                }}
+                                                onBlur={confirmNewBlock}
+                                                placeholder="Task name…"
+                                                className="w-full bg-transparent text-[12px] font-display font-semibold text-white placeholder:text-white/40 outline-none"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Task Blocks */}
+                                    {dayTasks.map(task => {
+                                        const leftPercent = ((task.startHour - minHour) / totalSlots) * 100;
+                                        const widthPercent = (task.duration / totalSlots) * 100;
+                                        const color = getBlockColor(task.title, colorMap);
+
+                                        return (
+                                            <div
+                                                key={task.id}
+                                                className={`absolute top-1.5 bottom-1.5 rounded-lg ${color.bg} ${color.border} ${color.glow} border flex flex-col justify-center px-3 overflow-hidden cursor-default transition-all hover:brightness-110`}
+                                                style={{
+                                                    left: `${leftPercent}%`,
+                                                    width: `${widthPercent}%`,
+                                                }}
+                                                title={`${task.title} — ${task.startHour}:00 to ${task.startHour + task.duration}:00`}
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                            >
+                                                <span className="text-[12px] font-display font-semibold text-white truncate leading-tight">
+                                                    {task.title}
+                                                </span>
+                                                {task.duration >= 1.5 && (
+                                                    <span className="text-[10px] text-white/60 truncate">
+                                                        {task.startHour > 12 ? `${task.startHour - 12}` : task.startHour}–{(task.startHour + task.duration) > 12 ? `${(task.startHour + task.duration) - 12}` : (task.startHour + task.duration)} PM
+                                                    </span>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ────────────────────────────────────────────
+// Mini Calendar Component
+// ────────────────────────────────────────────
+function MiniCalendar({ taskDates, selectedDate, onSelectDate }: {
+    taskDates: Set<string>;
+    selectedDate: string | null;
+    onSelectDate: (date: string) => void;
+}) {
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+    const startDay = getDay(monthStart);
+    const paddedDays = Array(startDay).fill(null).concat(days);
+
+    return (
+        <div className="liquid-glass rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+                <h3 className="text-[15px] font-display font-bold text-white">
+                    {format(currentMonth, "MMMM yyyy")}
+                </h3>
+                <div className="flex items-center gap-1">
+                    <button
+                        onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                    >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                        onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                    >
+                        <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            </div>
+            <div className="grid grid-cols-7 gap-0.5 text-center">
+                {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => (
+                    <div key={d} className="text-[10px] font-display font-semibold text-white/25 py-1">{d}</div>
+                ))}
+            </div>
+            <div className="grid grid-cols-7 gap-0.5">
+                {paddedDays.map((day, i) => {
+                    if (!day) return <div key={`pad-${i}`} />;
+                    const dateStr = format(day, "yyyy-MM-dd");
+                    const hasTask = taskDates.has(dateStr);
+                    const isSelected = selectedDate === dateStr;
+                    const isTodayDate = isToday(day);
+                    const isThisMonth = isSameMonth(day, currentMonth);
+                    return (
+                        <button
+                            key={dateStr}
+                            onClick={() => onSelectDate(dateStr)}
+                            className={`relative w-full aspect-square rounded-lg flex items-center justify-center text-[12px] transition-all ${isSelected
+                                ? "bg-purple-500 text-white font-semibold shadow-[0_0_12px_rgba(139,92,246,0.4)]"
+                                : isTodayDate
+                                    ? "bg-white/[0.08] text-white font-semibold"
+                                    : isThisMonth
+                                        ? "text-white/60 hover:bg-white/[0.06]"
+                                        : "text-white/20"
+                                }`}
+                        >
+                            {format(day, "d")}
+                            {hasTask && !isSelected && (
+                                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-400" />
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+// ────────────────────────────────────────────
+// Add Task Modal
+// ────────────────────────────────────────────
+function AddTaskModal({ onClose, onAdd }: {
+    onClose: () => void;
+    onAdd: (title: string, date: string, priority: Task["priority"], startHour: number, duration: number) => void;
+}) {
+    const [title, setTitle] = useState("");
+    const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+    const [priority, setPriority] = useState<Task["priority"]>("normal");
+    const [startHour, setStartHour] = useState(14);
+    const [duration, setDuration] = useState(1);
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!title.trim()) return;
+        onAdd(title.trim(), date, priority, startHour, duration);
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <form
+                onSubmit={handleSubmit}
+                onClick={e => e.stopPropagation()}
+                className="relative w-full max-w-md liquid-glass-heavy rounded-2xl p-6 space-y-5 border border-white/[0.1] shadow-2xl"
+            >
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[18px] font-display font-bold text-white">New Task</h3>
+                    <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
+                        <X className="h-4 w-4" />
+                    </button>
+                </div>
+
+                {/* Title */}
+                <div className="space-y-2">
+                    <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Task Title</label>
+                    <input
+                        autoFocus
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="e.g. Submit homework chapter 5"
+                        className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors"
+                    />
+                </div>
+
+                {/* Date */}
+                <div className="space-y-2">
+                    <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Due Date</label>
+                    <input
+                        type="date"
+                        value={date}
+                        onChange={e => setDate(e.target.value)}
+                        className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark]"
+                    />
+                </div>
+
+                {/* Time row */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Start Time</label>
+                        <select
+                            value={startHour}
+                            onChange={e => setStartHour(Number(e.target.value))}
+                            className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark] bg-transparent"
+                        >
+                            {Array.from({ length: 18 }, (_, i) => i + 6).map(h => (
+                                <option key={h} value={h} className="bg-gray-900 text-white">
+                                    {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Duration</label>
+                        <select
+                            value={duration}
+                            onChange={e => setDuration(Number(e.target.value))}
+                            className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark] bg-transparent"
+                        >
+                            {[0.5, 1, 1.5, 2, 2.5, 3, 4].map(d => (
+                                <option key={d} value={d} className="bg-gray-900 text-white">
+                                    {d === 0.5 ? "30 min" : d === 1 ? "1 hour" : `${d} hours`}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                {/* Priority */}
+                <div className="space-y-2">
+                    <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Priority</label>
+                    <div className="flex gap-2">
+                        {(["normal", "high", "urgent"] as const).map(p => (
+                            <button
+                                key={p}
+                                type="button"
+                                onClick={() => setPriority(p)}
+                                className={`flex-1 h-10 rounded-xl text-[13px] font-medium capitalize transition-all border ${priority === p
+                                    ? p === "urgent"
+                                        ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                        : p === "high"
+                                            ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                            : "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                                    : "border-white/[0.08] text-white/40 hover:bg-white/[0.04]"
+                                    }`}
+                            >
+                                {p}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={!title.trim()}
+                    className="w-full h-11 rounded-xl gradient-bg text-white text-[14px] font-display font-semibold glow-purple-soft hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                    Add Task
+                </button>
+            </form>
+        </div>
+    );
+}
+
+// ────────────────────────────────────────────
+// Format deadline label
+// ────────────────────────────────────────────
+function formatDeadline(dateStr: string): { label: string; urgent: boolean } {
+    const date = new Date(dateStr + "T00:00:00");
+    if (isToday(date)) return { label: "Due Today", urgent: true };
+    if (isTomorrow(date)) return { label: "Due Tomorrow", urgent: true };
+    if (isPast(date)) return { label: `Overdue — ${format(date, "MMM d")}`, urgent: true };
+    return { label: format(date, "MMM d, EEEE"), urgent: false };
+}
+
+// ────────────────────────────────────────────
+// Recent Courses (derived from recent files)
+// ────────────────────────────────────────────
+const COURSE_META: Record<string, { name: string; meta: string; color: string }> = {
+    "cs201": { name: "Data Structures", meta: "CS • Fall 2024 • Dr. Ahmad", color: "purple" },
+    "cs301": { name: "Web Development", meta: "CS • Fall 2024 • Dr. Salim", color: "green" },
+    "eng201": { name: "Thermodynamics", meta: "ENG • Fall 2024 • Dr. Noor", color: "red" },
+    "cs101": { name: "Intro to CS", meta: "CS • Fall 2024 • Dr. Maha", color: "purple" },
+    "math201": { name: "Linear Algebra", meta: "MATH • Fall 2024 • Dr. Kareem", color: "green" },
+};
+
+const progressColors: Record<string, string> = {
+    purple: "bg-purple-500",
+    green: "bg-emerald-500",
+    red: "bg-red-500",
+};
+
+const progressGlows: Record<string, string> = {
+    purple: "shadow-[0_0_12px_rgba(139,92,246,0.4)]",
+    green: "shadow-[0_0_12px_rgba(16,185,129,0.4)]",
+    red: "shadow-[0_0_12px_rgba(239,68,68,0.4)]",
+};
+
+// ────────────────────────────────────────────
+// Main Dashboard
+// ────────────────────────────────────────────
 export default function Dashboard() {
     const { data: recentFiles, isLoading: isLoadingRecent, isError: isErrorRecent } = useRecentFiles();
     const { data: reputation, isLoading: isLoadingRep } = useReputation(DEMO_USER_ID);
     const { data: requests, isLoading: isLoadingRequests } = useMyRequests(DEMO_USER_ID);
-    const { pinnedIds, togglePin } = usePinnedCourses();
+    usePinnedCourses();
+
+    const { tasks, taskDates, addTask, toggleTask, deleteTask } = useTasks();
+    const [showAddTask, setShowAddTask] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
     const isLoading = isLoadingRecent || isLoadingRep || isLoadingRequests;
-
-    // Derived state
-    const totalPoints = reputation ? reputation.totalPoints : 0;
-
-    if (isLoading) {
-        return <DashboardSkeleton />;
-    }
+    if (isLoading) return <DashboardSkeleton />;
 
     if (isErrorRecent) {
         return (
-            <div className="p-12 text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Hmm, we couldn't load your dashboard</h2>
-                <p className="text-muted-foreground mb-4">Mind trying again? Sometimes things just need a refresh.</p>
-                <Button onClick={() => window.location.reload()}>Try Again</Button>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="glass-card p-12 text-center max-w-md">
+                    <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+                    <h2 className="text-xl font-display font-bold text-white mb-2">Couldn't load dashboard</h2>
+                    <p className="text-white/50 mb-6">Something went wrong. Let's try again.</p>
+                    <Button onClick={() => window.location.reload()} className="gradient-bg border-0 glow-purple-soft">
+                        Try Again
+                    </Button>
+                </div>
             </div>
-        )
+        );
     }
+
+    const lastFile = recentFiles && recentFiles.length > 0 ? recentFiles[0] : null;
+
+    // Derive 3 most-recent unique courses from recent files
+    const recentCourses: { id: string; name: string; meta: string; color: string; lastAccess: string }[] = [];
+    const seenCourseIds = new Set<string>();
+    if (recentFiles) {
+        for (const file of recentFiles) {
+            if (seenCourseIds.has(file.courseId)) continue;
+            seenCourseIds.add(file.courseId);
+            const info = COURSE_META[file.courseId] || {
+                name: file.courseId.toUpperCase(),
+                meta: "Course",
+                color: ["purple", "green", "red"][recentCourses.length % 3],
+            };
+            recentCourses.push({ id: file.courseId, lastAccess: file.viewedAt, ...info });
+            if (recentCourses.length >= 3) break;
+        }
+    }
+    // Fallback if no recent files
+    if (recentCourses.length === 0) {
+        recentCourses.push(
+            { id: "cs201", lastAccess: "", ...COURSE_META["cs201"] },
+            { id: "cs301", lastAccess: "", ...COURSE_META["cs301"] },
+            { id: "eng201", lastAccess: "", ...COURSE_META["eng201"] },
+        );
+    }
+
+    const displayTasks = selectedDate
+        ? tasks.filter(t => t.date === selectedDate)
+        : tasks;
 
     return (
         <div className="space-y-8 animate-fade-in">
-            {/* Welcome / Resume Header */}
-            <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 text-foreground transition-all duration-500 ease-in-out">
-                {recentFiles && recentFiles.length > 0 ? (
-                    // Q1/Q2: Continue Studying State
-                    <div className="relative z-10 max-w-3xl">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary mb-6 border border-primary/20">
-                            <Clock className="h-4 w-4" />
-                            <span>Continue Learning</span>
+            {/* ── Continue Studying Hero ── */}
+            {lastFile && (
+                <Link to={`/courses/${lastFile.courseId}/files/${lastFile.id}`} className="block group">
+                    <div className="liquid-glass rounded-2xl p-6 flex items-center gap-5 border-purple-500/15 hover:border-purple-500/30 transition-all glow-purple-soft">
+                        <div className="w-14 h-14 rounded-2xl gradient-bg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-lg">
+                            <PlayCircle className="h-7 w-7 text-white" />
                         </div>
-
-                        <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
-                            Pick up where you left off in <span className="text-primary block md:inline">{recentFiles[0].title}</span>
-                        </h1>
-
-                        <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-xl">
-                            You were studying <span className="font-semibold text-foreground">{recentFiles[0].type}</span> for <span className="font-semibold text-foreground uppercase">{recentFiles[0].courseId}</span>. <br className="hidden md:block" />
-                            Ready to jump back in?
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-4">
-                            <Button size="lg" className="shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-semibold text-lg px-4 py-2 h-auto group/btn" asChild>
-                                <Link to={`/courses/${recentFiles[0].courseId}/files/${recentFiles[0].id}`}>
-                                    <Brain className="me-3 h-6 w-6 group-hover/btn:rotate-12 transition-transform" />
-                                    Continue Studying
-                                </Link>
-                            </Button>
-                            <span className="text-sm text-muted-foreground">
-                                Last seen {formatDistanceToNow(new Date(recentFiles[0].viewedAt), { addSuffix: true })}
-                            </span>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[11px] font-display font-semibold text-purple-400 uppercase tracking-[0.15em] mb-1">
+                                Continue Studying
+                            </p>
+                            <h2 className="text-[20px] font-display font-bold text-white leading-tight truncate group-hover:text-purple-200 transition-colors">
+                                {lastFile.title}
+                            </h2>
+                            <p className="text-[12px] text-white/35 mt-1 flex items-center gap-2">
+                                <span className="uppercase">{lastFile.courseId}</span>
+                                <span>•</span>
+                                <Clock className="h-3 w-3" />
+                                <span>{formatDistanceToNow(new Date(lastFile.viewedAt), { addSuffix: true })}</span>
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2 text-[13px] font-display font-semibold text-purple-400 group-hover:text-purple-300 transition-colors shrink-0">
+                            Resume
+                            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </div>
                     </div>
-                ) : (
-                    // Default Welcome State
-                    <div className="relative z-10 max-w-2xl">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-muted/50 px-3 py-1 text-sm font-medium text-muted-foreground border border-border mb-6">
-                            <Sparkles className="h-4 w-4 text-primary fill-primary/20" />
-                            <span>AI-Powered Learning</span>
-                        </div>
+                </Link>
+            )}
 
-                        <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-tight">
-                            Welcome back, <span className="text-primary">Student!</span>
-                        </h1>
-
-                        <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-xl">
-                            Your AI study assistant is ready to help you master new concepts. Start by browsing your courses or open a recent file.
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-4">
-                            <Button size="lg" className="shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 font-semibold group/btn" asChild>
-                                <Link to="/courses">
-                                    <FileText className="me-2 h-5 w-5" />
-                                    Browse Courses
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-                )}
+            {/* ── Page Header ── */}
+            <div className="flex items-start justify-between">
+                <div>
+                    <h1 className="text-[36px] font-display font-bold text-white tracking-[-0.04em] leading-none">
+                        Dashboard
+                    </h1>
+                    <p className="text-[14px] text-white/45 mt-2">
+                        Welcome back, Deena. Here's your learning overview.
+                    </p>
+                </div>
             </div>
 
-
-            {/* Dashboard Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Recent Files */}
-                <div className="lg:col-span-2">
-                    {/* Recent Opened Files */}
-                    <div>
+            {/* ── Metric Cards ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {metrics.map((metric, i) => (
+                    <div
+                        key={metric.label}
+                        className={`rounded-2xl p-6 transition-all animate-fade-in-up opacity-0 ${metric.hero ? "liquid-glass border-purple-500/20 glow-purple-soft" : "liquid-glass"
+                            } stagger-${i + 1}`}
+                    >
                         <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-semibold">Recent Opened Files</h2>
-                            <Button variant="ghost" size="sm" asChild><Link to="/recent">View All</Link></Button>
+                            <span className="text-[12px] text-white/45 font-medium">{metric.label}</span>
+                            <span className={`text-[12px] font-display font-semibold ${metric.positive ? "text-emerald-400" : "text-red-400"
+                                }`}>
+                                {metric.change}
+                            </span>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {recentFiles && recentFiles.length > 0 ? (
-                                recentFiles.slice(0, 6).map((file) => (
+                        <div className="text-[36px] font-display font-bold tracking-[-0.04em] leading-none text-white">
+                            {metric.value}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* ── Main Content — Two Columns ── */}
+            <div className="flex gap-6 min-h-0">
+                {/* Left Column */}
+                <div className="flex-1 space-y-6 min-w-0">
+                    {/* ── Learning Plan Schedule ── */}
+                    <LearningPlan tasks={tasks} onAddTask={addTask} />
+
+                    {/* ── Recent Courses ── */}
+                    <div className="space-y-4">
+                        <div className="flex items-end justify-between">
+                            <h2 className="text-[22px] font-display font-bold text-white tracking-[-0.02em]">
+                                Recent Courses
+                            </h2>
+                            <Link to="/courses" className="flex items-center gap-1.5 text-[13px] font-display font-medium text-white/50 hover:text-white/80 transition-colors">
+                                View all
+                                <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {recentCourses.map((course, i) => (
+                                <Link
+                                    key={course.id}
+                                    to={`/courses?course=${course.id}`}
+                                    className={`glass-card overflow-hidden group cursor-pointer animate-fade-in-up opacity-0 stagger-${i + 1}`}
+                                >
+                                    <div className="h-[120px] bg-white/[0.03] flex items-center justify-center border-b border-white/[0.06]">
+                                        <BookOpen className="h-8 w-8 text-white/15 group-hover:text-white/25 transition-colors" />
+                                    </div>
+                                    <div className="p-5 space-y-3">
+                                        <h3 className="text-[15px] font-display font-semibold text-white leading-tight group-hover:text-purple-300 transition-colors">
+                                            {course.name}
+                                        </h3>
+                                        <p className="text-[12px] text-white/40">{course.meta}</p>
+                                        {course.lastAccess && (
+                                            <p className="text-[11px] text-white/25 flex items-center gap-1.5">
+                                                <Clock className="h-3 w-3" />
+                                                Opened {formatDistanceToNow(new Date(course.lastAccess), { addSuffix: true })}
+                                            </p>
+                                        )}
+                                        <div className="space-y-2">
+                                            <div className="w-full h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full ${progressColors[course.color]} ${progressGlows[course.color]} transition-all`}
+                                                    style={{ width: `${Math.floor(Math.random() * 60 + 20)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* ── Recent Files ── */}
+                    {recentFiles && recentFiles.length > 0 && (
+                        <div className="space-y-4">
+                            <div className="flex items-end justify-between">
+                                <h2 className="text-[22px] font-display font-bold text-white tracking-[-0.02em]">
+                                    Recent Files
+                                </h2>
+                                <Link to="/recent" className="flex items-center gap-1.5 text-[13px] font-display font-medium text-white/50 hover:text-white/80 transition-colors">
+                                    View all
+                                    <ArrowRight className="h-3.5 w-3.5" />
+                                </Link>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {recentFiles.slice(0, 4).map((file) => (
                                     <Link key={file.id} to={`/courses/${file.courseId}/files/${file.id}`}>
-                                        <Card className="hover-lift cursor-pointer group overflow-hidden h-full">
-                                            <div className="h-2 bg-gradient-to-r from-primary to-primary/50" />
-                                            <CardHeader className="p-4">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1 min-w-0">
-                                                        <CardTitle className="text-base group-hover:text-primary transition-colors truncate">
-                                                            {file.title}
-                                                        </CardTitle>
-                                                        <CardDescription className="flex items-center gap-2 mt-1">
-                                                            <Badge variant="secondary" className="text-[10px]">
-                                                                {file.type}
-                                                            </Badge>
-                                                            <span className="text-[10px] uppercase">{file.courseId}</span>
-                                                        </CardDescription>
-                                                    </div>
-                                                </div>
-                                                <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+                                        <div className="glass-card p-4 flex items-center gap-4 group">
+                                            <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center shrink-0">
+                                                <FileText className="h-4.5 w-4.5 text-white/40 group-hover:text-purple-400 transition-colors" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[14px] font-medium text-white truncate group-hover:text-purple-300 transition-colors">
+                                                    {file.title}
+                                                </p>
+                                                <p className="text-[11px] text-white/35 flex items-center gap-1.5 mt-0.5">
+                                                    <span className="uppercase">{file.courseId}</span>
+                                                    <span>•</span>
                                                     <Clock className="h-3 w-3" />
                                                     {formatDistanceToNow(new Date(file.viewedAt), { addSuffix: true })}
                                                 </p>
-                                            </CardHeader>
-                                        </Card>
-                                    </Link>
-                                ))
-                            ) : (
-                                <div className="col-span-full">
-                                    <Card className="p-8 text-center bg-muted/20 border-dashed">
-                                        <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
-                                        <p className="text-sm text-muted-foreground">You haven't opened any files yet. Ready to start learning?</p>
-                                        <Button variant="link" size="sm" asChild className="mt-2">
-                                            <Link to="/courses">Browse Courses</Link>
-                                        </Button>
-                                    </Card>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Column: Requests */}
-                <div className="space-y-8">
-                    {/* Reputation Card */}
-                    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <Zap className="h-5 w-5 text-primary" />
-                                Your Reputation
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-4xl font-bold text-primary mb-1">{totalPoints}</div>
-                            <p className="text-sm text-muted-foreground">Points earned</p>
-                        </CardContent>
-                    </Card>
-
-                    {/* Your Requests */}
-                    <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-semibold">Your Requests</h2>
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link to="/uploads">View All</Link>
-                            </Button>
-                        </div>
-                        <Card>
-                            <CardContent className="p-0">
-                                {requests && requests.length > 0 ? (
-                                    requests.slice(0, 5).map(req => (
-                                        <div key={req.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors border-b last:border-b-0">
-                                            <div className="p-2 bg-muted rounded-lg">
-                                                {req.status === 'pending' && <Clock className="h-5 w-5 text-amber-500" />}
-                                                {req.status === 'approved' && <Sparkles className="h-5 w-5 text-green-500" />}
-                                                {req.status === 'rejected' && <AlertCircle className="h-5 w-5 text-red-500" />}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <p className="font-medium truncate">{req.title}</p>
-                                                    <Badge variant="outline" className={
-                                                        req.status === 'pending' ? 'text-amber-600 bg-amber-50' :
-                                                            req.status === 'approved' ? 'text-green-600 bg-green-50' :
-                                                                'text-red-600 bg-red-50'
-                                                    }>{req.status}</Badge>
-                                                </div>
-                                                <p className="text-sm text-muted-foreground">{req.courseId} • {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}</p>
                                             </div>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="p-8 text-center text-muted-foreground">
-                                        <p>No active requests</p>
-                                    </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Right Column: Calendar + Tasks + Activity + Reputation ── */}
+                <div className="w-[340px] shrink-0 space-y-5 hidden lg:block">
+                    {/* Mini Calendar */}
+                    <MiniCalendar
+                        taskDates={taskDates}
+                        selectedDate={selectedDate}
+                        onSelectDate={(d) => setSelectedDate(prev => prev === d ? null : d)}
+                    />
+
+                    {/* Upcoming Tasks */}
+                    <div className="liquid-glass rounded-2xl overflow-hidden">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+                            <h3 className="text-[16px] font-display font-bold text-white">
+                                {selectedDate
+                                    ? `Tasks — ${format(new Date(selectedDate + "T00:00:00"), "MMM d")}`
+                                    : "Upcoming Tasks"
+                                }
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                {selectedDate && (
+                                    <button
+                                        onClick={() => setSelectedDate(null)}
+                                        className="text-[11px] text-white/40 hover:text-white/70 px-2 py-1 rounded-md hover:bg-white/[0.06] transition-all"
+                                    >
+                                        Clear
+                                    </button>
                                 )}
-                            </CardContent>
-                        </Card>
+                                <button
+                                    onClick={() => setShowAddTask(true)}
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-purple-400 hover:bg-purple-500/15 transition-all"
+                                    title="Add task"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {displayTasks.length === 0 ? (
+                            <div className="px-6 py-8 text-center">
+                                <Calendar className="h-8 w-8 text-white/15 mx-auto mb-2" />
+                                <p className="text-[13px] text-white/30">
+                                    {selectedDate ? "No tasks on this date" : "No tasks yet"}
+                                </p>
+                                <button
+                                    onClick={() => setShowAddTask(true)}
+                                    className="text-[12px] text-purple-400 hover:text-purple-300 mt-2 transition-colors"
+                                >
+                                    Add a task
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-white/[0.06]">
+                                {displayTasks.slice(0, 6).map((task) => {
+                                    const deadline = formatDeadline(task.date);
+                                    return (
+                                        <div
+                                            key={task.id}
+                                            className={`flex items-center gap-3 px-6 py-3.5 hover:bg-white/[0.03] transition-colors group ${task.completed ? "opacity-50" : ""
+                                                }`}
+                                        >
+                                            <button
+                                                onClick={() => toggleTask(task.id)}
+                                                className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-all ${task.completed
+                                                    ? "bg-emerald-500/30 border-emerald-500/40 text-emerald-400"
+                                                    : "border-white/[0.15] hover:border-purple-500/40"
+                                                    }`}
+                                            >
+                                                {task.completed && <Check className="h-3 w-3" />}
+                                            </button>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-[13px] font-medium truncate ${task.completed ? "line-through text-white/40" : "text-white"
+                                                    }`}>
+                                                    {task.title}
+                                                </p>
+                                                <p className={`text-[11px] mt-0.5 ${deadline.urgent && !task.completed ? "text-red-400" : "text-white/35"
+                                                    }`}>
+                                                    {deadline.label}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                {!task.completed && task.priority === "urgent" && (
+                                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-red-500/20 text-red-400 border border-red-500/20">Urgent</span>
+                                                )}
+                                                {!task.completed && task.priority === "high" && (
+                                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/20">High</span>
+                                                )}
+                                                {!task.completed && task.priority === "normal" && (
+                                                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md border border-white/[0.08] text-white/30">Pending</span>
+                                                )}
+                                                <button
+                                                    onClick={() => deleteTask(task.id)}
+                                                    className="w-6 h-6 rounded-md flex items-center justify-center text-white/0 group-hover:text-white/30 hover:!text-red-400 hover:bg-red-500/10 transition-all"
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
+
+                    {/* Weekly Activity Chart */}
+                    <div className="liquid-glass rounded-2xl p-6 space-y-5">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-[16px] font-display font-bold text-white">
+                                Weekly Activity
+                            </h3>
+                            <span className="text-[11px] text-white/35 px-3 py-1 rounded-lg border border-white/[0.08]">
+                                This Week
+                            </span>
+                        </div>
+                        <div className="flex items-end gap-3 h-[120px] border-b border-white/[0.06] pb-1">
+                            {weeklyActivity.map((day) => (
+                                <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
+                                    <div
+                                        className={`w-full rounded-md transition-all ${day.value > 50
+                                            ? "bg-purple-500/80 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
+                                            : "bg-white/[0.08]"
+                                            }`}
+                                        style={{ height: `${day.value}%` }}
+                                    />
+                                    <span className="text-[11px] text-white/35">{day.day}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Reputation Card */}
+                    {reputation && (
+                        <div className="liquid-glass rounded-2xl p-6 border-purple-500/20 glow-purple-soft">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Zap className="h-4 w-4 text-purple-400" />
+                                <span className="text-[13px] font-display font-semibold text-white/70">Your Reputation</span>
+                            </div>
+                            <div className="text-[32px] font-display font-bold text-white leading-none">
+                                {reputation.totalPoints}
+                            </div>
+                            <p className="text-[12px] text-white/35 mt-1">Points earned</p>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Add Task Modal */}
+            {showAddTask && (
+                <AddTaskModal
+                    onClose={() => setShowAddTask(false)}
+                    onAdd={addTask}
+                />
+            )}
         </div>
     );
 }
@@ -217,13 +1030,22 @@ export default function Dashboard() {
 function DashboardSkeleton() {
     return (
         <div className="space-y-8">
-            <Skeleton className="h-[300px] w-full rounded-3xl" />
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-32 w-full" />)}
+            <Skeleton className="h-[80px] w-full rounded-2xl bg-white/[0.06]" />
+            <div>
+                <Skeleton className="h-10 w-56 bg-white/[0.06]" />
+                <Skeleton className="h-4 w-80 bg-white/[0.04] mt-3" />
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-[120px] rounded-2xl bg-white/[0.06]" />
+                ))}
+            </div>
+            <Skeleton className="h-[280px] w-full rounded-2xl bg-white/[0.06]" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-40 w-full" />)}
+                {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-[200px] rounded-2xl bg-white/[0.06]" />
+                ))}
             </div>
         </div>
-    )
+    );
 }

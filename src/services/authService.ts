@@ -37,7 +37,7 @@ export const authService = {
         return { user: { name: "Demo User", email } };
     },
 
-    signUp: async ({ name, email, password }: Record<string, string>) => {
+    signUp: async ({ name, email }: Record<string, string>) => {
         // --- REAL IMPLEMENTATION ---
         // const response = await fetch(`${API_URL}/signup`, {
         //     method: 'POST',
@@ -60,7 +60,7 @@ export const authService = {
         return { user: { name, email } };
     },
 
-    requestPasswordReset: async ({ email }: { email: string }) => {
+    requestPasswordReset: async ({ email: _email }: { email: string }) => {
         // --- REAL IMPLEMENTATION ---
         // // Note: Backend does not seemingly have a direct reset password endpoint yet, 
         // // usually handled by Auth0 directly or a specific /forgot-password endpoint.

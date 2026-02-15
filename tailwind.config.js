@@ -4,10 +4,18 @@ export default {
     content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['Inter', 'system-ui', 'sans-serif'],
+  			display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		backdropBlur: {
+  			'glass': '20px',
+  			'glass-heavy': '40px',
   		},
   		colors: {
   			background: 'hsl(var(--background))',

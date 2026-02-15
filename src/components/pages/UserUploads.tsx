@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { FileText, Search, Filter, AlertCircle, CheckCircle, Clock, XCircle, ChevronLeft, Zap, Loader2 } from "lucide-react";
+import { FileText, Search, AlertCircle, CheckCircle, Clock, XCircle, ChevronLeft, Zap, Loader2, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useMyRequests } from "@/queries/useRequests";
 import RequestFileModal from "@/components/features/RequestFileModal";
 import { formatDistanceToNow } from "date-fns";
@@ -17,174 +14,165 @@ export default function UserUploads() {
 
     const getStatusIcon = (status: string) => {
         switch (status) {
-            case "approved": return <CheckCircle className="h-4 w-4 text-green-500" />;
-            case "rejected": return <XCircle className="h-4 w-4 text-red-500" />;
-            default: return <Clock className="h-4 w-4 text-yellow-500" />;
+            case "approved": return <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />;
+            case "rejected": return <XCircle className="h-3.5 w-3.5 text-red-400" />;
+            default: return <Clock className="h-3.5 w-3.5 text-yellow-400" />;
         }
     };
 
-    const getStatusColor = (status: string) => {
+    const getStatusBg = (status: string) => {
         switch (status) {
-            case "approved": return "bg-green-500/10 text-green-500 hover:bg-green-500/20";
-            case "rejected": return "bg-red-500/10 text-red-500 hover:bg-red-500/20";
-            default: return "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20";
+            case "approved": return "bg-emerald-500/15 text-emerald-400 border-emerald-500/20";
+            case "rejected": return "bg-red-500/15 text-red-400 border-red-500/20";
+            default: return "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
         }
     };
 
     if (isLoading) {
         return (
             <div className="h-[50vh] flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
             </div>
-        )
+        );
     }
 
     if (isError || !userRequests) {
         return (
-            <div className="h-[50vh] flex flex-col items-center justify-center text-red-500">
-                <AlertCircle className="h-8 w-8 mb-2" />
-                <p>Failed to load requests.</p>
-                <Button variant="link" onClick={() => window.location.reload()}>Retry</Button>
+            <div className="h-[50vh] flex flex-col items-center justify-center">
+                <div className="glass-card p-8 text-center">
+                    <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
+                    <p className="text-white/60 mb-3">Failed to load requests.</p>
+                    <Button variant="link" onClick={() => window.location.reload()} className="text-purple-400">
+                        Retry
+                    </Button>
+                </div>
             </div>
-        )
+        );
     }
 
     const totalPoints = userRequests.reduce((acc, curr) => acc + (curr.points || 0), 0);
 
     return (
-        <div className="animate-fade-in space-y-8 p-8 max-w-7xl mx-auto">
+        <div className="animate-fade-in space-y-8">
             {/* Header */}
-            <div className="flex flex-col gap-4">
-                <Link to="/" className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm w-fit transition-colors">
-                    <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+            <div className="space-y-4">
+                <Link to="/" className="text-white/40 hover:text-white/70 flex items-center gap-2 text-[13px] w-fit transition-colors">
+                    <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
                     Back to Dashboard
                 </Link>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Your Contributions</h1>
-                        <p className="text-muted-foreground mt-2">Track your impact and file request status.</p>
+                        <h1 className="text-[32px] font-display font-bold text-white tracking-[-0.03em]">Your Contributions</h1>
+                        <p className="text-white/40 mt-1 text-[14px]">Track your impact and file request status.</p>
                     </div>
-                    <Button onClick={() => setIsRequestOpen(true)}>
-                        <FileText className="me-2 h-4 w-4" />
+                    <button
+                        onClick={() => setIsRequestOpen(true)}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-white text-[13px] font-display font-semibold glow-purple-soft hover:opacity-90 transition-opacity"
+                    >
+                        <Plus className="h-4 w-4" />
                         Submit New File
-                    </Button>
+                    </button>
                 </div>
                 <RequestFileModal open={isRequestOpen} onOpenChange={setIsRequestOpen} />
             </div>
 
             {/* Impact Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-primary">Community Score</CardTitle>
-                        <Zap className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-primary">{totalPoints}</div>
-                        <p className="text-xs text-muted-foreground">Total impact points</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Approved</CardTitle>
-                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {userRequests.filter(f => f.status === "approved").length}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="liquid-glass rounded-2xl p-5 border-purple-500/20 glow-purple-soft">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-[12px] text-purple-300 font-medium">Community Score</span>
+                        <Zap className="h-4 w-4 text-purple-400" />
+                    </div>
+                    <div className="text-[28px] font-display font-bold text-white">{totalPoints}</div>
+                    <p className="text-[11px] text-white/35 mt-0.5">Total impact points</p>
+                </div>
+                {[
+                    { label: "Approved", count: userRequests.filter(f => f.status === "approved").length, icon: CheckCircle },
+                    { label: "Pending Review", count: userRequests.filter(f => f.status === "pending").length, icon: Clock },
+                    { label: "Rejected", count: userRequests.filter(f => f.status === "rejected").length, icon: XCircle },
+                ].map((stat) => {
+                    const Icon = stat.icon;
+                    return (
+                        <div key={stat.label} className="liquid-glass rounded-2xl p-5">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[12px] text-white/45 font-medium">{stat.label}</span>
+                                <Icon className="h-4 w-4 text-white/25" />
+                            </div>
+                            <div className="text-[28px] font-display font-bold text-white">{stat.count}</div>
                         </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {userRequests.filter(f => f.status === "pending").length}
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-                        <XCircle className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {userRequests.filter(f => f.status === "rejected").length}
-                        </div>
-                    </CardContent>
-                </Card>
+                    );
+                })}
             </div>
 
-            {/* Filters & Search */}
-            <div className="flex items-center gap-4">
+            {/* Search */}
+            <div className="flex items-center gap-3">
                 <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute start-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search uploads..." className="ps-9 pe-12" />
+                    <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <input
+                        placeholder="Search uploads..."
+                        className="w-full h-10 rounded-xl liquid-glass-subtle ps-10 pe-4 text-[14px] text-white placeholder:text-white/30 outline-none focus:border-purple-500/40 transition-colors"
+                    />
                 </div>
-                <Button variant="outline" size="icon">
-                    <Filter className="h-4 w-4" />
-                </Button>
             </div>
 
             {/* List */}
-            <div className="rounded-md border bg-card">
-                <div className="p-4 grid gap-4">
-                    {userRequests.length === 0 ? (
-                        <div className="text-center py-12 text-muted-foreground">
-                            <FileText className="mx-auto h-12 w-12 opacity-20 mb-4" />
-                            <p>No uploads yet.</p>
-                        </div>
-                    ) : (
-                        userRequests.map((file) => (
-                            <div key={file.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors gap-4">
+            <div className="liquid-glass rounded-2xl overflow-hidden">
+                {userRequests.length === 0 ? (
+                    <div className="text-center py-16 text-white/30">
+                        <FileText className="mx-auto h-10 w-10 opacity-30 mb-3" />
+                        <p className="text-[14px]">No uploads yet.</p>
+                    </div>
+                ) : (
+                    <div className="divide-y divide-white/[0.06]">
+                        {userRequests.map((file) => (
+                            <div key={file.id} className="flex items-center justify-between px-6 py-5 hover:bg-white/[0.03] transition-colors gap-4">
                                 <div className="flex items-start gap-4">
-                                    <div className="mt-1 p-2 rounded-lg bg-primary/10">
-                                        <FileText className="h-5 w-5 text-primary" />
+                                    <div className="mt-0.5 w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
+                                        <FileText className="h-4.5 w-4.5 text-purple-400" />
                                     </div>
-                                    <div className="space-y-1">
-                                        <div className="font-semibold flex items-center gap-2">
-                                            {file.title}
-                                            <Badge variant="secondary" className={`capitalize ${getStatusColor(file.status)}`}>
+                                    <div className="space-y-1.5 min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="font-display font-semibold text-white text-[14px]">{file.title}</span>
+                                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md border ${getStatusBg(file.status)}`}>
                                                 {getStatusIcon(file.status)}
-                                                <span className="ms-1.5">{file.status}</span>
-                                            </Badge>
+                                                <span className="capitalize">{file.status}</span>
+                                            </span>
                                             {file.status === "approved" && file.points && (
-                                                <Badge variant="outline" className="text-primary border-primary/20 bg-primary/5 gap-1">
-                                                    <Zap className="h-3 w-3 fill-primary text-primary" />
+                                                <span className="inline-flex items-center gap-1 text-[11px] text-purple-400 px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/20">
+                                                    <Zap className="h-3 w-3" />
                                                     +{file.points} pts
-                                                </Badge>
+                                                </span>
                                             )}
                                         </div>
-                                        <div className="text-sm text-muted-foreground">
+                                        <p className="text-[12px] text-white/35">
                                             {file.courseId.toUpperCase()} • {formatDistanceToNow(new Date(file.createdAt || new Date()), { addSuffix: true })}
-                                        </div>
+                                        </p>
                                         {file.status === "rejected" && file.rejectionReason && (
-                                            <div className="flex items-center gap-2 text-sm text-red-500 bg-red-500/5 px-2 py-1 rounded w-fit mt-2">
-                                                <AlertCircle className="h-3 w-3" />
-                                                Rejection Reason: {file.rejectionReason}
+                                            <div className="flex items-center gap-2 text-[12px] text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/15 w-fit mt-1">
+                                                <AlertCircle className="h-3 w-3 shrink-0" />
+                                                <span>{file.rejectionReason}</span>
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="shrink-0">
                                     {file.status === "rejected" ? (
-                                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                                        <button className="text-[12px] px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors">
                                             Delete
-                                        </Button>
+                                        </button>
                                     ) : (
-                                        <Button variant="outline" size="sm" asChild>
-                                            <Link to={`/courses/${file.courseId}/files/123` /* Mock link for now */}>View</Link>
-                                        </Button>
+                                        <Link
+                                            to={`/courses/${file.courseId}/files/123`}
+                                            className="text-[12px] px-3 py-1.5 rounded-lg border border-white/[0.1] text-white/50 hover:text-white/80 hover:bg-white/[0.04] transition-colors"
+                                        >
+                                            View
+                                        </Link>
                                     )}
                                 </div>
                             </div>
-                        ))
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, FileText, FolderOpen, Plus, Sparkles, Loader2, AlertCircle, Star } from "lucide-react";
+import { ChevronRight, FileText, FolderOpen, Plus, Sparkles, Loader2, AlertCircle, Star, ChevronDown, Pin } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import RequestFileModal from "@/components/features/RequestFileModal";
 
 import { useMajors, useYears, useSemesters, useCourses, useLecturers } from "@/queries/useCatalog";
 import { useFiles, useTopContributors } from "@/queries/useFiles";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
+import { courses as allCourses } from "@/mock/mock-db";
 import type { MaterialType } from "@/types/domain";
 
 const DEMO_TYPES: MaterialType[] = ["Slides", "Homeworks", "Past Papers", "Notes"];
@@ -25,7 +25,10 @@ export default function Courses() {
     });
 
     const [isRequestOpen, setIsRequestOpen] = useState(false);
-    const { togglePin, isPinned } = usePinnedCourses();
+    const { pinnedIds, togglePin, isPinned } = usePinnedCourses();
+
+    // Resolve pinned course IDs to full course objects
+    const pinnedCourses = allCourses.filter(c => pinnedIds.includes(c.id));
 
     // -- Queries --
     const { data: majors, isLoading: bgMajors } = useMajors();
@@ -33,23 +36,17 @@ export default function Courses() {
     const { data: semesters, isLoading: bgSemesters } = useSemesters(selections.major);
     const { data: courses, isLoading: bgCourses } = useCourses({
         majorId: selections.major,
-        // yearId: selections.year, // Optional in our service, but good to filter if service supported it
         semesterId: selections.semester
     });
     const { data: lecturers, isLoading: bgLecturers } = useLecturers({
         courseId: selections.course
     });
 
-    // Files Query - only fetch if we have enough info? Or at least course?
     const isReadyForFiles = !!selections.course;
     const { data: files, isLoading: isLoadingFiles, isError: isErrorFiles } = useFiles({
         majorId: selections.major,
         courseId: selections.course,
-        lecturerId: selections.lecturer, // Note: service expects ID, but our UI currently might be mixing name/ID. 
-        // In this refactor, let's assume UI selects ID or Name depending on what service returns. 
-        // Our service returns Lecturer objects { id, name }.
-        // But the File object has `lecturer` string (name). 
-        // Ideally we filter by ID in backend. Let's pass the value from Select (which should be ID).
+        lecturerId: selections.lecturer,
         type: selections.type
     });
 
@@ -59,7 +56,6 @@ export default function Courses() {
     const handleSelect = (key: string, value: string) => {
         setSelections(prev => {
             const newSelections = { ...prev, [key]: value };
-            // Reset subsequent selections to avoid invalid states
             const keys = Object.keys(prev);
             const index = keys.indexOf(key);
             for (let i = index + 1; i < keys.length; i++) {
@@ -75,18 +71,30 @@ export default function Courses() {
         return selections[keys[stepIndex - 1] as keyof typeof selections] !== "";
     };
 
+    const selectFields = [
+        { key: "major", label: "Major", data: majors?.map(m => ({ id: m.id, label: m.name })), loading: bgMajors, step: 0, placeholder: "Select Major" },
+        { key: "year", label: "Year", data: years?.map(y => ({ id: y.id, label: y.label })), loading: bgYears, step: 1, placeholder: "Select Year" },
+        { key: "semester", label: "Semester", data: semesters?.map(s => ({ id: s.id, label: s.name })), loading: bgSemesters, step: 2, placeholder: "Select Semester" },
+        { key: "course", label: "Course", data: courses?.map(c => ({ id: c.id, label: `${c.code} - ${c.name}` })), loading: bgCourses, step: 3, placeholder: "Select Course" },
+        { key: "lecturer", label: "Lecturer", data: lecturers?.map(l => ({ id: l.name, label: l.name })), loading: bgLecturers, step: 4, placeholder: "Select Lecturer" },
+        { key: "type", label: "Type", data: DEMO_TYPES.map(t => ({ id: t, label: t })), loading: false, step: -1, placeholder: "Select Type" },
+    ];
+
     return (
         <div className="animate-fade-in space-y-8">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold mb-2">Course Library</h1>
-                    <p className="text-muted-foreground">Browse materials by hierarchy</p>
+                    <h1 className="text-[32px] font-display font-bold text-white tracking-[-0.03em]">Course Library</h1>
+                    <p className="text-white/40 mt-1 text-[14px]">Browse materials by hierarchy</p>
                 </div>
-                <Button onClick={() => setIsRequestOpen(true)}>
-                    <Plus className="me-2 h-4 w-4" />
+                <button
+                    onClick={() => setIsRequestOpen(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-white text-[13px] font-display font-semibold glow-purple-soft hover:opacity-90 transition-opacity"
+                >
+                    <Plus className="h-4 w-4" />
                     Request File Add
-                </Button>
+                </button>
                 <RequestFileModal
                     open={isRequestOpen}
                     onOpenChange={setIsRequestOpen}
@@ -101,216 +109,221 @@ export default function Courses() {
                 />
             </div>
 
+            {/* Pinned Courses Section */}
+            {pinnedCourses.length > 0 && (
+                <div className="animate-fade-in">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                        <h2 className="text-[14px] font-display font-semibold text-white/70">Pinned Courses</h2>
+                        <span className="text-[11px] text-white/30">({pinnedCourses.length})</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                        {pinnedCourses.map(course => (
+                            <button
+                                key={course.id}
+                                onClick={() => {
+                                    setSelections({
+                                        major: course.majorId || "",
+                                        year: "",
+                                        semester: course.semesterId || "",
+                                        course: course.id,
+                                        lecturer: "",
+                                        type: ""
+                                    });
+                                }}
+                                className={`group relative liquid-glass rounded-xl p-4 text-left hover:bg-white/[0.06] transition-all duration-200 border ${selections.course === course.id
+                                        ? "border-purple-500/40 bg-purple-500/[0.08]"
+                                        : "border-white/[0.06] hover:border-white/[0.12]"
+                                    }`}
+                            >
+                                {/* Color accent bar */}
+                                <div className={`absolute top-0 left-4 right-4 h-[2px] rounded-b bg-gradient-to-r ${course.color} opacity-60`} />
+
+                                <div className="flex items-start justify-between">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-[13px] font-display font-bold text-white/90 truncate">
+                                            {course.code}
+                                        </p>
+                                        <p className="text-[12px] text-white/40 mt-0.5 truncate">
+                                            {course.name}
+                                        </p>
+                                        <p className="text-[11px] text-white/25 mt-1">
+                                            {course.term}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            togglePin(course.id);
+                                        }}
+                                        className="p-1 rounded-md text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-colors shrink-0 ml-2"
+                                        title="Unpin course"
+                                    >
+                                        <Star className="h-3.5 w-3.5 fill-current" />
+                                    </button>
+                                </div>
+
+                                {/* Arrow indicator */}
+                                <div className={`absolute right-3 bottom-3 transition-opacity ${selections.course === course.id ? "opacity-100" : "opacity-0 group-hover:opacity-50"
+                                    }`}>
+                                    <ChevronRight className="h-3.5 w-3.5 text-purple-400" />
+                                </div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Hierarchy Selectors */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {/* Major */}
-                <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-2">
-                        Major {bgMajors && <Loader2 className="h-3 w-3 animate-spin" />}
-                    </label>
-                    <Select value={selections.major} onValueChange={(v) => handleSelect("major", v)} disabled={bgMajors}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Major" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {majors?.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Year */}
-                <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-2">
-                        Year {bgYears && <Loader2 className="h-3 w-3 animate-spin" />}
-                    </label>
-                    <Select value={selections.year} onValueChange={(v) => handleSelect("year", v)} disabled={!isStepEnabled(1) || bgYears}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {years?.map(y => <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Semester */}
-                <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-2">
-                        Semester {bgSemesters && <Loader2 className="h-3 w-3 animate-spin" />}
-                    </label>
-                    <Select value={selections.semester} onValueChange={(v) => handleSelect("semester", v)} disabled={!isStepEnabled(2) || bgSemesters}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Semester" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {semesters?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Course */}
-                <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-2">
-                        Course {bgCourses && <Loader2 className="h-3 w-3 animate-spin" />}
-                    </label>
-                    <Select value={selections.course} onValueChange={(v) => handleSelect("course", v)} disabled={!isStepEnabled(3) || bgCourses}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Course" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {courses?.map(c => (
-                                <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Lecturer */}
-                <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase flex items-center gap-2">
-                        Lecturer {bgLecturers && <Loader2 className="h-3 w-3 animate-spin" />}
-                    </label>
-                    <Select value={selections.lecturer} onValueChange={(v) => handleSelect("lecturer", v)} disabled={!isStepEnabled(4) || bgLecturers}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Lecturer" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {lecturers?.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Type */}
-                <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase flex items-center">Type</label>
-                    <Select value={selections.type} onValueChange={(v) => handleSelect("type", v)}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {DEMO_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
+                {selectFields.map((field) => (
+                    <div key={field.key} className="space-y-2">
+                        <label className="text-[11px] font-display font-semibold text-white/35 uppercase tracking-wider flex items-center gap-2">
+                            {field.label} {field.loading && <Loader2 className="h-3 w-3 animate-spin text-purple-400" />}
+                        </label>
+                        <Select
+                            value={selections[field.key as keyof typeof selections]}
+                            onValueChange={(v) => handleSelect(field.key, v)}
+                            disabled={field.step >= 0 ? !isStepEnabled(field.step) || !!field.loading : false}
+                        >
+                            <SelectTrigger className="liquid-glass-subtle border-white/[0.08] text-white/70 hover:bg-white/[0.06] transition-all [&>span]:text-[13px] h-10">
+                                <SelectValue placeholder={field.placeholder} />
+                            </SelectTrigger>
+                            <SelectContent className="liquid-glass-heavy border-white/[0.1]">
+                                {field.data?.map(item => (
+                                    <SelectItem key={item.id} value={item.id} className="text-white/70 hover:text-white focus:bg-white/[0.08] focus:text-white">
+                                        {item.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                ))}
             </div>
 
-            {/* Results Preview Panel / Content Area */}
+            {/* Results Preview Panel */}
             {isReadyForFiles ? (
-                <div className="animate-fade-in border rounded-xl overflow-hidden bg-card shadow-sm min-h-[300px]">
-                    <div className="p-4 border-b bg-muted/30 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <FolderOpen className="h-5 w-5 text-primary" />
-                            <h3 className="font-semibold">
+                <div className="animate-fade-in liquid-glass rounded-2xl overflow-hidden min-h-[300px]">
+                    <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <FolderOpen className="h-4.5 w-4.5 text-purple-400" />
+                            <h3 className="text-[15px] font-display font-semibold text-white">
                                 {selections.course} / {selections.type || "All"}
                             </h3>
-                            <Button
-                                variant="ghost"
-                                size="icon"
+                            <button
                                 onClick={() => togglePin(selections.course)}
-                                className={isPinned(selections.course) ? "text-amber-500 hover:text-amber-600" : "text-muted-foreground hover:text-amber-500"}
+                                className={`p-1.5 rounded-md transition-colors ${isPinned(selections.course)
+                                    ? "text-amber-400 hover:text-amber-300"
+                                    : "text-white/20 hover:text-amber-400"
+                                    }`}
                             >
-                                <Star className={isPinned(selections.course) ? "fill-current h-5 w-5" : "h-5 w-5"} />
-                            </Button>
+                                <Star className={isPinned(selections.course) ? "fill-current h-4 w-4" : "h-4 w-4"} />
+                            </button>
                         </div>
-                        <Badge variant="secondary">
+                        <span className="text-[12px] px-3 py-1 rounded-lg border border-white/[0.08] text-white/40">
                             {files?.length || 0} files found
-                        </Badge>
+                        </span>
                     </div>
 
                     {isLoadingFiles ? (
-                        <div className="p-4 space-y-4">
+                        <div className="p-6 space-y-4">
                             {[1, 2, 3].map(i => (
                                 <div key={i} className="flex gap-4">
-                                    <Skeleton className="h-12 w-12 rounded-lg" />
+                                    <Skeleton className="h-10 w-10 rounded-xl bg-white/[0.06]" />
                                     <div className="space-y-2 flex-1">
-                                        <Skeleton className="h-4 w-1/3" />
-                                        <Skeleton className="h-3 w-1/4" />
+                                        <Skeleton className="h-4 w-1/3 bg-white/[0.06]" />
+                                        <Skeleton className="h-3 w-1/4 bg-white/[0.04]" />
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : isErrorFiles ? (
                         <div className="p-12 text-center">
-                            <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-3" />
-                            <p className="font-semibold mb-1">Couldn't load materials right now</p>
-                            <p className="text-sm text-muted-foreground mb-4">Mind giving it another try?</p>
-                            <Button variant="link" onClick={() => window.location.reload()}>Refresh</Button>
+                            <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
+                            <p className="font-display font-semibold text-white mb-1">Couldn't load materials right now</p>
+                            <p className="text-[13px] text-white/40 mb-4">Mind giving it another try?</p>
+                            <Button variant="link" onClick={() => window.location.reload()} className="text-purple-400">
+                                Refresh
+                            </Button>
                         </div>
                     ) : files && files.length > 0 ? (
-                        <div className="divide-y">
+                        <div className="divide-y divide-white/[0.06]">
                             {files.map((file) => (
-                                <div key={file.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors group">
+                                <div key={file.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.03] transition-colors group">
                                     <div className="flex items-center gap-4">
-                                        <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                                            <FileText className="h-5 w-5" />
+                                        <div className="h-10 w-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                                            <FileText className="h-4.5 w-4.5 text-blue-400" />
                                         </div>
                                         <div>
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-medium text-sm group-hover:text-primary transition-colors">{file.title}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                                            <p className="font-medium text-[14px] text-white group-hover:text-purple-300 transition-colors">
+                                                {file.title}
+                                            </p>
+                                            <div className="flex items-center gap-2 text-[12px] text-white/35 mt-0.5">
                                                 <span>{file.lecturer}</span>
                                                 <span>•</span>
                                                 <span>{file.date}</span>
                                                 <span>•</span>
                                                 <span>{file.size}</span>
                                                 {file.status === "rejected" && (
-                                                    <span className="text-red-500">• Reason: {file.rejectionReason}</span>
+                                                    <span className="text-red-400">• {file.rejectionReason}</span>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
-                                    <Button asChild size="sm" className="gap-2" disabled={file.status !== "approved"}>
-                                        <Link to={`/courses/${file.courseId}/files/${file.id}`}>
-                                            {file.status === "approved" ? "Open" : "View Details"}
-                                            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
-                                        </Link>
-                                    </Button>
+                                    <Link
+                                        to={`/courses/${file.courseId}/files/${file.id}`}
+                                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl gradient-bg text-[13px] text-white font-medium hover:opacity-90 transition-opacity"
+                                    >
+                                        {file.status === "approved" ? "Open" : "View Details"}
+                                        <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
+                                    </Link>
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="p-12 text-center text-muted-foreground">
-                            <FolderOpen className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                            <p className="font-semibold mb-1">We don't have materials for this yet</p>
-                            <Button variant="link" onClick={() => setIsRequestOpen(true)}>Want to request them?</Button>
+                        <div className="p-12 text-center text-white/30">
+                            <FolderOpen className="h-10 w-10 mx-auto mb-3 opacity-40" />
+                            <p className="font-display font-semibold text-white/60 mb-2">We don't have materials for this yet</p>
+                            <button onClick={() => setIsRequestOpen(true)} className="text-purple-400 text-[13px] hover:underline">
+                                Want to request them?
+                            </button>
                         </div>
                     )}
                 </div>
             ) : (
-                // Top Contributors Section (Show when not searching)
-                <div className="flex justify-center pt-8 border-t">
+                // Top Contributors Section
+                <div className="flex justify-center pt-6">
                     <div className="w-full max-w-md">
-                        <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-primary" />
+                        <h3 className="text-[16px] font-display font-bold text-white mb-4 flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-purple-400" />
                             Top Contributors
                         </h3>
                         {isLoadingContributors ? (
                             <div className="space-y-3">
-                                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+                                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl bg-white/[0.06]" />)}
                             </div>
                         ) : (
-                            <div className="bg-card rounded-xl border shadow-sm divide-y">
+                            <div className="liquid-glass rounded-2xl divide-y divide-white/[0.06] overflow-hidden">
                                 {topContributors?.map((c, i) => (
-                                    <div key={c.id} className="p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors">
-                                        <div className="font-bold text-muted-foreground w-4 text-center text-sm">
+                                    <div key={c.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-white/[0.03] transition-colors">
+                                        <div className="font-display font-bold text-white/25 w-4 text-center text-[13px]">
                                             {i + 1}
                                         </div>
-                                        <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold ring-2 ring-background">
+                                        <div className="h-8 w-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-[12px] font-display font-bold">
                                             {c.avatar}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between">
-                                                <p className="text-sm font-medium truncate">{c.name}</p>
-                                                <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal">
+                                                <p className="text-[13px] font-medium text-white truncate">{c.name}</p>
+                                                <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/[0.06] text-white/40">
                                                     {c.points} pts
-                                                </Badge>
+                                                </span>
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
-                                                <p className="text-[10px] text-muted-foreground truncate">{c.major}</p>
-                                                {c.badge === "Gold" && <span className="text-[10px] text-yellow-500 font-medium">Gold</span>}
-                                                {c.badge === "Silver" && <span className="text-[10px] text-slate-400 font-medium">Silver</span>}
-                                                {c.badge === "Bronze" && <span className="text-[10px] text-amber-600 font-medium">Bronze</span>}
+                                                <p className="text-[11px] text-white/30 truncate">{c.major}</p>
+                                                {c.badge === "Gold" && <span className="text-[10px] text-yellow-400 font-medium">Gold</span>}
+                                                {c.badge === "Silver" && <span className="text-[10px] text-slate-300 font-medium">Silver</span>}
+                                                {c.badge === "Bronze" && <span className="text-[10px] text-amber-500 font-medium">Bronze</span>}
                                             </div>
                                         </div>
                                     </div>

@@ -1,22 +1,76 @@
+/**
+ * ============================================================================
+ * APP SHELL / LAYOUT – Static Implementation
+ * ============================================================================
+ *
+ * Provides the sidebar navigation, breadcrumbs, and top bar.
+ * Currently has NO backend interaction – all nav items are hardcoded
+ * and user profile data is not displayed.
+ *
+ * ============================================================================
+ * BACKEND MIGRATION GUIDE
+ * ============================================================================
+ *
+ * 1. User Profile Display (sidebar avatar / name):
+ *    Use the authenticated user context from the auth provider.
+ *    ```ts
+ *    const { user } = useAuth();  // provides user.name, user.avatar, user.role
+ *    ```
+ *    No new endpoint needed – user data comes from the auth session
+ *    (GET /api/me/profile, already documented in authService.ts).
+ *
+ * 2. Notification Badge (Bell icon):
+ *    Add an unread notification count to the top bar.
+ *
+ *    GET /api/me/notifications/unread-count
+ *      → Response: { count: number }
+ *      → Poll every 30s or use WebSocket for real-time updates.
+ *
+ *    GET /api/me/notifications
+ *      → Response: Notification[]
+ *
+ *    PATCH /api/me/notifications/:id/read
+ *      → Marks a notification as read.
+ *
+ *    ```ts
+ *    export const useUnreadCount = () => useQuery({
+ *        queryKey: ["unread-notifications"],
+ *        queryFn: () => api<{ count: number }>("GET", "/api/me/notifications/unread-count"),
+ *        refetchInterval: 30_000,  // poll every 30 seconds
+ *    });
+ *    ```
+ *
+ * 3. Conditional Nav Items:
+ *    Admin-only routes (e.g. /admin/*) should be shown conditionally:
+ *    ```ts
+ *    const isAdmin = user?.role === "admin";
+ *    const visibleNavItems = navItems.filter(item =>
+ *        !item.adminOnly || isAdmin
+ *    );
+ *    ```
+ *
+ * 4. Language preference:
+ *    The language code currently reads from localStorage.
+ *    After Settings backend is connected, read from the auth session or
+ *    GET /api/me/settings response instead.
+ * ============================================================================
+ */
+
 import { useEffect } from "react";
-import { Home, History, Settings, GraduationCap, BookOpen } from "lucide-react";
-import { Link, Outlet, useLocation } from "react-router-dom";
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarProvider,
-    SidebarTrigger,
-    SidebarInset,
-} from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+    Home,
+    History,
+    Settings,
+    BookOpen,
+    Upload,
+    Map,
+    Bell,
+    Search,
+    GraduationCap,
+    Sparkles,
+    ArrowRight,
+} from "lucide-react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -25,42 +79,49 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { CommandPalette } from "../ui/command-palette";
 
-// Data for language persistence (duplicated from Settings for init, or could be in a shared lib)
+// Language config
 const languages = [
     { code: "en", name: "English", dir: "ltr" },
     { code: "ar", name: "العربية", dir: "rtl" },
     { code: "he", name: "עברית", dir: "rtl" },
 ];
 
-// Dynamic Breadcrumbs Component
+// Navigation items
+const navItems = [
+    { label: "Dashboard", icon: Home, href: "/", num: "01" },
+    { label: "Courses", icon: BookOpen, href: "/courses", num: "02" },
+    { label: "Recent", icon: History, href: "/recent", num: "03" },
+    { label: "Uploads", icon: Upload, href: "/uploads", num: "04" },
+    { label: "My Path", icon: Map, href: "/path", num: "05" },
+    { label: "Settings", icon: Settings, href: "/settings", num: "06" },
+];
+
+// Dynamic Breadcrumbs
 const Breadcrumbs = () => {
     const location = useLocation();
     const pathnames = location.pathname.split("/").filter((x) => x);
 
     const formatLabel = (value: string) => {
-        // Handle special cases
         if (value.startsWith("cs") || value.startsWith("math") || value.startsWith("phys")) {
             return value.toUpperCase();
         }
         return value.charAt(0).toUpperCase() + value.slice(1);
     };
 
-    // Paths that should not be clickable (folders/categories without index pages)
     const nonClickablePaths = ["files"];
 
     return (
         <Breadcrumb>
             <BreadcrumbList>
                 <BreadcrumbItem>
-                    <BreadcrumbLink href="/" className="flex items-center gap-1.5">
+                    <BreadcrumbLink href="/" className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors">
                         <Home className="h-3.5 w-3.5" />
                         Home
                     </BreadcrumbLink>
                 </BreadcrumbItem>
-                {pathnames.length > 0 && <BreadcrumbSeparator className="rtl:rotate-180" />}
+                {pathnames.length > 0 && <BreadcrumbSeparator className="text-white/30 rtl:rotate-180" />}
                 {pathnames.map((value, index) => {
                     const to = `/${pathnames.slice(0, index + 1).join("/")}`;
                     const isLast = index === pathnames.length - 1;
@@ -70,23 +131,26 @@ const Breadcrumbs = () => {
                         <div key={to} className="flex items-center gap-2">
                             <BreadcrumbItem>
                                 {isLast || isNonClickable ? (
-                                    <BreadcrumbPage className={isNonClickable ? "text-muted-foreground font-normal" : ""}>
+                                    <BreadcrumbPage className={isNonClickable ? "text-white/40" : "text-white/90 font-medium"}>
                                         {formatLabel(value)}
                                     </BreadcrumbPage>
                                 ) : (
-                                    <BreadcrumbLink href={to}>{formatLabel(value)}</BreadcrumbLink>
+                                    <BreadcrumbLink href={to} className="text-white/50 hover:text-white/80 transition-colors">
+                                        {formatLabel(value)}
+                                    </BreadcrumbLink>
                                 )}
                             </BreadcrumbItem>
-                            {!isLast && <BreadcrumbSeparator className="rtl:rotate-180" />}
+                            {!isLast && <BreadcrumbSeparator className="text-white/30 rtl:rotate-180" />}
                         </div>
                     );
                 })}
             </BreadcrumbList>
         </Breadcrumb>
-    )
-}
+    );
+};
 
-function AppSidebar() {
+// Glass Sidebar
+function GlassSidebar() {
     const location = useLocation();
 
     const isActive = (path: string) => {
@@ -95,94 +159,87 @@ function AppSidebar() {
     };
 
     return (
-        <Sidebar variant="inset" collapsible="icon">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link to="/">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg gradient-bg">
-                                    <GraduationCap className="h-4 w-4 text-white" />
-                                </div>
-                                <div className="grid flex-1 text-start text-sm leading-tight">
-                                    <span className="truncate font-semibold">GeeksHub</span>
-                                    <span className="truncate text-xs text-muted-foreground">AI Study Workspace</span>
-                                </div>
+        <aside className="w-[260px] min-h-screen liquid-glass-heavy flex flex-col border-r border-white/[0.06] relative z-20">
+            <div className="flex flex-col flex-1 px-6 py-8">
+                {/* Logo */}
+                <Link to="/" className="flex items-center gap-3.5 mb-10 group">
+                    <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-purple-soft group-hover:scale-105 transition-transform">
+                        <GraduationCap className="h-4.5 w-4.5 text-white" />
+                    </div>
+                    <span className="font-display text-[15px] font-bold text-white tracking-[0.15em] uppercase">
+                        GeeksHub
+                    </span>
+                </Link>
+
+                {/* Navigation */}
+                <nav className="flex-1 space-y-0.5">
+                    {navItems.map((item) => {
+                        const active = isActive(item.href);
+                        const Icon = item.icon;
+                        return (
+                            <Link
+                                key={item.href}
+                                to={item.href}
+                                className={`flex items-center gap-4 px-3 py-3 rounded-xl text-[14px] transition-all group relative ${active
+                                    ? "text-white bg-white/[0.1] border border-white/[0.1]"
+                                    : "text-white/45 hover:text-white/75 hover:bg-white/[0.04]"
+                                    }`}
+                            >
+                                {active && (
+                                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/10 to-transparent pointer-events-none" />
+                                )}
+                                <span className={`font-display text-[13px] tabular-nums w-5 ${active ? "text-purple-400" : "text-white/25"}`}>
+                                    {item.num}
+                                </span>
+                                <Icon className={`h-[18px] w-[18px] ${active ? "text-white" : ""}`} />
+                                <span className={`font-medium ${active ? "font-semibold" : ""}`}>
+                                    {item.label}
+                                </span>
                             </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarHeader>
-            <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Dashboard" isActive={isActive("/")}>
-                                    <Link to="/">
-                                        <Home className="h-4 w-4" />
-                                        <span>Dashboard</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Courses" isActive={isActive("/courses")}>
-                                    <Link to="/courses">
-                                        <BookOpen className="h-4 w-4" />
-                                        <span>Courses</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Recent" isActive={isActive("/recent")}>
-                                    <Link to="/recent">
-                                        <History className="h-4 w-4" />
-                                        <span>Recent</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-                <SidebarGroup className="mt-auto">
-                    <SidebarGroupLabel>Account</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Settings" isActive={isActive("/settings")}>
-                                    <Link to="/settings">
-                                        <Settings className="h-4 w-4" />
-                                        <span>Settings</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            </SidebarContent>
-            <SidebarFooter>
-                <div className="p-2">
-                    <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
-                            S
+                        );
+                    })}
+                </nav>
+
+                {/* Upgrade Card */}
+                <div className="mt-auto pt-6 space-y-5">
+                    <div className="liquid-glass-subtle rounded-xl p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+                            <span className="text-[11px] font-display font-bold text-purple-400 uppercase tracking-[0.15em]">
+                                Pro
+                            </span>
                         </div>
-                        <div className="flex-1 truncate text-sm text-start">
-                            <p className="font-medium truncate">Student</p>
-                            <p className="text-xs text-muted-foreground truncate">student@university.edu</p>
+                        <p className="text-[15px] font-display font-semibold text-white leading-tight">
+                            Unlock AI Learning
+                        </p>
+                        <p className="text-[12px] text-white/40 leading-relaxed">
+                            Get personalized paths, unlimited files & AI assistant.
+                        </p>
+                        <button className="w-full h-9 rounded-lg gradient-bg text-white text-[12px] font-display font-semibold hover:opacity-90 transition-opacity glow-purple-soft">
+                            Activate Pro
+                        </button>
+                    </div>
+
+                    {/* User */}
+                    <div className="flex items-center gap-3 px-1">
+                        <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white text-[13px] font-display font-semibold">
+                            D
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-medium text-white truncate">Deena</p>
+                            <p className="text-[11px] text-white/35 truncate">student@uni.edu</p>
                         </div>
                     </div>
                 </div>
-            </SidebarFooter>
-        </Sidebar>
+            </div>
+        </aside>
     );
 }
 
 export default function AppShell() {
-    // Global Language Persistence Init
     useEffect(() => {
         const savedLang = localStorage.getItem("language") || "en";
-        const selectedLang = languages.find(l => l.code === savedLang);
+        const selectedLang = languages.find((l) => l.code === savedLang);
         if (selectedLang) {
             document.documentElement.lang = selectedLang.code;
             document.documentElement.dir = selectedLang.dir;
@@ -190,34 +247,52 @@ export default function AppShell() {
     }, []);
 
     return (
-        <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset>
-                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
-                    <SidebarTrigger className="-ms-1" />
-                    <Separator orientation="vertical" className="me-2 h-4" />
+        <div className="flex h-screen overflow-hidden relative">
+            {/* Animated Mesh Background */}
+            <div className="mesh-background">
+                <div className="mesh-orb mesh-orb-1" />
+                <div className="mesh-orb mesh-orb-2" />
+            </div>
+
+            {/* Sidebar */}
+            <GlassSidebar />
+
+            {/* Main Area */}
+            <div className="flex-1 flex flex-col min-h-0">
+                {/* Glass Header */}
+                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 px-8 liquid-glass border-b border-white/[0.06] border-t-0 border-x-0">
                     <Breadcrumbs />
                     <div className="ms-auto flex items-center gap-2">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="gap-2 text-muted-foreground"
-                            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+                        <button
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all text-[13px]"
+                            onClick={() =>
+                                document.dispatchEvent(
+                                    new KeyboardEvent("keydown", { key: "k", metaKey: true })
+                                )
+                            }
                         >
-                            <span className="hidden sm:inline">Search...</span>
-                            <kbd className="hidden sm:inline-flex pointer-events-none h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                                <span className="text-xs">⌘/Ctrl + K</span>
+                            <Search className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Search</span>
+                            <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-white/30">
+                                ⌘K
                             </kbd>
-                        </Button>
+                        </button>
+                        <button className="relative w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
+                            <Bell className="h-4 w-4" />
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-purple-500 ring-2 ring-black/50" />
+                        </button>
                     </div>
                 </header>
+
+                {/* Content */}
                 <main className="flex-1 overflow-auto">
-                    <div className="container max-w-6xl mx-auto py-6 px-4">
+                    <div className="max-w-[1400px] mx-auto py-8 px-8">
                         <Outlet />
                     </div>
                 </main>
-                <CommandPalette />
-            </SidebarInset>
-        </SidebarProvider>
+            </div>
+
+            <CommandPalette />
+        </div>
     );
 }

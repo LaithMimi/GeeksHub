@@ -64,6 +64,7 @@ import { RouterProvider } from 'react-router-dom'
 import { router } from './lib/router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from "@/components/ui/sonner"
+import { ThemeProvider } from "@/hooks/useTheme"
 
 // Create QueryClient instance
 // TODO: Configure with production defaults when backend is ready
@@ -71,9 +72,11 @@ const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <Toaster />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+        <Toaster />
+      </QueryClientProvider>
+    </ThemeProvider>
   </StrictMode>,
 )

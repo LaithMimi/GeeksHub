@@ -55,7 +55,7 @@ export const useCreateRequest = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: createFileRequest,
-        onSuccess: (data, variables) => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['my-requests', variables.userId] });
             toast.success("Request submitted successfully");
         },

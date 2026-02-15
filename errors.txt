@@ -1,0 +1,17 @@
+src/components/layout/FileShell.tsx(69,34): error TS2322: Type '{ children: Element[]; direction: string; }' is not assignable to type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & { children?: ReactNode; className?: string | undefined; ... 8 more ...; style?: CSSProperties | undefined; }'.
+  Property 'direction' does not exist on type 'IntrinsicAttributes & HTMLAttributes<HTMLDivElement> & { children?: ReactNode; className?: string | undefined; ... 8 more ...; style?: CSSProperties | undefined; }'.
+src/components/pages/Dashboard.tsx(2,44): error TS6133: 'TrendingUp' is declared but its value is never read.
+src/components/pages/Dashboard.tsx(2,74): error TS6133: 'Star' is declared but its value is never read.
+src/components/pages/Dashboard.tsx(2,80): error TS6133: 'Bookmark' is declared but its value is never read.
+src/components/pages/Dashboard.tsx(19,11): error TS6198: All destructured elements are unused.
+src/components/pages/Recent.tsx(3,54): error TS6133: 'AlertCircle' is declared but its value is never read.
+src/components/ui/select.tsx(25,51): error TS6133: 'disabled' is declared but its value is never read.
+src/components/ui/select.tsx(76,27): error TS2339: Property 'position' does not exist on type 'Omit<Omit<DropdownMenuContentProps & RefAttributes<HTMLDivElement>, "ref"> & RefAttributes<HTMLDivElement>, "ref">'.
+src/components/ui/select.tsx(84,9): error TS2322: Type '{ children: Element; asChild?: boolean | undefined; defaultChecked?: boolean | undefined; defaultValue?: string | number | readonly string[] | undefined; suppressContentEditableWarning?: boolean | undefined; ... 293 more ...; position: any; }' is not assignable to type 'IntrinsicAttributes & Omit<DropdownMenuContentProps & RefAttributes<HTMLDivElement>, "ref"> & RefAttributes<...>'.
+  Property 'position' does not exist on type 'IntrinsicAttributes & Omit<DropdownMenuContentProps & RefAttributes<HTMLDivElement>, "ref"> & RefAttributes<...>'.
+src/queries/useRequests.ts(58,21): error TS6133: 'data' is declared but its value is never read.
+src/services/authService.ts(40,35): error TS6133: 'password' is declared but its value is never read.
+src/services/authService.ts(63,34): error TS6133: 'email' is declared but its value is never read.
+src/services/catalogService.ts(80,33): error TS6133: 'majorId' is declared but its value is never read.
+src/services/catalogService.ts(91,37): error TS6133: 'majorId' is declared but its value is never read.
+src/services/catalogService.ts(146,37): error TS6133: 'filters' is declared but its value is never read.

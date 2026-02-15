@@ -1,3 +1,89 @@
+/**
+ * ============================================================================
+ * AI ASSISTANT PANEL – Mock Implementation
+ * ============================================================================
+ *
+ * Provides a chat interface for asking questions about the current file,
+ * and a (coming soon) notes tab. Currently uses a simulated AI response.
+ *
+ * ============================================================================
+ * BACKEND MIGRATION GUIDE
+ * ============================================================================
+ *
+ * 1. Required Backend Endpoints:
+ *
+ *    POST   /api/assistant/chat
+ *      → Sends a message to the AI and receives a response.
+ *      → Request body:
+ *        {
+ *          fileId: string,           // The file the user is viewing
+ *          message: string,          // The user's question
+ *          conversationHistory: Message[]  // Previous messages for context
+ *        }
+ *      → Response: { content: string, sources?: { page: number, title: string }[] }
+ *      → For streaming, use Server-Sent Events (SSE):
+ *        ```ts
+ *        const response = await fetch("/api/assistant/chat", {
+ *            method: "POST",
+ *            headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
+ *            body: JSON.stringify({ fileId, message, conversationHistory }),
+ *        });
+ *        const reader = response.body!.getReader();
+ *        // Read chunks and append to assistant message in real-time
+ *        ```
+ *
+ *    GET    /api/me/notes?fileId=:fileId
+ *      → Fetches the user's notes for the current file.
+ *      → Response: { id: string, content: string, updatedAt: string }[]
+ *
+ *    POST   /api/me/notes
+ *      → Creates/updates a note for the current file.
+ *      → Request body: { fileId: string, content: string }
+ *      → Response: { id: string, content: string, updatedAt: string }
+ *
+ * 2. SQL Schema:
+ *    ```sql
+ *    -- Chat history (optional – can be session-only)
+ *    CREATE TABLE chat_sessions (
+ *        id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+ *        user_id    UUID NOT NULL REFERENCES users(id),
+ *        file_id    UUID NOT NULL REFERENCES files(id),
+ *        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+ *    );
+ *    CREATE TABLE chat_messages (
+ *        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+ *        session_id  UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
+ *        role        VARCHAR(10) NOT NULL,  -- 'user' | 'assistant'
+ *        content     TEXT NOT NULL,
+ *        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+ *    );
+ *
+ *    -- Notes
+ *    CREATE TABLE user_notes (
+ *        id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+ *        user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ *        file_id    UUID NOT NULL REFERENCES files(id),
+ *        content    TEXT NOT NULL,
+ *        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+ *    );
+ *    CREATE UNIQUE INDEX idx_notes_user_file ON user_notes(user_id, file_id);
+ *    ```
+ *
+ * 3. AI Provider Integration:
+ *    The backend should call an LLM API (OpenAI, Gemini, etc.):
+ *    ```python
+ *    # Example FastAPI endpoint
+ *    @app.post("/api/assistant/chat")
+ *    async def chat(request: ChatRequest, user = Depends(get_current_user)):
+ *        # 1. Fetch the file content / embeddings for RAG context
+ *        file_context = await get_file_context(request.file_id)
+ *        # 2. Build prompt with file context + conversation history
+ *        # 3. Call LLM API (stream response for better UX)
+ *        # 4. Return response with source citations
+ *    ```
+ * ============================================================================
+ */
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +117,26 @@ export default function AssistantPanel() {
         }
     }, [messages]);
 
+    /**
+     * Sends a message and receives an AI response.
+     * @backend REPLACE the setTimeout mock with a real API call:
+     *
+     *   const response = await fetch("/api/assistant/chat", {
+     *       method: "POST",
+     *       headers: { "Content-Type": "application/json" },
+     *       body: JSON.stringify({
+     *           fileId: currentFileId,       // from route params or context
+     *           message: inputValue,
+     *           conversationHistory: messages,
+     *       }),
+     *   });
+     *   const data = await response.json();
+     *   // data.content = AI response text
+     *   // data.sources = [{ page: 12, title: "Algorithm Complexity" }, ...]
+     *
+     *   For streaming (recommended for better UX):
+     *   Use EventSource or ReadableStream to append tokens as they arrive.
+     */
     const handleSendMessage = () => {
         if (!inputValue.trim()) return;
 
@@ -44,7 +150,8 @@ export default function AssistantPanel() {
         setMessages(prev => [...prev, userMessage]);
         setInputValue("");
 
-        // Simulate AI response
+        // @backend REPLACE: This setTimeout simulates the AI response.
+        // See the @backend comment above for the real implementation.
         setTimeout(() => {
             const aiMessage: Message = {
                 id: (Date.now() + 1).toString(),
