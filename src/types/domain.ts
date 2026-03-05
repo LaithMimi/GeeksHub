@@ -185,6 +185,7 @@ export interface FileRequest {
     rejectionNote?: string; // Free-text note for rejection
     points?: number; // Legacy: Points awarded if approved
     pointsAwarded?: number; // Actual points awarded (distinct from proposed)
+    fileId?: string; // ID of the created file (populated when request is approved)
 }
 
 // ============================================================================

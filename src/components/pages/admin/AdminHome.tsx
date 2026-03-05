@@ -12,8 +12,8 @@ export default function AdminHome() {
         <div className="space-y-8">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-                <p className="text-muted-foreground mt-1">
+                <h1 className="text-3xl font-display font-bold tracking-tight text-white">Admin Dashboard</h1>
+                <p className="text-white/60 mt-1">
                     Manage file requests and monitor moderation activity.
                 </p>
             </div>
@@ -21,10 +21,10 @@ export default function AdminHome() {
             {/* KPI Cards */}
             <div className="grid gap-4 md:grid-cols-3">
                 {/* Pending */}
-                <Card>
+                <Card className="glass-card bg-transparent border-white/[0.06] text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-                        <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                        <ClipboardList className="h-4 w-4 text-white/60" />
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
@@ -34,14 +34,14 @@ export default function AdminHome() {
                         ) : (
                             <div className="text-2xl font-bold">{stats?.pending ?? 0}</div>
                         )}
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-white/60">
                             Awaiting review
                         </p>
                     </CardContent>
                 </Card>
 
                 {/* Approved Today */}
-                <Card>
+                <Card className="glass-card bg-transparent border-white/[0.06] text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Approved Today</CardTitle>
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -54,14 +54,14 @@ export default function AdminHome() {
                         ) : (
                             <div className="text-2xl font-bold text-green-600">{stats?.approvedToday ?? 0}</div>
                         )}
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-white/60">
                             Files added to catalog
                         </p>
                     </CardContent>
                 </Card>
 
                 {/* Rejected Today */}
-                <Card>
+                <Card className="glass-card bg-transparent border-white/[0.06] text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Rejected Today</CardTitle>
                         <XCircle className="h-4 w-4 text-red-500" />
@@ -74,7 +74,7 @@ export default function AdminHome() {
                         ) : (
                             <div className="text-2xl font-bold text-red-600">{stats?.rejectedToday ?? 0}</div>
                         )}
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-white/60">
                             Requests declined
                         </p>
                     </CardContent>
@@ -82,7 +82,7 @@ export default function AdminHome() {
             </div>
 
             {/* Quick Actions */}
-            <Card>
+            <Card className="glass-card bg-transparent border-white/[0.06] text-white">
                 <CardHeader>
                     <CardTitle>Quick Actions</CardTitle>
                     <CardDescription>Jump directly into moderation tasks</CardDescription>
@@ -111,21 +111,21 @@ export default function AdminHome() {
 
             {/* Info Cards */}
             <div className="grid gap-4 md:grid-cols-2">
-                <Card className="border-dashed">
+                <Card className="border-dashed glass-card bg-transparent border-white/[0.06] text-white">
                     <CardHeader>
                         <CardTitle className="text-base">Keyboard Shortcuts</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground space-y-2">
+                    <CardContent className="text-sm text-white/60 space-y-2">
                         <p><kbd className="px-2 py-1 bg-muted rounded text-xs">Click row</kbd> → Open request details</p>
                         <p><kbd className="px-2 py-1 bg-muted rounded text-xs">Checkbox</kbd> → Select for bulk actions</p>
                         <p>More shortcuts coming soon...</p>
                     </CardContent>
                 </Card>
-                <Card className="border-dashed">
+                <Card className="border-dashed glass-card bg-transparent border-white/[0.06] text-white">
                     <CardHeader>
                         <CardTitle className="text-base">Moderation Guidelines</CardTitle>
                     </CardHeader>
-                    <CardContent className="text-sm text-muted-foreground space-y-2">
+                    <CardContent className="text-sm text-white/60 space-y-2">
                         <p>• <strong>Approve</strong> files that are relevant and high quality</p>
                         <p>• <strong>Reject</strong> duplicates, outdated, or incorrect content</p>
                         <p>• Always provide a reason when rejecting</p>

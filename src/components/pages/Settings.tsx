@@ -13,7 +13,8 @@ import { useState, useEffect } from "react";
 import { Bell, Monitor, Globe, BookOpen, Brain, Clock, CheckCircle, Sun, Moon, Laptop, Palette, Sparkles } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { majors, years, userRequests } from "@/lib/data";
+import { majors } from "@/mock/mock-db";
+import { years } from "@/mock/mock-db";
 import { Link } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -35,12 +36,29 @@ export default function Settings() {
         weeklyDigest: false,
         soundEffects: true,
     });
-    const [defaultMajor, setDefaultMajor] = useState(majors[0]);
-    const [defaultYear, setDefaultYear] = useState(years[0]);
+    const [defaultMajor, setDefaultMajor] = useState(majors[0]?.id ?? "");
+    const [defaultYear, setDefaultYear] = useState(years[0]?.id ?? "");
     const [aiSourceExpanded, setAiSourceExpanded] = useState(true);
     const [aiScope, setAiScope] = useState("file");
-    const [reduceMotion, setReduceMotion] = useState(false);
-    const [compactMode, setCompactMode] = useState(false);
+    const [reduceMotion, setReduceMotion] = useState(() => {
+        const saved = localStorage.getItem("geekshub-reduce-motion");
+        return saved === "true";
+    });
+    const [compactMode, setCompactMode] = useState(() => {
+        const saved = localStorage.getItem("geekshub-compact-mode");
+        return saved === "true";
+    });
+
+    // Apply CSS classes when toggles change
+    useEffect(() => {
+        document.body.classList.toggle("reduce-motion", reduceMotion);
+        localStorage.setItem("geekshub-reduce-motion", String(reduceMotion));
+    }, [reduceMotion]);
+
+    useEffect(() => {
+        document.body.classList.toggle("compact", compactMode);
+        localStorage.setItem("geekshub-compact-mode", String(compactMode));
+    }, [compactMode]);
 
     useEffect(() => {
         const selectedLang = languages.find(l => l.code === language);
@@ -50,12 +68,6 @@ export default function Settings() {
             localStorage.setItem("language", language);
         }
     }, [language]);
-
-    const statusBg: Record<string, string> = {
-        pending: "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-        approved: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-        rejected: "bg-red-500/15 text-red-400 border-red-500/20",
-    };
 
     const themeOptions = [
         {
@@ -214,10 +226,10 @@ export default function Settings() {
                 <GlassSection icon={BookOpen} iconColor="text-purple-400" title="Study Defaults" desc="Pre-fill your search and browse filters.">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <GlassSelect label="Default Major" value={defaultMajor} onValueChange={setDefaultMajor}>
-                            {majors.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                            {majors.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
                         </GlassSelect>
                         <GlassSelect label="Default Year" value={defaultYear} onValueChange={setDefaultYear}>
-                            {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                            {years.map(y => <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>)}
                         </GlassSelect>
                     </div>
                 </GlassSection>
@@ -266,25 +278,10 @@ export default function Settings() {
                     />
                 </GlassSection>
 
-                {/* 6. Active Requests */}
                 <GlassSection icon={Clock} iconColor="text-white/40" title="Active Requests" desc="A quick glance at your file submission statuses.">
-                    {userRequests.length > 0 ? (
-                        <div className="space-y-1.5">
-                            {userRequests.map(req => (
-                                <div key={req.id} className="flex items-center justify-between text-[13px] px-3 py-2.5 rounded-xl hover:bg-white/[0.03] transition-colors">
-                                    <span className="truncate max-w-[200px] text-white/70">{req.title}</span>
-                                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md border ${statusBg[req.status] || statusBg.pending}`}>
-                                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-[13px] text-white/30">No active requests.</p>
-                    )}
-                    <Link to="/uploads" className="inline-block text-[13px] text-purple-400 hover:text-purple-300 hover:underline mt-2 transition-colors">
-                        Manage all uploads
-                    </Link>
+                    <p className="text-[13px] text-white/30">
+                        Visit <Link to="/uploads" className="text-purple-400 hover:text-purple-300 hover:underline transition-colors">Uploads</Link> to see your active requests.
+                    </p>
                 </GlassSection>
 
                 {/* 7. About */}

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { authService } from "@/services/authService";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Loader2, Facebook, Twitter } from "lucide-react";
 
 interface SignInFormProps {
@@ -11,6 +12,8 @@ interface SignInFormProps {
 export default function SignInForm({ onForgotPassword }: SignInFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const { signIn } = useAuth();
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -22,8 +25,8 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
         const password = formData.get("password") as string;
 
         try {
-            await authService.signIn({ email, password });
-            alert("Signed in successfully!");
+            await signIn(email, password);
+            navigate("/");
         } catch (err: any) {
             setError(err.message || "An error occurred.");
         } finally {

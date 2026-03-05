@@ -12,9 +12,8 @@ export default function FileShell() {
     const isMobile = useIsMobile();
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-    // Fetch file data here to ensure it exists before showing content (optional, but good for error boundary)
     const { fileId } = useParams();
-    const { isLoading, isError } = useFile(fileId || "");
+    const { data: file, isLoading, isError } = useFile(fileId || "");
 
     const Content = () => {
         if (isLoading) return (
@@ -55,7 +54,7 @@ export default function FileShell() {
                                 </h2>
                             </div>
                             <div className="flex-1 overflow-hidden">
-                                <AssistantPanel />
+                                <AssistantPanel fileId={fileId} fileTitle={file?.title} />
                             </div>
                         </SheetContent>
                     </Sheet>
@@ -84,7 +83,7 @@ export default function FileShell() {
                             </span>
                         </div>
                         <div className="flex-1 overflow-hidden">
-                            <AssistantPanel />
+                            <AssistantPanel fileId={fileId} fileTitle={file?.title} />
                         </div>
                     </div>
                 </ResizablePanel>

@@ -57,6 +57,7 @@
  */
 
 import { useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import {
     Home,
     History,
@@ -151,6 +152,7 @@ const Breadcrumbs = () => {
 // Glass Sidebar
 function GlassSidebar() {
     const location = useLocation();
+    const { user } = useAuth();
 
     const isActive = (path: string) => {
         if (path === "/") return location.pathname === "/";
@@ -222,11 +224,11 @@ function GlassSidebar() {
                     {/* User */}
                     <div className="flex items-center gap-3 px-1">
                         <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white text-[13px] font-display font-semibold">
-                            D
+                            {user?.avatarInitials ?? "?"}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-medium text-white truncate">Deena</p>
-                            <p className="text-[11px] text-white/35 truncate">student@uni.edu</p>
+                            <p className="text-[13px] font-medium text-white truncate">{user?.displayName ?? "Guest"}</p>
+                            <p className="text-[11px] text-white/35 truncate">{user?.email ?? ""}</p>
                         </div>
                     </div>
                 </div>
@@ -278,7 +280,6 @@ export default function AppShell() {
                         </button>
                         <button className="relative w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
                             <Bell className="h-4 w-4" />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-purple-500 ring-2 ring-black/50" />
                         </button>
                     </div>
                 </header>

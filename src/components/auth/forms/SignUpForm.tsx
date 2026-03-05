@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { authService } from "@/services/authService";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { Loader2, Facebook, Twitter } from "lucide-react";
 
 export default function SignUpForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const { signUp } = useAuth();
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -17,8 +20,8 @@ export default function SignUpForm() {
         const data = Object.fromEntries(formData);
 
         try {
-            await authService.signUp(data as Record<string, string>);
-            alert("Account created!");
+            await signUp(data.name as string, data.email as string, data.password as string);
+            navigate("/");
         } catch (err: any) {
             setError(err.message || "An error occurred.");
         } finally {

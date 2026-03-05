@@ -34,7 +34,15 @@ export const authService = {
         if (email === "error@example.com") {
             throw { message: "Invalid email or password." };
         }
-        return { user: { name: "Demo User", email } };
+        const isAuthAdmin = email.includes("admin");
+        return {
+            user: {
+                id: isAuthAdmin ? "admin1" : "u1",
+                name: isAuthAdmin ? "Admin User" : "Demo User",
+                email,
+                role: isAuthAdmin ? "ADMIN" : "STUDENT"
+            }
+        };
     },
 
     signUp: async ({ name, email }: Record<string, string>) => {
@@ -57,7 +65,14 @@ export const authService = {
         if (email === "taken@example.com") {
             throw { message: "This email is already in use.", field: "email" };
         }
-        return { user: { name, email } };
+        return {
+            user: {
+                id: "u" + Date.now().toString().slice(-4),
+                name,
+                email,
+                role: "STUDENT"
+            }
+        };
     },
 
     requestPasswordReset: async ({ email: _email }: { email: string }) => {

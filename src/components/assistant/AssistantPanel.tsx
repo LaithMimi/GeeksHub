@@ -1,86 +1,12 @@
 /**
  * ============================================================================
- * AI ASSISTANT PANEL – Mock Implementation
+ * AI ASSISTANT PANEL
  * ============================================================================
  *
  * Provides a chat interface for asking questions about the current file,
- * and a (coming soon) notes tab. Currently uses a simulated AI response.
+ * and a notes tab for taking study notes.
  *
- * ============================================================================
- * BACKEND MIGRATION GUIDE
- * ============================================================================
- *
- * 1. Required Backend Endpoints:
- *
- *    POST   /api/assistant/chat
- *      → Sends a message to the AI and receives a response.
- *      → Request body:
- *        {
- *          fileId: string,           // The file the user is viewing
- *          message: string,          // The user's question
- *          conversationHistory: Message[]  // Previous messages for context
- *        }
- *      → Response: { content: string, sources?: { page: number, title: string }[] }
- *      → For streaming, use Server-Sent Events (SSE):
- *        ```ts
- *        const response = await fetch("/api/assistant/chat", {
- *            method: "POST",
- *            headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
- *            body: JSON.stringify({ fileId, message, conversationHistory }),
- *        });
- *        const reader = response.body!.getReader();
- *        // Read chunks and append to assistant message in real-time
- *        ```
- *
- *    GET    /api/me/notes?fileId=:fileId
- *      → Fetches the user's notes for the current file.
- *      → Response: { id: string, content: string, updatedAt: string }[]
- *
- *    POST   /api/me/notes
- *      → Creates/updates a note for the current file.
- *      → Request body: { fileId: string, content: string }
- *      → Response: { id: string, content: string, updatedAt: string }
- *
- * 2. SQL Schema:
- *    ```sql
- *    -- Chat history (optional – can be session-only)
- *    CREATE TABLE chat_sessions (
- *        id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- *        user_id    UUID NOT NULL REFERENCES users(id),
- *        file_id    UUID NOT NULL REFERENCES files(id),
- *        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
- *    );
- *    CREATE TABLE chat_messages (
- *        id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- *        session_id  UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
- *        role        VARCHAR(10) NOT NULL,  -- 'user' | 'assistant'
- *        content     TEXT NOT NULL,
- *        created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
- *    );
- *
- *    -- Notes
- *    CREATE TABLE user_notes (
- *        id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
- *        user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
- *        file_id    UUID NOT NULL REFERENCES files(id),
- *        content    TEXT NOT NULL,
- *        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
- *    );
- *    CREATE UNIQUE INDEX idx_notes_user_file ON user_notes(user_id, file_id);
- *    ```
- *
- * 3. AI Provider Integration:
- *    The backend should call an LLM API (OpenAI, Gemini, etc.):
- *    ```python
- *    # Example FastAPI endpoint
- *    @app.post("/api/assistant/chat")
- *    async def chat(request: ChatRequest, user = Depends(get_current_user)):
- *        # 1. Fetch the file content / embeddings for RAG context
- *        file_context = await get_file_context(request.file_id)
- *        # 2. Build prompt with file context + conversation history
- *        # 3. Call LLM API (stream response for better UX)
- *        # 4. Return response with source citations
- *    ```
+ * @backend See assistantService.ts for migration guide.
  * ============================================================================
  */
 
@@ -89,18 +15,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Send, Sparkles, FileText, MessageCircle, StickyNote, User } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { Bot, Send, Sparkles, FileText, MessageCircle, StickyNote, User, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { sendMessage, getNotes, saveNotes } from "@/services/assistantService";
+import type { AssistantMessage } from "@/services/assistantService";
 
-interface Message {
-    id: string;
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: Date;
+interface AssistantPanelProps {
+    fileId?: string;
+    fileTitle?: string;
 }
 
-export default function AssistantPanel() {
-    const [messages, setMessages] = useState<Message[]>([
+export default function AssistantPanel({ fileId = "", fileTitle = "this file" }: AssistantPanelProps) {
+    const [messages, setMessages] = useState<AssistantMessage[]>([
         {
             id: '1',
             role: 'assistant',
@@ -109,38 +35,55 @@ export default function AssistantPanel() {
         }
     ]);
     const [inputValue, setInputValue] = useState("");
+    const [isTyping, setIsTyping] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Notes state
+    const [noteContent, setNoteContent] = useState("");
+    const [noteSaveStatus, setNoteSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [messages]);
+    }, [messages, isTyping]);
 
-    /**
-     * Sends a message and receives an AI response.
-     * @backend REPLACE the setTimeout mock with a real API call:
-     *
-     *   const response = await fetch("/api/assistant/chat", {
-     *       method: "POST",
-     *       headers: { "Content-Type": "application/json" },
-     *       body: JSON.stringify({
-     *           fileId: currentFileId,       // from route params or context
-     *           message: inputValue,
-     *           conversationHistory: messages,
-     *       }),
-     *   });
-     *   const data = await response.json();
-     *   // data.content = AI response text
-     *   // data.sources = [{ page: 12, title: "Algorithm Complexity" }, ...]
-     *
-     *   For streaming (recommended for better UX):
-     *   Use EventSource or ReadableStream to append tokens as they arrive.
-     */
-    const handleSendMessage = () => {
+    // Load notes on mount/fileId change
+    useEffect(() => {
+        if (!fileId) return;
+        let cancelled = false;
+        getNotes(fileId).then((content) => {
+            if (!cancelled) setNoteContent(content);
+        });
+        return () => { cancelled = true; };
+    }, [fileId]);
+
+    // Debounced note save
+    const handleNoteChange = useCallback((value: string) => {
+        setNoteContent(value);
+
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        if (statusTimeoutRef.current) clearTimeout(statusTimeoutRef.current);
+
+        saveTimeoutRef.current = setTimeout(async () => {
+            if (!fileId) return;
+            setNoteSaveStatus("saving");
+            try {
+                await saveNotes(fileId, value);
+                setNoteSaveStatus("saved");
+                statusTimeoutRef.current = setTimeout(() => setNoteSaveStatus("idle"), 2000);
+            } catch {
+                setNoteSaveStatus("error");
+            }
+        }, 500);
+    }, [fileId]);
+
+    const handleSendMessage = async () => {
         if (!inputValue.trim()) return;
 
-        const userMessage: Message = {
+        const userMessage: AssistantMessage = {
             id: Date.now().toString(),
             role: 'user',
             content: inputValue,
@@ -149,18 +92,28 @@ export default function AssistantPanel() {
 
         setMessages(prev => [...prev, userMessage]);
         setInputValue("");
+        setIsTyping(true);
 
-        // @backend REPLACE: This setTimeout simulates the AI response.
-        // See the @backend comment above for the real implementation.
-        setTimeout(() => {
-            const aiMessage: Message = {
+        try {
+            const response = await sendMessage(fileId, inputValue, messages);
+            const aiMessage: AssistantMessage = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: `I understand you're asking about "${userMessage.content}". As an AI study assistant, I can help explain this concept based on the document content.\n\nHere is the explanation...\n\n**Sources:**\n• Page 12: "Algorithm Complexity"\n• Page 45: "Big O Notation Examples"`,
+                content: response,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, aiMessage]);
-        }, 1000);
+        } catch {
+            const errorMessage: AssistantMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: "Something went wrong. Please try again.",
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorMessage]);
+        } finally {
+            setIsTyping(false);
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -203,7 +156,7 @@ export default function AssistantPanel() {
                                                 <span className="font-medium text-sm">GeeksHub AI</span>
                                                 <Badge variant="secondary" className="text-xs">
                                                     <Sparkles className="h-3 w-3 mr-1" />
-                                                    GPT-4
+                                                    AI
                                                 </Badge>
                                             </div>
                                         )}
@@ -223,6 +176,20 @@ export default function AssistantPanel() {
                                     )}
                                 </div>
                             ))}
+
+                            {/* Typing indicator */}
+                            {isTyping && (
+                                <div className="flex gap-3 animate-fade-in">
+                                    <div className="shrink-0 w-8 h-8 rounded-full gradient-bg flex items-center justify-center">
+                                        <Bot className="h-4 w-4 text-white" />
+                                    </div>
+                                    <div className="bg-muted/50 rounded-2xl rounded-tl-sm p-4 flex items-center gap-1.5">
+                                        <span className="w-2 h-2 rounded-full bg-white/40 animate-bounce [animation-delay:0ms]" />
+                                        <span className="w-2 h-2 rounded-full bg-white/40 animate-bounce [animation-delay:150ms]" />
+                                        <span className="w-2 h-2 rounded-full bg-white/40 animate-bounce [animation-delay:300ms]" />
+                                    </div>
+                                </div>
+                            )}
                             <div ref={scrollRef} />
                         </div>
                     </ScrollArea>
@@ -236,38 +203,62 @@ export default function AssistantPanel() {
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 onKeyDown={handleKeyDown}
+                                disabled={isTyping}
                             />
                             <Button
                                 size="icon"
                                 className="absolute right-2 bottom-2 h-10 w-10 rounded-full gradient-bg hover:opacity-90 transition-opacity"
                                 onClick={handleSendMessage}
-                                disabled={!inputValue.trim()}
+                                disabled={!inputValue.trim() || isTyping}
                             >
-                                <Send className="h-4 w-4" />
+                                {isTyping ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Send className="h-4 w-4" />
+                                )}
                             </Button>
                         </div>
                         <div className="flex items-center justify-center gap-2 mt-3">
                             <FileText className="h-3 w-3 text-muted-foreground" />
                             <p className="text-xs text-muted-foreground">
-                                Answering from <span className="font-medium text-foreground">Introduction to Algorithms.pdf</span>
+                                Answering from <span className="font-medium text-foreground">{fileTitle}</span>
                             </p>
                         </div>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="notes" className="flex-1 p-6 m-0">
-                    <div className="h-full flex flex-col items-center justify-center text-center">
-                        <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                            <StickyNote className="h-8 w-8 text-muted-foreground" />
+                <TabsContent value="notes" className="flex-1 flex flex-col m-0 p-0 overflow-hidden">
+                    <div className="flex-1 p-4 flex flex-col">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <StickyNote className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">Your Notes</span>
+                            </div>
+                            {noteSaveStatus === "saving" && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Loader2 className="h-3 w-3 animate-spin" /> Saving...
+                                </span>
+                            )}
+                            {noteSaveStatus === "saved" && (
+                                <span className="text-xs text-emerald-400 flex items-center gap-1 animate-fade-in">
+                                    <CheckCircle className="h-3 w-3" /> Saved ✓
+                                </span>
+                            )}
+                            {noteSaveStatus === "error" && (
+                                <span className="text-xs text-red-400 flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" /> Failed to save
+                                </span>
+                            )}
                         </div>
-                        <h3 className="font-semibold mb-2">Smart Notes</h3>
-                        <p className="text-sm text-muted-foreground max-w-[200px]">
-                            Take notes while studying. AI will help organize and summarize them.
+                        <Textarea
+                            placeholder="Take notes while studying... Your notes are saved automatically."
+                            className="flex-1 resize-none bg-muted/30 border-0 focus-visible:ring-1 focus-visible:ring-primary rounded-xl text-sm"
+                            value={noteContent}
+                            onChange={(e) => handleNoteChange(e.target.value)}
+                        />
+                        <p className="text-[11px] text-muted-foreground mt-2 text-center">
+                            Notes for <span className="font-medium">{fileTitle}</span>
                         </p>
-                        <Button variant="outline" className="mt-4">
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            Coming Soon
-                        </Button>
                     </div>
                 </TabsContent>
             </Tabs>

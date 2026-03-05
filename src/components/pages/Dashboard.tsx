@@ -23,6 +23,7 @@ import { useReputation } from "@/queries/useReputation";
 import { useMyRequests } from "@/queries/useRequests";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
 import { useTasks, type Task } from "@/hooks/useTasks";
+import { useAuth } from "@/context/AuthContext";
 import {
     formatDistanceToNow, format, isToday, isTomorrow, isPast,
     startOfMonth, endOfMonth, eachDayOfInterval, getDay,
@@ -30,14 +31,13 @@ import {
     startOfWeek, addDays, addWeeks,
 } from "date-fns";
 
-const DEMO_USER_ID = "u1";
 
-// Metric card data
+// Metric card data — placeholder values until backend analytics are available
 const metrics = [
-    { label: "Study Hours", value: "128h", change: "+12.5%", positive: true, hero: true },
-    { label: "Courses Active", value: "12", change: "+3", positive: true },
-    { label: "Completion Rate", value: "78%", change: "+5.2%", positive: true },
-    { label: "XP Earned", value: "2,350", change: "+240", positive: true },
+    { label: "Study Hours", value: "—", change: "", positive: true, hero: true },
+    { label: "Courses Active", value: "—", change: "", positive: true },
+    { label: "Completion Rate", value: "—", change: "", positive: true },
+    { label: "XP Earned", value: "—", change: "", positive: true },
 ];
 
 // Activity data
@@ -633,11 +633,10 @@ function formatDeadline(dateStr: string): { label: string; urgent: boolean } {
 // Recent Courses (derived from recent files)
 // ────────────────────────────────────────────
 const COURSE_META: Record<string, { name: string; meta: string; color: string }> = {
-    "cs201": { name: "Data Structures", meta: "CS • Fall 2024 • Dr. Ahmad", color: "purple" },
-    "cs301": { name: "Web Development", meta: "CS • Fall 2024 • Dr. Salim", color: "green" },
-    "eng201": { name: "Thermodynamics", meta: "ENG • Fall 2024 • Dr. Noor", color: "red" },
-    "cs101": { name: "Intro to CS", meta: "CS • Fall 2024 • Dr. Maha", color: "purple" },
-    "math201": { name: "Linear Algebra", meta: "MATH • Fall 2024 • Dr. Kareem", color: "green" },
+    "cs101": { name: "Intro to Algorithms", meta: "CS • Fall 2024 • Dr. Smith", color: "purple" },
+    "cs102": { name: "Data Structures", meta: "CS • Spring 2025 • Dr. Smith", color: "green" },
+    "math201": { name: "Linear Algebra", meta: "MATH • Fall 2024 • Prof. Johnson", color: "green" },
+    "phys101": { name: "Classical Mechanics", meta: "PHYS • Fall 2024 • Dr. Emily Davis", color: "red" },
 };
 
 const progressColors: Record<string, string> = {
@@ -656,9 +655,11 @@ const progressGlows: Record<string, string> = {
 // Main Dashboard
 // ────────────────────────────────────────────
 export default function Dashboard() {
+    const { user } = useAuth();
+    const userId = user?.id ?? "u1";
     const { data: recentFiles, isLoading: isLoadingRecent, isError: isErrorRecent } = useRecentFiles();
-    const { data: reputation, isLoading: isLoadingRep } = useReputation(DEMO_USER_ID);
-    const { data: _requests, isLoading: isLoadingRequests } = useMyRequests(DEMO_USER_ID);
+    const { data: reputation, isLoading: isLoadingRep } = useReputation(userId);
+    const { data: _requests, isLoading: isLoadingRequests } = useMyRequests(userId);
     usePinnedCourses();
 
     const { tasks, taskDates, addTask, toggleTask, deleteTask } = useTasks();
@@ -701,12 +702,12 @@ export default function Dashboard() {
             if (recentCourses.length >= 3) break;
         }
     }
-    // Fallback if no recent files
+    // Fallback if no recent files — use IDs that match mock-db
     if (recentCourses.length === 0) {
         recentCourses.push(
-            { id: "cs201", lastAccess: "", ...COURSE_META["cs201"] },
-            { id: "cs301", lastAccess: "", ...COURSE_META["cs301"] },
-            { id: "eng201", lastAccess: "", ...COURSE_META["eng201"] },
+            { id: "cs101", lastAccess: "", ...COURSE_META["cs101"] },
+            { id: "math201", lastAccess: "", ...COURSE_META["math201"] },
+            { id: "phys101", lastAccess: "", ...COURSE_META["phys101"] },
         );
     }
 
@@ -802,7 +803,7 @@ export default function Dashboard() {
                             {recentCourses.map((course, i) => (
                                 <Link
                                     key={course.id}
-                                    to={`/courses?course=${course.id}`}
+                                    to={`/courses/${course.id}/materials`}
                                     className={`glass-card overflow-hidden group cursor-pointer animate-fade-in-up opacity-0 stagger-${i + 1}`}
                                 >
                                     <div className="h-[120px] bg-white/[0.03] flex items-center justify-center border-b border-white/[0.06]">
@@ -823,7 +824,7 @@ export default function Dashboard() {
                                             <div className="w-full h-1 rounded-full bg-white/[0.06] overflow-hidden">
                                                 <div
                                                     className={`h-full rounded-full ${progressColors[course.color]} ${progressGlows[course.color]} transition-all`}
-                                                    style={{ width: `${Math.floor(Math.random() * 60 + 20)}%` }}
+                                                    style={{ width: `50%` }}
                                                 />
                                             </div>
                                         </div>

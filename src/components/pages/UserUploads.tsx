@@ -1,16 +1,21 @@
 import { useState } from "react";
-import { FileText, Search, AlertCircle, CheckCircle, Clock, XCircle, ChevronLeft, Zap, Loader2, Plus } from "lucide-react";
+import { FileText, Search, AlertCircle, CheckCircle, Clock, XCircle, ChevronLeft, Zap, Loader2, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useMyRequests } from "@/queries/useRequests";
+import { useMyRequests, useWithdrawRequest } from "@/queries/useRequests";
 import RequestFileModal from "@/components/features/RequestFileModal";
 import { formatDistanceToNow } from "date-fns";
+import type { FileRequest } from "@/types/domain";
+import { toast } from "sonner";
 
 const DEMO_USER_ID = "u1";
 
 export default function UserUploads() {
     const [isRequestOpen, setIsRequestOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
     const { data: userRequests, isLoading, isError } = useMyRequests(DEMO_USER_ID);
+    const { mutate: withdrawRequest, isPending: isDeleting } = useWithdrawRequest();
 
     const getStatusIcon = (status: string) => {
         switch (status) {
@@ -26,6 +31,21 @@ export default function UserUploads() {
             case "rejected": return "bg-red-500/15 text-red-400 border-red-500/20";
             default: return "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
         }
+    };
+
+    const handleDelete = (request: FileRequest) => {
+        withdrawRequest(
+            { requestId: request.id, userId: DEMO_USER_ID },
+            {
+                onSuccess: () => {
+                    setDeleteConfirmId(null);
+                    toast.success(`"${request.title}" removed`);
+                },
+                onError: () => {
+                    toast.error("Failed to delete request");
+                },
+            }
+        );
     };
 
     if (isLoading) {
@@ -50,7 +70,16 @@ export default function UserUploads() {
         );
     }
 
-    const totalPoints = userRequests.reduce((acc, curr) => acc + (curr.points || 0), 0);
+    // Filter by search query
+    const filteredRequests = searchQuery.trim()
+        ? userRequests.filter((r) =>
+            r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            r.courseId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            r.lecturerName.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        : userRequests;
+
+    const totalPoints = userRequests.reduce((acc, curr) => acc + (curr.pointsAwarded || curr.points || 0), 0);
 
     return (
         <div className="animate-fade-in space-y-8">
@@ -110,6 +139,8 @@ export default function UserUploads() {
                     <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
                     <input
                         placeholder="Search uploads..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full h-10 rounded-xl liquid-glass-subtle ps-10 pe-4 text-[14px] text-white placeholder:text-white/30 outline-none focus:border-purple-500/40 transition-colors"
                     />
                 </div>
@@ -117,14 +148,16 @@ export default function UserUploads() {
 
             {/* List */}
             <div className="liquid-glass rounded-2xl overflow-hidden">
-                {userRequests.length === 0 ? (
+                {filteredRequests.length === 0 ? (
                     <div className="text-center py-16 text-white/30">
                         <FileText className="mx-auto h-10 w-10 opacity-30 mb-3" />
-                        <p className="text-[14px]">No uploads yet.</p>
+                        <p className="text-[14px]">
+                            {searchQuery.trim() ? "No uploads match your search." : "No uploads yet."}
+                        </p>
                     </div>
                 ) : (
                     <div className="divide-y divide-white/[0.06]">
-                        {userRequests.map((file) => (
+                        {filteredRequests.map((file) => (
                             <div key={file.id} className="flex items-center justify-between px-6 py-5 hover:bg-white/[0.03] transition-colors gap-4">
                                 <div className="flex items-start gap-4">
                                     <div className="mt-0.5 w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
@@ -137,10 +170,10 @@ export default function UserUploads() {
                                                 {getStatusIcon(file.status)}
                                                 <span className="capitalize">{file.status}</span>
                                             </span>
-                                            {file.status === "approved" && file.points && (
+                                            {file.status === "approved" && (file.pointsAwarded || file.points) && (
                                                 <span className="inline-flex items-center gap-1 text-[11px] text-purple-400 px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/20">
                                                     <Zap className="h-3 w-3" />
-                                                    +{file.points} pts
+                                                    +{file.pointsAwarded || file.points} pts
                                                 </span>
                                             )}
                                         </div>
@@ -150,23 +183,49 @@ export default function UserUploads() {
                                         {file.status === "rejected" && file.rejectionReason && (
                                             <div className="flex items-center gap-2 text-[12px] text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/15 w-fit mt-1">
                                                 <AlertCircle className="h-3 w-3 shrink-0" />
-                                                <span>{file.rejectionReason}</span>
+                                                <span>{file.rejectionNote || file.rejectionReason}</span>
                                             </div>
                                         )}
                                     </div>
                                 </div>
                                 <div className="shrink-0">
                                     {file.status === "rejected" ? (
-                                        <button className="text-[12px] px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors">
-                                            Delete
-                                        </button>
-                                    ) : (
+                                        deleteConfirmId === file.id ? (
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleDelete(file)}
+                                                    disabled={isDeleting}
+                                                    className="text-[12px] px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors flex items-center gap-1.5"
+                                                >
+                                                    {isDeleting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                                                    Confirm
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirmId(null)}
+                                                    className="text-[12px] px-3 py-1.5 rounded-lg border border-white/[0.08] text-white/50 hover:text-white/80 transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => setDeleteConfirmId(file.id)}
+                                                className="text-[12px] px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 hover:bg-red-500/10 transition-colors"
+                                            >
+                                                Delete
+                                            </button>
+                                        )
+                                    ) : file.status === "approved" && file.fileId ? (
                                         <Link
-                                            to={`/courses/${file.courseId}/files/123`}
+                                            to={`/courses/${file.courseId}/files/${file.fileId}`}
                                             className="text-[12px] px-3 py-1.5 rounded-lg border border-white/[0.1] text-white/50 hover:text-white/80 hover:bg-white/[0.04] transition-colors"
                                         >
                                             View
                                         </Link>
+                                    ) : (
+                                        <span className="text-[12px] px-3 py-1.5 rounded-lg border border-white/[0.06] text-white/20 cursor-not-allowed">
+                                            {file.status === "pending" ? "Pending" : "View"}
+                                        </span>
                                     )}
                                 </div>
                             </div>

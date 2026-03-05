@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ChevronRight, FileText, FolderOpen, Plus, Sparkles, Loader2, AlertCircle, Star } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,15 @@ import type { MaterialType } from "@/types/domain";
 const DEMO_TYPES: MaterialType[] = ["Slides", "Homeworks", "Past Papers", "Notes"];
 
 export default function Courses() {
+    const [searchParams] = useSearchParams();
+    const initialCourseId = searchParams.get("course");
+    const initialCourse = initialCourseId ? allCourses.find(c => c.id === initialCourseId) : null;
+
     const [selections, setSelections] = useState({
-        major: "",
+        major: initialCourse?.majorId || "",
         year: "",
-        semester: "",
-        course: "",
+        semester: initialCourse?.semesterId || "",
+        course: initialCourseId || "",
         lecturer: "",
         type: ""
     });
