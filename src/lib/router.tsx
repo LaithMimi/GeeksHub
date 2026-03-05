@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Link, useParams } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import AppShell from "@/components/layout/AppShell";
 import AdminShell from "@/components/layout/AdminShell";
 import CourseShell from "@/components/layout/CourseShell";
@@ -11,31 +11,17 @@ import Settings from "@/components/pages/Settings";
 import Courses from "@/components/pages/Courses";
 import AuthPage from "@/pages/Auth/AuthPage";
 import ResetPasswordPage from "@/pages/Auth/ResetPasswordPage";
+import RouteError from "@/components/errors/RouteError";
+
+// Course Pages
+import CourseMaterials from "@/components/pages/CourseMaterials";
+import CourseNotes from "@/components/pages/CourseNotes";
+import CourseExams from "@/components/pages/CourseExams";
+
 // Admin Pages
 import AdminHome from "@/components/pages/admin/AdminHome";
 import ModerationQueue from "@/components/pages/admin/ModerationQueue";
 import AuditLog from "@/components/pages/admin/AuditLog";
-
-// Materials View Component
-function MaterialsView() {
-    const { courseId } = useParams();
-    return (
-        <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Materials</h2>
-            <ul className="space-y-2">
-                <li>
-                    <Link
-                        to={`/courses/${courseId}/files/123`}
-                        className="block p-2 border rounded hover:bg-slate-50"
-                    >
-                        Introduction to Algorithms.pdf
-                        <span className="block text-xs text-muted-foreground">Click to open Study View</span>
-                    </Link>
-                </li>
-            </ul>
-        </div>
-    );
-}
 
 export const router = createBrowserRouter([
     {
@@ -49,9 +35,8 @@ export const router = createBrowserRouter([
     {
         path: "/",
         element: <AppShell />,
-        errorElement: <div className="p-8">Something went wrong (AppShell Error Boundary)</div>,
+        errorElement: <RouteError name="AppShell" />,
         children: [
-
             {
                 index: true,
                 element: <Dashboard />,
@@ -78,7 +63,7 @@ export const router = createBrowserRouter([
                     {
                         path: ":courseId",
                         element: <CourseShell />,
-                        errorElement: <div className="p-8">Something went wrong (CourseShell Error Boundary)</div>,
+                        errorElement: <RouteError name="CourseShell" />,
                         children: [
                             {
                                 index: true,
@@ -86,15 +71,15 @@ export const router = createBrowserRouter([
                             },
                             {
                                 path: "materials",
-                                element: <MaterialsView />,
+                                element: <CourseMaterials />,
                             },
                             {
                                 path: "notes",
-                                element: <div>Notes View</div>,
+                                element: <CourseNotes />,
                             },
                             {
                                 path: "exams",
-                                element: <div>Past Exams View</div>,
+                                element: <CourseExams />,
                             },
                             {
                                 path: "files/:fileId",
@@ -116,7 +101,7 @@ export const router = createBrowserRouter([
     {
         path: "/admin",
         element: <AdminShell />,
-        errorElement: <div className="p-8">Something went wrong (Admin Error Boundary)</div>,
+        errorElement: <RouteError name="Admin" />,
         children: [
             {
                 index: true,
@@ -133,3 +118,4 @@ export const router = createBrowserRouter([
         ],
     },
 ]);
+

@@ -1,13 +1,13 @@
 import type {
-    Course,
-    File,
-    FileRequest,
-    Major,
-    Semester,
-    Lecturer,
-    Contributor,
-    PointsTransaction,
-    AuditLogEntry
+  Course,
+  File,
+  FileRequest,
+  Major,
+  Semester,
+  Lecturer,
+  Contributor,
+  PointsTransaction,
+  AuditLogEntry
 } from "@/types/domain";
 
 /**
@@ -140,61 +140,61 @@ export const randomDelay = (min = 200, max = 600) => delay(Math.floor(Math.rando
 // -- Seed Data --
 
 export const majors: Major[] = [
-    { id: "cs", name: "Computer Science", slug: "sem" },
-    { id: "math", name: "Mathematics", slug: "math" },
-    { id: "phys", name: "Physics", slug: "phys" }
+  { id: "cs", name: "Computer Science", slug: "sem" },
+  { id: "math", name: "Mathematics", slug: "math" },
+  { id: "phys", name: "Physics", slug: "phys" }
 ];
 
 export const semesters: Semester[] = [
-    { id: "fall2024", name: "Fall 2024" },
-    { id: "spring2025", name: "Spring 2025" }
+  { id: "fall2024", name: "Fall 2024" },
+  { id: "spring2025", name: "Spring 2025" }
 ];
 
 export const years = ["Freshman", "Sophomore", "Junior", "Senior"].map((y, i) => ({ id: String(i + 1), label: y }));
 
 export const lecturers: Lecturer[] = [
-    { id: "l1", name: "Dr. Smith" },
-    { id: "l2", name: "Prof. Johnson" },
-    { id: "l3", name: "Dr. Emily Davis" },
-    { id: "l4", name: "TA. Mike" }
+  { id: "l1", name: "Dr. Smith" },
+  { id: "l2", name: "Prof. Johnson" },
+  { id: "l3", name: "Dr. Emily Davis" },
+  { id: "l4", name: "TA. Mike" }
 ];
 
 export const courses: Course[] = [
-    { id: "cs101", code: "CS101", name: "Introduction to Algorithms", term: "Fall 2024", color: "from-violet-500 to-purple-600", progress: 65, majorId: "cs", semesterId: "fall2024" },
-    { id: "cs102", code: "CS102", name: "Data Structures", term: "Spring 2025", color: "from-violet-500 to-purple-600", majorId: "cs", semesterId: "spring2025" },
-    { id: "math201", code: "MATH201", name: "Linear Algebra", term: "Fall 2024", color: "from-blue-500 to-cyan-500", progress: 42, majorId: "math", semesterId: "fall2024" },
-    { id: "math202", code: "MATH202", name: "Calculus II", term: "Spring 2025", color: "from-blue-500 to-cyan-500", majorId: "math", semesterId: "spring2025" },
-    { id: "phys101", code: "PHYS101", name: "Classical Mechanics", term: "Fall 2024", color: "from-emerald-500 to-teal-500", progress: 88, majorId: "phys", semesterId: "fall2024" },
-    { id: "phys102", code: "PHYS102", name: "Electromagnetism", term: "Spring 2025", color: "from-emerald-500 to-teal-500", majorId: "phys", semesterId: "spring2025" }
+  { id: "cs101", code: "CS101", name: "Introduction to Algorithms", term: "Fall 2024", color: "from-violet-500 to-purple-600", progress: 65, majorId: "cs", semesterId: "fall2024" },
+  { id: "cs102", code: "CS102", name: "Data Structures", term: "Spring 2025", color: "from-violet-500 to-purple-600", majorId: "cs", semesterId: "spring2025" },
+  { id: "math201", code: "MATH201", name: "Linear Algebra", term: "Fall 2024", color: "from-blue-500 to-cyan-500", progress: 42, majorId: "math", semesterId: "fall2024" },
+  { id: "math202", code: "MATH202", name: "Calculus II", term: "Spring 2025", color: "from-blue-500 to-cyan-500", majorId: "math", semesterId: "spring2025" },
+  { id: "phys101", code: "PHYS101", name: "Classical Mechanics", term: "Fall 2024", color: "from-emerald-500 to-teal-500", progress: 88, majorId: "phys", semesterId: "fall2024" },
+  { id: "phys102", code: "PHYS102", name: "Electromagnetism", term: "Spring 2025", color: "from-emerald-500 to-teal-500", majorId: "phys", semesterId: "spring2025" }
 ];
 
 // Mutable state for the session
 export const files: File[] = [
-    { id: "123", title: "Introduction to Algorithms.pdf", type: "Notes", lecturer: "Dr. Smith", date: "Oct 24, 2024", size: "2.4 MB", courseId: "cs101", status: "approved", points: 20 },
-    { id: "124", title: "Sorting Algorithms.pptx", type: "Slides", lecturer: "Dr. Smith", date: "Oct 26, 2024", size: "12 MB", courseId: "cs101", status: "approved", points: 15 },
-    { id: "125", title: "Homework 3 Solutions.pdf", type: "Homeworks", lecturer: "TA. Mike", date: "Nov 01, 2024", size: "1.1 MB", courseId: "cs101", status: "approved", points: 10 },
-    { id: "126", title: "Linear Algebra Notes.pdf", type: "Notes", lecturer: "Prof. Johnson", date: "5 hours ago", size: "1.8 MB", courseId: "math201", status: "approved" },
-    { id: "127", title: "Physics Lab Report.docx", type: "Homeworks", lecturer: "Dr. Emily Davis", date: "Yesterday", size: "3.5 MB", courseId: "phys101", status: "approved" },
+  { id: "123", title: "Introduction to Algorithms.pdf", type: "Notes", lecturer: "Dr. Smith", date: "Oct 24, 2024", size: "2.4 MB", courseId: "cs101", status: "approved", points: 20 },
+  { id: "124", title: "Sorting Algorithms.pptx", type: "Slides", lecturer: "Dr. Smith", date: "Oct 26, 2024", size: "12 MB", courseId: "cs101", status: "approved", points: 15 },
+  { id: "125", title: "Homework 3 Solutions.pdf", type: "Homeworks", lecturer: "TA. Mike", date: "Nov 01, 2024", size: "1.1 MB", courseId: "cs101", status: "approved", points: 10 },
+  { id: "126", title: "Linear Algebra Notes.pdf", type: "Notes", lecturer: "Prof. Johnson", date: "5 hours ago", size: "1.8 MB", courseId: "math201", status: "approved" },
+  { id: "127", title: "Physics Lab Report.docx", type: "Homeworks", lecturer: "Dr. Emily Davis", date: "Yesterday", size: "3.5 MB", courseId: "phys101", status: "approved" },
 ];
 
 export const fileRequests: FileRequest[] = [
-    { id: "req1", userId: "u1", uploaderName: "John Doe", title: "Midterm Review.pdf", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-27T10:00:00Z", status: "pending", courseId: "cs101" },
-    { id: "req2", userId: "u1", uploaderName: "John Doe", title: "Old Syllabus.docx", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-20T09:00:00Z", status: "rejected", rejectionReason: "OUTDATED", rejectionNote: "This syllabus is from 2020", courseId: "cs101" },
-    { id: "req3", userId: "u1", uploaderName: "John Doe", title: "Calculus Cheat Sheet.pdf", type: "Notes", lecturerName: "Prof. Johnson", lecturerId: "l2", createdAt: "2024-12-20T14:00:00Z", status: "approved", pointsAwarded: 25, reviewedAt: "2024-12-21T10:00:00Z", reviewedById: "admin1", courseId: "math201" },
-    { id: "req4", userId: "u1", uploaderName: "John Doe", title: "Physics Lab Data.xlsx", type: "Homeworks", lecturerName: "Dr. Emily Davis", lecturerId: "l3", createdAt: "2024-12-22T11:00:00Z", status: "approved", pointsAwarded: 15, reviewedAt: "2024-12-23T09:00:00Z", reviewedById: "admin1", courseId: "phys101" },
-    // Additional pending requests for admin testing
-    { id: "req5", userId: "u2", uploaderName: "Jane Smith", title: "Algorithm Complexity Notes.pdf", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-26T14:30:00Z", status: "pending", courseId: "cs101" },
-    { id: "req6", userId: "u3", uploaderName: "Bob Wilson", title: "Sorting Visualizations.pptx", type: "Slides", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-26T16:00:00Z", status: "pending", courseId: "cs101" },
-    { id: "req7", userId: "u2", uploaderName: "Jane Smith", title: "Matrix Operations Guide.pdf", type: "Notes", lecturerName: "Prof. Johnson", lecturerId: "l2", createdAt: "2024-12-27T08:00:00Z", status: "pending", courseId: "math201" },
-    { id: "req8", userId: "u4", uploaderName: "Alice Brown", title: "Past Exam 2023.pdf", type: "Past Papers", lecturerName: "Dr. Emily Davis", lecturerId: "l3", createdAt: "2024-12-27T09:30:00Z", status: "pending", courseId: "phys101" },
+  { id: "req1", userId: "u1", uploaderName: "John Doe", title: "Midterm Review.pdf", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-27T10:00:00Z", status: "pending", courseId: "cs101" },
+  { id: "req2", userId: "u1", uploaderName: "John Doe", title: "Old Syllabus.docx", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-20T09:00:00Z", status: "rejected", rejectionReason: "OUTDATED", rejectionNote: "This syllabus is from 2020", courseId: "cs101" },
+  { id: "req3", userId: "u1", uploaderName: "John Doe", title: "Calculus Cheat Sheet.pdf", type: "Notes", lecturerName: "Prof. Johnson", lecturerId: "l2", createdAt: "2024-12-20T14:00:00Z", status: "approved", pointsAwarded: 25, reviewedAt: "2024-12-21T10:00:00Z", reviewedById: "admin1", courseId: "math201" },
+  { id: "req4", userId: "u1", uploaderName: "John Doe", title: "Physics Lab Data.xlsx", type: "Homeworks", lecturerName: "Dr. Emily Davis", lecturerId: "l3", createdAt: "2024-12-22T11:00:00Z", status: "approved", pointsAwarded: 15, reviewedAt: "2024-12-23T09:00:00Z", reviewedById: "admin1", courseId: "phys101" },
+  // Additional pending requests for admin testing
+  { id: "req5", userId: "u2", uploaderName: "Jane Smith", title: "Algorithm Complexity Notes.pdf", type: "Notes", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-26T14:30:00Z", status: "pending", courseId: "cs101" },
+  { id: "req6", userId: "u3", uploaderName: "Bob Wilson", title: "Sorting Visualizations.pptx", type: "Slides", lecturerName: "Dr. Smith", lecturerId: "l1", createdAt: "2024-12-26T16:00:00Z", status: "pending", courseId: "cs101" },
+  { id: "req7", userId: "u2", uploaderName: "Jane Smith", title: "Matrix Operations Guide.pdf", type: "Notes", lecturerName: "Prof. Johnson", lecturerId: "l2", createdAt: "2024-12-27T08:00:00Z", status: "pending", courseId: "math201" },
+  { id: "req8", userId: "u4", uploaderName: "Alice Brown", title: "Past Exam 2023.pdf", type: "Past Papers", lecturerName: "Dr. Emily Davis", lecturerId: "l3", createdAt: "2024-12-27T09:30:00Z", status: "pending", courseId: "phys101" },
 ];
 
 export const topContributors: Contributor[] = [
-    { id: "c1", name: "Alex Chen", avatar: "AC", points: 1250, badge: "Gold", major: "Computer Science" },
-    { id: "c2", name: "Sarah Jones", avatar: "SJ", points: 980, badge: "Silver", major: "Mathematics" },
-    { id: "c3", name: "Mike Ross", avatar: "MR", points: 850, badge: "Bronze", major: "Physics" },
-    { id: "c4", name: "Emily White", avatar: "EW", points: 720, badge: "Contributor", major: "Computer Science" },
-    { id: "c5", name: "David Kim", avatar: "DK", points: 690, badge: "Contributor", major: "Mathematics" },
+  { id: "c1", name: "Alex Chen", avatar: "AC", points: 1250, badge: "Gold", major: "Computer Science" },
+  { id: "c2", name: "Sarah Jones", avatar: "SJ", points: 980, badge: "Silver", major: "Mathematics" },
+  { id: "c3", name: "Mike Ross", avatar: "MR", points: 850, badge: "Bronze", major: "Physics" },
+  { id: "c4", name: "Emily White", avatar: "EW", points: 720, badge: "Contributor", major: "Computer Science" },
+  { id: "c5", name: "David Kim", avatar: "DK", points: 690, badge: "Contributor", major: "Mathematics" },
 ];
 
 export const pointsTransactions: PointsTransaction[] = [];
@@ -207,8 +207,8 @@ export const recentFiles: any[] = [];
 
 // Demo admin user
 export const DEMO_ADMIN = {
-    id: "admin1",
-    name: "Admin User",
-    role: "ADMIN" as const
+  id: "admin1",
+  name: "Admin User",
+  role: "ADMIN" as const
 };
 
