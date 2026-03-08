@@ -1,6 +1,7 @@
 import datetime
 import os
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlmodel import Session, select
 from typing import List, Optional
@@ -16,12 +17,27 @@ storage_client = storage.Client()
 bucket_name = os.getenv("BUCKET_NAME")
 
 # Admin Helper
+from auth0.management import Auth0
+
 def get_auth0_admin():
     try:
         domain = os.getenv("AUTH0_DOMAIN")
-        get_token = GetToken(domain, os.getenv("AUTH0_M2M_ID"), client_secret=os.getenv("AUTH0_M2M_SECRET"))
-        token = get_token.client_credentials(f'https://{domain}/api/v2/')
-        return Auth0(domain, token['access_token'])
+        # 1. Get the token as before
+        get_token = GetToken(
+            domain, 
+            os.getenv("AUTH0_M2M_ID"), 
+            client_secret=os.getenv("AUTH0_M2M_SECRET")
+        )
+        token_data = get_token.client_credentials(f'https://{domain}/api/v2/')
+        
+        # 2. Initialize using the NEW keyword names from your help output
+        # tenant_domain: the 'domain' from your .env
+        # token: the access_token string
+        return Auth0(
+            tenant_domain=domain, 
+            token=token_data['access_token']
+        )
+        
     except Exception as e:
         print(f"Auth0 Admin Error: {e}")
         return None
@@ -35,7 +51,25 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="GeeksHub API", lifespan=lifespan)
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,   # Allows cookies to be sent in cross-origin requests
+    allow_methods=["*"],  # Allows GET, POST, OPTIONS, etc.
+    allow_headers=["*"],  # Allows the Authorization header for JWTs
+)
+
 # --- PUBLIC ROUTES ---
+
+@app.get("/api/v1/health")
+def health_check(session: Session = Depends(get_session)):
+    try:
+        # Try a simple query to Neon
+        session.exec(select(1)).first()
+        return {"status": "online", "database": "connected"}
+    except Exception:
+        return {"status": "online", "database": "disconnected"}
 
 @app.post("/api/v1/signup")
 def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
@@ -54,13 +88,13 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
     
     try:
         # 2. Create user in Auth0
-        auth0_user = admin.users.create({
-            "email": clean_email,
-            "password": payload.password,
-            "name": payload.username,
-            "connection": "Username-Password-Authentication"
-        })
-        auth0_id = auth0_user['user_id']
+        auth0_user = admin.users.create(
+            email=clean_email,
+            password=payload.password,
+            name=payload.username,
+            connection="Username-Password-Authentication"
+        )
+        auth0_id = auth0_user.user_id
         
         # 3. Save to Neon DB
         new_user = User(
@@ -71,8 +105,8 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
         )
         session.add(new_user)
         session.commit()
-        
-        return {"message": "Account created! You can now sign in."}
+        session.refresh(new_user)
+        return new_user
 
     except Exception as e:
         # ROLLBACK: If we created the Auth0 user but the DB failed, delete the Auth0 user
@@ -93,17 +127,28 @@ def sign_in(payload: UserSignIn, session: Session = Depends(get_session)):
     domain = os.getenv("AUTH0_DOMAIN")
     try:
         get_token = GetToken(domain, os.getenv("AUTH0_M2M_ID"), client_secret=os.getenv("AUTH0_M2M_SECRET"))
-        token = get_token.login(
+        auth0_response = get_token.login(
             username=clean_email,    # Updated
             password=payload.password, # Updated
             scope="openid profile email",
             audience=os.getenv("AUTH0_AUDIENCE"),
             realm="Username-Password-Authentication"
         )
-        return token
+        return {
+            "token": auth0_response.get("access_token"),
+            "user": user
+        }
     except Exception as e:
         print(f"Auth0 Login Error: {e}") 
         raise HTTPException(status_code=401, detail=str(e))
+
+@app.get("/api/v1/me", response_model=User)
+def get_my_profile(current_user: User = Depends(get_verified_user)):
+    """
+    Returns the current user's profile based on the JWT in the Authorization header.
+    Matches Task 1: GET /api/me/profile
+    """
+    return current_user
 
 # --- PROTECTED ROUTES ---
 
@@ -124,10 +169,11 @@ def create_file_request(
     new_request = FileRequest(
         user_id=current_user.id,
         course_id=payload.course_id,
-        type_id=payload.type_id,
+        type=payload.type,
         lecturer=payload.lecturer, 
         title=payload.title,
-        storage_path="pending_upload/",
+        file_url="pending_upload/",
+        status="PENDING"
     )
     session.add(new_request)
     session.commit()

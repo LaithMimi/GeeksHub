@@ -6,73 +6,52 @@ export type AuthError = {
 // Simulated API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// const API_URL = "http://localhost:8000/api/v1";
+const API_URL = "http://localhost:8000/api/v1";
 
 export const authService = {
     signIn: async ({ email, password }: Record<string, string>) => {
-        // --- REAL IMPLEMENTATION ---
-        // const response = await fetch(`${API_URL}/signin`, {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ email, password }),
-        // });
-        // 
-        // if (!response.ok) {
-        //     const errorData = await response.json();
-        //     throw { message: errorData.detail || "Login failed" };
-        // }
-        // 
-        // const tokenData = await response.json();
-        // // Store token (e.g., localStorage or cookie)
-        // localStorage.setItem('token', tokenData.access_token);
-        // return { user: { email } }; // Adjust return based on actual response or fetch user data
-        // ---------------------------
-
-        await delay(600); // Simulate network
-        // Mock check
-        if (password === "error") throw { message: "Simulated error" };
-        if (email === "error@example.com") {
-            throw { message: "Invalid email or password." };
+        const response = await fetch(`${API_URL}/signin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw { message: errorData.detail || "Login failed" };
         }
-        const isAuthAdmin = email.includes("admin");
-        return {
-            user: {
-                id: isAuthAdmin ? "admin1" : "u1",
-                name: isAuthAdmin ? "Admin User" : "Demo User",
-                email,
-                role: isAuthAdmin ? "ADMIN" : "STUDENT"
-            }
+        
+        const data = await response.json();
+        
+        // Save the real token to localStorage
+        localStorage.setItem('token', data.token);
+        
+        // Return BOTH token and user to the AuthContext
+        return { 
+            token: data.token, 
+            user: data.user 
         };
     },
 
-    signUp: async ({ name, email }: Record<string, string>) => {
-        // --- REAL IMPLEMENTATION ---
-        // const response = await fetch(`${API_URL}/signup`, {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ username: name, email, password }),
-        // });
-        //
-        // if (!response.ok) {
-        //     const errorData = await response.json();
-        //     throw { message: errorData.detail || "Signup failed" };
-        // }
-        //
-        // return await response.json();
-        // ---------------------------
+    signUp: async ({ name, email, password }: Record<string, string>) => {
+        const response = await fetch(`${API_URL}/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // MATCHES YOUR UserSignUp MODEL
+            body: JSON.stringify({ 
+                username: name, 
+                email, 
+                password, 
+                password_confirm: password // temporarily using the same password for confirmation 
+            }),
+        });
 
-        await delay(800);
-        if (email === "taken@example.com") {
-            throw { message: "This email is already in use.", field: "email" };
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw { message: errorData.detail || "Signup failed" };
         }
-        return {
-            user: {
-                id: "u" + Date.now().toString().slice(-4),
-                name,
-                email,
-                role: "STUDENT"
-            }
-        };
+
+        return await response.json();
     },
 
     requestPasswordReset: async ({ email: _email }: { email: string }) => {

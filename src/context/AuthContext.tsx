@@ -32,20 +32,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signIn = useCallback(async (email: string, password: string) => {
         setState((s) => ({ ...s, isLoading: true, error: null }));
         try {
-            const { user } = await authService.signIn({ email, password });
+            const {user, token} = await authService.signIn({ email, password }); // Removed { }
             const newUser = {
                 id: user.id,
                 email,
-                displayName: user.name,
+                displayName: user.name, // Note: backend uses 'name'
                 role: user.role as Role,
-                avatarInitials: user.name
-                    .split(" ")
-                    .map((n: string) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2),
+                avatarInitials: user.name.charAt(0).toUpperCase()    
             };
             localStorage.setItem("mock_user_session", JSON.stringify(newUser));
+            localStorage.setItem("token", token);
             setState({
                 user: newUser,
                 isLoading: false,
@@ -60,8 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signUp = useCallback(async (name: string, email: string, password: string) => {
         setState((s) => ({ ...s, isLoading: true, error: null }));
         try {
-            const { user } = await authService.signUp({ name, email, password });
-            // auto sign-in after registration
+            const user = await authService.signUp({ name, email, password }); // Removed { }
             const newUser = {
                 id: user.id,
                 email,
