@@ -11,7 +11,7 @@ class User(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     auth0_id: str = Field(unique=True, index=True)
     email: str = Field(unique=True)
-    display_name: str
+    name: str
     role: str = "STUDENT" 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -37,6 +37,20 @@ class MaterialType(SQLModel, table=True):
     id: str = Field(primary_key=True) # e.g. 'slides'
     display_name: str
 
+# --- FILES (APPROVED) ---
+class File(SQLModel, table=True):
+    __tablename__ = "files"
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    title: str
+    course_id: UUID = Field(foreign_key="courses.id")
+    type: str # 'summary' | 'exam' | 'notes' | 'slides'
+    lecturer: str
+    uploader_id: UUID = Field(foreign_key="users.id")
+    file_url: str # This is your GCS path
+    download_count: int = Field(default=0)
+    rating: float = Field(default=0.0)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Community Contributions
 class FileRequest(SQLModel, table=True):
     __tablename__ = "file_requests"
@@ -45,18 +59,17 @@ class FileRequest(SQLModel, table=True):
     course_id: UUID = Field(foreign_key="courses.id")
     type_id: str = Field(foreign_key="material_types.id")
     title: str
-    lecturer: str = Field(index=True)
-    storage_path: str
+    file_url: str # Temporary GCS path
+    lecturer: str
     status: str = "PENDING"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-# This is what the frontend sends to the API
-class FileUploadCreate(BaseModel):
-    course_id: str
-    type_id: str
+# Used for the Upload/Request endpoint
+class FileRequestCreate(BaseModel):
+    course_id: UUID
+    type: str
     title: str
     lecturer: str
-    # We will handle the actual file binary via Google Cloud Storage later
 
 class UserSignUp(BaseModel):
     email: str

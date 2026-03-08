@@ -61,115 +61,75 @@ University students struggle to find high-quality, organized academic resources 
 `User` -(1:N)-> `FileRequest`
 `User` -(1:1)-> `UserReputation`
 
-### Schema Definitions
-
-#### 3.1 User
-Identity management (likely sourced from external Auth provider, mapped here).
+1. Users & Reputation
+Users (Identity & RBAC)
 | Field | Type | Required | Unique | Description |
 | :--- | :--- | :---: | :---: | :--- |
-| `id` | UUID | Yes | Yes | Primary Key (PK) |
-| `email` | String | Yes | Yes | University email |
-| `displayName` | String | Yes | No | Full name |
-| `role` | Enum | Yes | No | `STUDENT`, `ADMIN` |
-| `createdAt` | Timestamp | Yes | No | |
+| id | UUID | Yes | Yes | Primary Key (PK) |
+| auth0_id | String | Yes | Yes | Link to Auth0 Provider |
+| email | String | Yes | Yes | University email |
+| name | String | Yes | No | Full display name |
+| role | String | Yes | No | student or admin |
+| created_at | Timestamp | Yes | No | ISO 8601 |
 
-#### 3.2 Major
-Academic majors (e.g., Computer Science).
+Reputation Events (Points Ledger)
 | Field | Type | Required | Unique | Description |
 | :--- | :--- | :---: | :---: | :--- |
-| `id` | UUID | Yes | Yes | PK |
-| `name` | String | Yes | Yes | e.g., "Computer Science" |
-| `slug` | String | Yes | Yes | URL-friendly identifier |
+| id | UUID | Yes | Yes | PK |
+| user_id | UUID | Yes | No | FK to Users |
+| action | String | Yes | No | e.g., upload_approved |
+| points | Integer | Yes | No | Positive/Negative amount |
+| source_id | UUID | Yes | Yes | Idempotency Key (FK to FileRequest) |
 
-#### 3.3 AcademicYeaer (Year)
-Student year levels.
+2. Academic Catalog (Static)
+Majors
 | Field | Type | Required | Unique | Description |
 | :--- | :--- | :---: | :---: | :--- |
-| `id` | Integer | Yes | Yes | PK (1, 2, 3, 4, 5) |
-| `label` | String | Yes | Yes | e.g., "Freshman", "Senior" |
+| id | String | Yes | Yes | PK (Slug, e.g., software-engineering) |
+| name | String | Yes | Yes | e.g., "Software Engineering" |
 
-#### 3.4 Semester
-Global semester definitions.
+Courses
 | Field | Type | Required | Unique | Description |
 | :--- | :--- | :---: | :---: | :--- |
-| `id` | UUID | Yes | Yes | PK |
-| `name` | String | Yes | Yes | e.g., "Fall 2024" |
-| `startDate` | Date | Yes | No | Ordering/Filtering |
-| `endDate` | Date | Yes | No | |
+| id | UUID | Yes | Yes | PK (Internal ID) |
+| code | String | Yes | Yes | College Code (e.g., "10036") |
+| name | String | Yes | No | e.g., "Database Systems" |
+| major_id | String | Yes | No | FK to Major |
+| year_id | Integer | Yes | No | 1, 2, 3, or 4 |
+| semester | Integer | Yes | No | 1 (Fall) or 2 (Spring) |
 
-#### 3.5 Course
-Catalog course definition.
+3. Files & Moderation
+Material Types
 | Field | Type | Required | Unique | Description |
 | :--- | :--- | :---: | :---: | :--- |
-| `id` | String | Yes | Yes | PK (e.g., "cs101") - natural key preferred |
-| `code` | String | Yes | Yes | e.g., "CS101" |
-| `name` | String | Yes | No | e.g., "Intro to Algorithms" |
-| `majorId` | UUID | Yes | No | FK to Major |
-| `yearId` | Integer | Yes | No | FK to AcademicYear |
+| id | String | Yes | Yes | PK (slug: summary, exam, notes) |
+| display_name| String | Yes | Yes | UI label |
 
-#### 3.6 Lecturer
+File Requests (Staging Area)
 | Field | Type | Required | Unique | Description |
 | :--- | :--- | :---: | :---: | :--- |
-| `id` | UUID | Yes | Yes | PK |
-| `name` | String | Yes | No | e.g., "Dr. Smith" |
+| id | UUID | Yes | Yes | PK |
+| user_id | UUID | Yes | No | FK to User (Uploader) |
+| course_id | UUID | Yes | No | FK to Course |
+| type_id | String | Yes | No | FK to MaterialType |
+| title | String | Yes | No | User-defined title |
+| lecturer | String | Yes | No | Associated instructor name |
+| file_url | String | Yes | No | GCS Path (Pending Folder) |
+| status | String | Yes | No | pending, approved, rejected |
+| admin_note | String | No | No | Feedback from moderator |
+| created_at | Timestamp | Yes | No | |
 
-#### 3.7 CourseOffering
-Join table defining a specific instance of a course.
+Files (Approved Public Catalog)
 | Field | Type | Required | Unique | Description |
 | :--- | :--- | :---: | :---: | :--- |
-| `id` | UUID | Yes | Yes | PK |
-| `courseId` | String | Yes | No | FK to Course |
-| `lecturerId` | UUID | Yes | No | FK to Lecturer |
-| `semesterId` | UUID | Yes | No | FK to Semester |
-| **Constraints** | | | | Composite unique key (course, lecturer, semester) |
-
-#### 3.8 MaterialType
-| Field | Type | Required | Unique | Description |
-| :--- | :--- | :---: | :---: | :--- |
-| `id` | String | Yes | Yes | PK (slug: "slides", "notes") |
-| `displayName`| String | Yes | Yes | UI label |
-
-#### 3.9 FileRequest (Transaction)
-The central entity for user contributions.
-| Field | Type | Required | Unique | Description |
-| :--- | :--- | :---: | :---: | :--- |
-| `id` | UUID | Yes | Yes | PK |
-| `userId` | UUID | Yes | No | FK to User (Uploader) |
-| `courseOfferingId`| UUID | Yes | No | FK to CourseOffering |
-| `typeId` | String | Yes | No | FK to MaterialType |
-| `title` | String | Yes | No | |
-| `storagePath` | String | Yes | No | S3 key / Blob path |
-| `mimeType` | String | Yes | No | |
-| `sizeBytes` | Long | Yes | No | |
-| `status` | Enum | Yes | No | `PENDING`, `APPROVED`, `REJECTED` |
-| `rejectionReason`| String | No | No | Populated if rejected |
-| `reviewedBy` | UUID | No | No | FK to User (Admin) |
-| `reviewedAt` | Timestamp| No | No | |
-
-#### 3.10 File (Public View)
-Can be a view on `FileRequest` filtered by `status=APPROVED` or a separate denormalized table for read performance.
-*Assuming view or direct query on FileRequest for simplicity, but if separate:*
-- Link to `FileRequest` ID as source.
-
-#### 3.11 PointsTransaction
-Ledger for reputation changes.
-| Field | Type | Required | Unique | Description |
-| :--- | :--- | :---: | :---: | :--- |
-| `id` | UUID | Yes | Yes | PK |
-| `userId` | UUID | Yes | No | FK to User |
-| `amount` | Integer | Yes | No | Positive or negative |
-| `sourceType` | Enum | Yes | No | `FILE_APPROVAL`, `MANUAL_ADJUSTMENT` |
-| `referenceId` | UUID | Yes | Yes | FK to FileRequest (Idempotency key) |
-| `createdAt` | Timestamp| Yes | No | |
-
-#### 3.12 UserReputation
-Cached aggregate (could be a materialized view or column on User).
-| Field | Type | Required | Unique | Description |
-| :--- | :--- | :---: | :---: | :--- |
-| `userId` | UUID | Yes | Yes | PK/FK |
-| `totalPoints` | Integer | Yes | No | Default 0 |
-
----
+| id | UUID | Yes | Yes | PK (Preserved from Request ID) |
+| title | String | Yes | No | |
+| course_id | UUID | Yes | No | FK to Course |
+| type | String | Yes | No | String label for UI performance |
+| uploader_id | UUID | Yes | No | FK to User |
+| file_url | String | Yes | No | GCS Path (Final Folder) |
+| download_count| Integer | Yes | No | Default 0 |
+| rating | Float | Yes | No | Default 0.0 |
 
 ## 4. Workflows
 

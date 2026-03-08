@@ -69,9 +69,19 @@ def seed_database():
             Course(code="96040", name="Engineering Economics", major_id=sw_major.id, year_id=4, semester=2),
         ]
 
-
         for course in transcript_courses:
             session.add(course)
+        
+        # 3. Material Types
+        m_types = [
+            MaterialType(id="summary", display_name="Summary"),
+            MaterialType(id="exam", display_name="Exam"),
+            MaterialType(id="notes", display_name="Lecture Notes"),
+            MaterialType(id="slides", display_name="Slides"),
+        ]
+
+        for mt in m_types:
+            session.add(mt)    
 
         session.commit()
         print(f"Success! Seeded {len(transcript_courses)} courses from the Azrieli Transcript.")

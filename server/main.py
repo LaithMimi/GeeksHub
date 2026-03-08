@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from models import FileRequest, FileUploadCreate, Major, User, Course, UserSignUp, UserSignIn
+from models import FileRequest,FileRequestCreate, Major, User, Course, UserSignUp, UserSignIn
 from auth_utils import get_verified_user
 from database import get_session, init_db
 from uuid import UUID
@@ -39,36 +39,48 @@ app = FastAPI(title="GeeksHub API", lifespan=lifespan)
 
 @app.post("/api/v1/signup")
 def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
-    # lowercase and trim email for consistency
     clean_email = payload.email.lower().strip()
-    # Check Neon DB first
+    
+    # 1. Check Neon DB first
     existing_user = session.exec(select(User).where(User.email == clean_email)).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="An account with this email already exists.")
 
-    # Call Auth0 to create user
     admin = get_auth0_admin()
     if not admin:
         raise HTTPException(status_code=500, detail="Identity provider unavailable.")
     
+    auth0_id = None # Track this for the rollback
+    
     try:
+        # 2. Create user in Auth0
         auth0_user = admin.users.create({
             "email": clean_email,
             "password": payload.password,
-            "nickname": payload.username,
+            "name": payload.username,
             "connection": "Username-Password-Authentication"
         })
+        auth0_id = auth0_user['user_id']
         
+        # 3. Save to Neon DB
         new_user = User(
-            auth0_id=auth0_user['user_id'],
-            email=payload.email,
-            display_name=payload.username
+            auth0_id=auth0_id,
+            email=clean_email,
+            name=payload.username,
+            role="STUDENT"
         )
         session.add(new_user)
         session.commit()
+        
         return {"message": "Account created! You can now sign in."}
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # ROLLBACK: If we created the Auth0 user but the DB failed, delete the Auth0 user
+        if auth0_id:
+            print(f"Rolling back: Deleting Auth0 user {auth0_id} due to DB error.")
+            admin.users.delete(auth0_id)
+            
+        raise HTTPException(status_code=400, detail=f"Registration failed: {str(e)}")
 
 @app.post("/api/v1/signin")
 def sign_in(payload: UserSignIn, session: Session = Depends(get_session)):
@@ -105,7 +117,7 @@ def list_majors(
 
 @app.post("/api/v1/requests", status_code=201)
 def create_file_request(
-    payload: FileUploadCreate, 
+    payload: FileRequestCreate, 
     session: Session = Depends(get_session),
     current_user: User = Depends(get_verified_user)
 ):
@@ -187,7 +199,6 @@ async def request_upload(
     
     return {"message": "Request submitted for admin approval.", "request_id": new_request.id}
 
-
 @app.post("/api/v1/admin/requests/{request_id}/approve")
 def approve_file(
     request_id: UUID,
@@ -225,7 +236,6 @@ def approve_file(
         session.delete(request)
         session.commit()
         return {"message": "Request rejected and file deleted."}
-
 
 @app.get("/api/v1/files/{file_id}/download")
 def get_file_download_url(
