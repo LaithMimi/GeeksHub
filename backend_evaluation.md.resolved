@@ -1,0 +1,49 @@
+# Backend Evaluation Report
+
+Based on a review of [server/main.py](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/main.py), [server/models.py](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/models.py), and the [backend.md](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/backend.md) PRD, here is an evaluation of the current Backend (BE) implementation:
+
+## 1. Alignment with PRD (Feature Completeness)
+
+**Score: 4/10 (Incomplete)**
+
+The backend has foundational pieces but is missing critical workflows and models outlined in the PRD.
+
+**What is implemented:**
+- Basic SQLAlchemy/SQLModel entities ([User](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#78-85), [Major](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/models.py#19-24), [Course](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/models.py#25-33), [FileRequest](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#169-190)).
+- Authentication endpoints (`/signup`, `/signin`, `/me`) integrated with Auth0.
+- Basic routing for requesting an upload (`/requests`, `/upload`).
+- A basic admin approval endpoint.
+- File downloading via GCS pre-signed URLs.
+
+**What is completely missing:**
+- **Reputation & Points System**: The core incentivization engine (`UserReputation`, [PointsTransaction](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#224-232)) is absent from both the database models and the API.
+- **Search & Browse Files**: There is no `GET /files` endpoint to actually search or list approved files.
+- **Approved Files Table Population**: The PRD outlines an approved [File](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/models.py#41-53) table. However, in [approve_file](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/main.py#248-285), the request is simply deleted from the DB instead of being moved/copied to the `files` table.
+- **Semesters & Offerings**: The PRD mentions [Semester](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#113-117) and `CourseOffering`. These are missing in the models and endpoints.
+- **My Requests & Admin Queues**: Endpoints like `GET /me/requests` and `GET /admin/requests` are missing, making it impossible for users to track their submissions or admins to see pending requests.
+
+## 2. Code Quality & Architecture
+
+**Score: 6/10 (Needs Refactoring to scale)**
+
+**The Good:**
+- Uses FastAPI & SQLModel which is a modern and type-safe stack.
+- Correct use of dependency injection for database sessions and auth (`get_session`, `get_verified_user`).
+- Password validation logic is well-placed within Pydantic models.
+
+**Issues / Areas for Improvement:**
+- **Duplicate Upload Flow**: There seem to be two competing endpoints for creating requests: `POST /api/v1/requests` (which hardcodes `file_url="pending_upload/"`) and `POST /api/v1/courses/{course_id}/upload` (which properly handles the file upload but creates *another* FileRequest). These should be consolidated based on how the frontend sends files.
+- **Approval Logic Flaw**: In `POST /api/v1/admin/requests/{request_id}/approve`, if approved, the file is moved in GCS, but the row is just deleted from [FileRequest](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#169-190) without being inserted into [File](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/models.py#41-53). The file essentially becomes orphaned in the DB.
+- **Security Check**: Admin validation inside [approve_file](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/main.py#248-285) handles `current_user.role != "ADMIN"`. It would be cleaner to use a dedicated dependency (e.g., `Depends(get_admin_user)`) for route protection.
+- **Error Handling during Signup**: The Auth0 rollback logic in [sign_up](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/main.py#74-118) catches exceptions, but what if deleting the Auth0 user also fails? It could leave dangling accounts.
+- **File Download Bug**: [get_file_download_url](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/main.py#286-308) correctly queries [FileRequest](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#169-190) for the file, but if the file was approved, the request row was deleted (as per the approval endpoint logic), meaning users can only download pending files, not approved ones.
+
+## 3. Summary & Next Steps
+
+The backend handles the basic wiring of a FastAPI app with Auth0 and Neon DB, but the core business logic described in the PRD (approving files properly, browsing files, points ledger) remains unwritten.
+
+**Recommended Next Steps:**
+1. Fix the approval flow to insert into the [File](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/models.py#41-53) table instead of just deleting from [FileRequest](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#169-190). This is critical as it breaks the download functionality.
+2. Implement the `GET /files` endpoint so the frontend has data to display.
+3. Consolidate the file upload process (metadata + file blob).
+4. Implement the Reputation system as defined in the PRD.

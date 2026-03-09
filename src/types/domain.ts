@@ -102,8 +102,8 @@ export interface Major {
  * @backend Table: academic_years (or static enum)
  */
 export interface AcademicYear {
-    id: string; // "1", "2"
-    label: string; // "Freshman"
+    id: string; // "1", "2", "3", "4"
+    label: string; // "Freshman", "Sophomore", "Junior", "Senior"
 }
 
 /**
