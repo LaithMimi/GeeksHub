@@ -67,7 +67,7 @@
 import { files, randomDelay, topContributors, recentFiles } from "@/mock/mock-db";
 import type { Contributor, File, MaterialType } from "@/types/domain";
 
-// const API_URL = "http://localhost:8000/api/v1";
+
 
 export interface FileFilters {
     majorId?: string;
@@ -83,29 +83,12 @@ export interface FileFilters {
  * @backend GET /api/files?courseId=...&type=...&lecturerId=...&search=...
  */
 export const listFiles = async (filters: FileFilters): Promise<File[]> => {
-    // --- REAL IMPLEMENTATION ---
-    // // Note: Backend currently lacks a dedicated 'list files' endpoint or 'Materials' table.
-    // // Current backend implementation deletes FileRequest upon approval, losing metadata.
-    // // Hypothetical endpoint:
-    // const params = new URLSearchParams();
-    // if (filters.courseId) params.append("course_id", filters.courseId);
-    // if (filters.type) params.append("type_id", filters.type);
-    // 
-    // const response = await fetch(`${API_URL}/files?${params.toString()}`);
-    // if (!response.ok) throw new Error("Failed to fetch files");
-    // return await response.json();
-    // ---------------------------
-
     await randomDelay(300, 800);
 
     let result = files;
 
     if (filters.courseId) {
         result = result.filter(f => f.courseId === filters.courseId);
-    }
-    if (filters.lecturerId) {
-        // TODO: Implement lecturerId filter when backend ready
-        // Backend will handle this with: WHERE lecturer_id = ?
     }
     if (filters.type) {
         result = result.filter(f => f.type === filters.type as MaterialType);
@@ -121,21 +104,8 @@ export const listFiles = async (filters: FileFilters): Promise<File[]> => {
  * @returns File object with downloadUrl for PDF viewer
  */
 export const getFile = async (fileId: string): Promise<File | null> => {
-    // --- REAL IMPLEMENTATION ---
-    // // Backend /api/v1/files/{file_id}/download returns { download_url }
-    // // Ideally we also need file metadata.
-    // const response = await fetch(`${API_URL}/files/${fileId}/download`);
-    // if (!response.ok) return null;
-    // const { download_url } = await response.json();
-    // return { id: fileId, downloadUrl: download_url } as File; 
-    // ---------------------------
-
     await randomDelay(200, 400);
-    const file = files.find(f => f.id === fileId);
-    if (!file) {
-        return null;
-    }
-    return file;
+    return files.find(f => f.id === fileId) ?? null;
 };
 
 /**

@@ -13,8 +13,7 @@ import { useState, useEffect } from "react";
 import { Bell, Monitor, Globe, BookOpen, Brain, Clock, CheckCircle, Sun, Moon, Laptop, Palette, Sparkles } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { majors } from "@/mock/mock-db";
-import { years } from "@/mock/mock-db";
+import { majors, years } from "@/mock/mock-db";
 import { Link } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 

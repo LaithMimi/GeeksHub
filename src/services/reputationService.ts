@@ -66,8 +66,6 @@ import type { ReputationSummary } from "@/types/domain";
 export const getMyReputation = async (userId: string): Promise<ReputationSummary> => {
     await randomDelay();
 
-    // Calculate from transactions
-    // Backend: SELECT SUM(amount) FROM points_transactions WHERE user_id = ?
     const transactions = pointsTransactions.filter(t => t.userId === userId);
     const totalPoints = transactions.reduce((sum, t) => sum + t.amount, 0);
 

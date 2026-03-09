@@ -79,8 +79,8 @@ export function useRecentFiles() {
         if (stored) {
             try {
                 setRecentFiles(JSON.parse(stored));
-            } catch (e) {
-                console.error("Failed to parse recent files", e);
+            } catch {
+                // silently ignore parse failures
             }
         }
     }, []);

@@ -72,8 +72,7 @@ export function usePinnedCourses() {
         try {
             const stored = localStorage.getItem("pinned_courses");
             return stored ? JSON.parse(stored) : [];
-        } catch (error) {
-            console.error("Failed to parse pinned_courses", error);
+        } catch {
             return [];
         }
     });
@@ -84,8 +83,8 @@ export function usePinnedCourses() {
     useEffect(() => {
         try {
             localStorage.setItem("pinned_courses", JSON.stringify(pinnedIds));
-        } catch (error) {
-            console.error("Failed to save pinned_courses", error);
+        } catch {
+            // silently ignore write failures
         }
     }, [pinnedIds]);
 
