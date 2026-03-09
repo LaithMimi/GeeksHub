@@ -27,3 +27,5 @@ server/gcp_key.json
 .vercel
 venv/
 .env
+
+gcp_key.json
