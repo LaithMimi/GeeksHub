@@ -53,8 +53,8 @@
   --glass-border-strong: rgba(255, 255, 255, 0.2);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   --glass-shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.15);
-  --glass-blur: 20px;
-  --glass-blur-heavy: 40px;
+  --glass-blur: 12px;
+  --glass-blur-heavy: 24px;
   --glass-heavy-bg: rgba(10, 10, 20, 0.6);
   --glass-subtle-bg: rgba(255, 255, 255, 0.04);
   --glass-subtle-border: rgba(255, 255, 255, 0.06);
@@ -152,8 +152,9 @@ body {
   content: '';
   position: absolute;
   border-radius: 50%;
-  filter: blur(100px);
   animation: meshFloat 20s ease-in-out infinite;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .mesh-background::before {
@@ -185,8 +186,9 @@ body {
 .mesh-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
   pointer-events: none;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .mesh-orb-1 {
@@ -368,6 +370,8 @@ body {
     box-shadow: var(--glass-shadow),
       inset 0 1px 0 var(--glass-inset-highlight);
     transition: all var(--motion-standard) var(--ease-standard);
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .liquid-glass:hover {
@@ -383,6 +387,8 @@ body {
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow-lg),
       inset 0 1px 0 var(--glass-inset-highlight);
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   /* Subtle Glass (for nested elements) */
@@ -391,6 +397,8 @@ body {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--glass-subtle-border);
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   /* Glass Card */
@@ -403,6 +411,8 @@ body {
     box-shadow: var(--glass-shadow),
       inset 0 1px 0 var(--glass-inset-highlight);
     transition: all var(--motion-standard) var(--ease-standard);
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   .glass-card:hover {
@@ -438,6 +448,8 @@ body {
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--glass-border);
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 
   /* Hover Lift */

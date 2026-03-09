@@ -79,7 +79,16 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { CommandPalette } from "../ui/command-palette";
+import { isMac } from "@/lib/utils";
 
 // Language config
 const languages = [
@@ -90,12 +99,11 @@ const languages = [
 
 // Navigation items
 const navItems = [
-    { label: "Dashboard", icon: Home, href: "/", num: "01" },
-    { label: "Courses", icon: BookOpen, href: "/courses", num: "02" },
-    { label: "Recent", icon: History, href: "/recent", num: "03" },
-    { label: "Uploads", icon: Upload, href: "/uploads", num: "04" },
-    { label: "My Path", icon: Map, href: "/path", num: "05" },
-    { label: "Settings", icon: Settings, href: "/settings", num: "06" },
+    { label: "Dashboard", icon: Home, href: "/" },
+    { label: "Courses", icon: BookOpen, href: "/courses" },
+    { label: "Recent", icon: History, href: "/recent" },
+    { label: "Uploads", icon: Upload, href: "/uploads" },
+    { label: "My Path", icon: Map, href: "/path" },
 ];
 
 // Dynamic Breadcrumbs
@@ -152,7 +160,7 @@ const Breadcrumbs = () => {
 // Glass Sidebar
 function GlassSidebar() {
     const location = useLocation();
-    const { user } = useAuth();
+    const { user, signOut } = useAuth();
 
     const isActive = (path: string) => {
         if (path === "/") return location.pathname === "/";
@@ -189,9 +197,6 @@ function GlassSidebar() {
                                 {active && (
                                     <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/10 to-transparent pointer-events-none" />
                                 )}
-                                <span className={`font-display text-[13px] tabular-nums w-5 ${active ? "text-purple-400" : "text-white/25"}`}>
-                                    {item.num}
-                                </span>
                                 <Icon className={`h-[18px] w-[18px] ${active ? "text-white" : ""}`} />
                                 <span className={`font-medium ${active ? "font-semibold" : ""}`}>
                                     {item.label}
@@ -222,15 +227,33 @@ function GlassSidebar() {
                     </div>
 
                     {/* User */}
-                    <div className="flex items-center gap-3 px-1">
-                        <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white text-[13px] font-display font-semibold">
-                            {user?.avatarInitials ?? "?"}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-medium text-white truncate">{user?.displayName ?? "Guest"}</p>
-                            <p className="text-[11px] text-white/35 truncate">{user?.email ?? ""}</p>
-                        </div>
-                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button className="flex items-center gap-3 px-1 hover:bg-white/[0.04] p-2 rounded-xl transition-colors text-left w-full outline-none">
+                                <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white text-[13px] font-display font-semibold shrink-0">
+                                    {user?.avatarInitials ?? "?"}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[13px] font-medium text-white truncate">{user?.displayName ?? "Guest"}</p>
+                                    <p className="text-[11px] text-white/35 truncate">{user?.email ?? ""}</p>
+                                </div>
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56 mb-2" align="start" side="right">
+                            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                                <Link to="/settings" className="cursor-pointer w-full">
+                                    <Settings className="mr-2 h-4 w-4" />
+                                    <span>Settings</span>
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-500 focus:text-red-500 cursor-pointer" onClick={signOut}>
+                                Sign out
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
         </aside>
@@ -275,7 +298,7 @@ export default function AppShell() {
                             <Search className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Search</span>
                             <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-white/30">
-                                ⌘K
+                                {isMac ? "⌘K" : "Ctrl+K"}
                             </kbd>
                         </button>
                         <button className="relative w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
@@ -284,7 +307,12 @@ export default function AppShell() {
                     </div>
                 </header>
 
-                {/* Content */}
+                {/* Content 
+                This is the most important part. It's a React Router placeholder — it says "render whatever the current route's page component is, right here."
+                So when you navigate to /dashboard, React Router puts <Dashboard /> in place of <Outlet />.
+                When you navigate to /courses, it puts <CourseBrowser /> there instead.
+                The sidebar and header never re-render — only this slot swaps out.
+                */}
                 <main className="flex-1 overflow-auto">
                     <div className="max-w-[1400px] mx-auto py-8 px-8">
                         <Outlet />

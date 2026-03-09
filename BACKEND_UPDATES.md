@@ -144,3 +144,16 @@ These issues remain open and require backend work:
 | 5 | No user reputation API | Implement `GET /api/v1/me/reputation` |
 | 6 | No top contributors API | Implement `GET /api/v1/contributors/top` |
 | 7 | No audit log API | Implement `GET /api/v1/admin/audit-logs` |
+
+---
+
+## 8. Dashboard Metric Endpoints Required
+
+The frontend Dashboard currently has 4 "Metric Cards" that require real data from the backend to be fully accurate. Please implement the following endpoints in priority order:
+
+| Priority | Feature / Card | Endpoint Needed | Expected Response | Rationale |
+|---|---|---|---|---|
+| **1** | XP Earned | `GET /api/me/reputation` | `{ totalPoints: number, level: number, ... }` | Easiest. Data already exists in mock; just needs a real query returning user's points based on approved uploads. |
+| **2** | Courses Active | `GET /api/me/courses/active` | `[ { courseId: string, ... } ]` | Returns distinct courses the user has file activity in or is explicitly enrolled in. Currently, frontend artificially guesses this from recent files. |
+| **3** | Tasks Done | `GET /api/me/tasks` | `[ { id: string, completed: boolean, ... } ]` | Required to move user schedule/tasks off `localStorage` so they sync across devices. Used to calculate the completion rate. |
+| **4** | Study Hours | `GET /api/me/study-hours` | `{ hours: number }` | Requires building dedicated session tracking (recording `session_start` when a file opens and `session_end` when closed). Dashboard displays `"—"` until this exists. |

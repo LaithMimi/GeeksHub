@@ -15,6 +15,7 @@ import {
     X,
     Check,
     Trash2,
+    TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,32 +25,22 @@ import { useMyRequests } from "@/queries/useRequests";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
 import { useTasks, type Task } from "@/hooks/useTasks";
 import { useAuth } from "@/context/AuthContext";
+import { useCourses } from "@/queries/useCatalog";
 import {
     formatDistanceToNow, format, isToday, isTomorrow, isPast,
     startOfMonth, endOfMonth, eachDayOfInterval, getDay,
     addMonths, subMonths, isSameMonth,
-    startOfWeek, addDays, addWeeks,
+    startOfWeek, addDays, addWeeks, endOfWeek, isWithinInterval,
 } from "date-fns";
 
 
-// Metric card data — placeholder values until backend analytics are available
-const metrics = [
-    { label: "Study Hours", value: "—", change: "", positive: true, hero: true },
-    { label: "Courses Active", value: "—", change: "", positive: true },
-    { label: "Completion Rate", value: "—", change: "", positive: true },
-    { label: "XP Earned", value: "—", change: "", positive: true },
-];
-
-// Activity data
-const weeklyActivity = [
-    { day: "Mon", value: 60 },
-    { day: "Tue", value: 85 },
-    { day: "Wed", value: 40 },
-    { day: "Thu", value: 95 },
-    { day: "Fri", value: 70 },
-    { day: "Sat", value: 30 },
-    { day: "Sun", value: 20 },
-];
+// Time-based greeting generator
+function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+}
 
 // Color palette for task blocks on the schedule
 const BLOCK_COLORS = [
@@ -268,7 +259,7 @@ function LearningPlan({ tasks, onAddTask }: {
                     <div className="grid gap-0" style={{ gridTemplateColumns: `60px repeat(${hours.length}, 1fr)` }}>
                         <div /> {/* Spacer for day label column */}
                         {hours.map(h => (
-                            <div key={h} className="text-[11px] text-white/30 text-center pb-3 font-medium">
+                            <div key={h} className="text-[9px] text-white/30 text-center pb-3 font-medium">
                                 {h === 0 ? "12:00 am" : h < 12 ? `${h}:00 am` : h === 12 ? "12:00 pm" : `${h - 12}:00 pm`}
                             </div>
                         ))}
@@ -632,12 +623,6 @@ function formatDeadline(dateStr: string): { label: string; urgent: boolean } {
 // ────────────────────────────────────────────
 // Recent Courses (derived from recent files)
 // ────────────────────────────────────────────
-const COURSE_META: Record<string, { name: string; meta: string; color: string }> = {
-    "cs101": { name: "Intro to Algorithms", meta: "CS • Fall 2024 • Dr. Smith", color: "purple" },
-    "cs102": { name: "Data Structures", meta: "CS • Spring 2025 • Dr. Smith", color: "green" },
-    "math201": { name: "Linear Algebra", meta: "MATH • Fall 2024 • Prof. Johnson", color: "green" },
-    "phys101": { name: "Classical Mechanics", meta: "PHYS • Fall 2024 • Dr. Emily Davis", color: "red" },
-};
 
 const progressColors: Record<string, string> = {
     purple: "bg-purple-500",
@@ -659,15 +644,14 @@ export default function Dashboard() {
     const userId = user!.id;
     const { data: recentFiles, isLoading: isLoadingRecent, isError: isErrorRecent } = useRecentFiles();
     const { data: reputation, isLoading: isLoadingRep } = useReputation(userId);
-    const { data: _requests, isLoading: isLoadingRequests } = useMyRequests(userId);
+    const { data: _requests } = useMyRequests(userId);
+    const { data: allCourses } = useCourses({}); // Retrieve full course catalog for metadata mapping
     usePinnedCourses();
 
     const { tasks, taskDates, addTask, toggleTask, deleteTask } = useTasks();
     const [showAddTask, setShowAddTask] = useState(false);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-
-    const isLoading = isLoadingRecent || isLoadingRep || isLoadingRequests;
-    if (isLoading) return <DashboardSkeleton />;
+    const [showCompleted, setShowCompleted] = useState(false);
 
     if (isErrorRecent) {
         return (
@@ -685,40 +669,112 @@ export default function Dashboard() {
     }
 
     const lastFile = recentFiles && recentFiles.length > 0 ? recentFiles[0] : null;
+    const lastFileCourse = allCourses?.find(c => c.id === lastFile?.courseId);
 
     // Derive 3 most-recent unique courses from recent files
-    const recentCourses: { id: string; name: string; meta: string; color: string; lastAccess: string }[] = [];
+    const recentCourses: { id: string; name: string; meta: string; color: string; lastAccess: string; progress: number }[] = [];
     const seenCourseIds = new Set<string>();
     if (recentFiles) {
         for (const file of recentFiles) {
             if (seenCourseIds.has(file.courseId)) continue;
             seenCourseIds.add(file.courseId);
-            const info = COURSE_META[file.courseId] || {
-                name: file.courseId.toUpperCase(),
-                meta: "Course",
+
+            const course = allCourses?.find(c => c.id === file.courseId);
+
+            // Derive progress from how many approved requests exist for this course vs total requests
+            const approvedForCourse = (_requests ?? []).filter(
+                r => r.courseId === file.courseId && r.status === "approved"
+            ).length;
+            const totalForCourse = (_requests ?? []).filter(
+                r => r.courseId === file.courseId
+            ).length;
+            const progress = totalForCourse > 0
+                ? Math.round((approvedForCourse / totalForCourse) * 100)
+                : 0;
+
+            recentCourses.push({
+                id: file.courseId,
+                name: course?.name ?? file.courseId.toUpperCase(),
+                meta: course ? `${course.semesterId} • ${course.majorId}` : "Course",
                 color: ["purple", "green", "red"][recentCourses.length % 3],
-            };
-            recentCourses.push({ id: file.courseId, lastAccess: file.viewedAt, ...info });
+                lastAccess: file.viewedAt,
+                progress
+            });
+
             if (recentCourses.length >= 3) break;
         }
     }
-    // Fallback if no recent files — use IDs that match mock-db
-    if (recentCourses.length === 0) {
-        recentCourses.push(
-            { id: "cs101", lastAccess: "", ...COURSE_META["cs101"] },
-            { id: "math201", lastAccess: "", ...COURSE_META["math201"] },
-            { id: "phys101", lastAccess: "", ...COURSE_META["phys101"] },
-        );
-    }
 
-    const displayTasks = selectedDate
+    // Dynamic metrics - using live data where available
+    const uniqueCourseIds = new Set(
+        (recentFiles ?? []).map(f => f.courseId)
+    );
+
+    const completedTasks = tasks.filter(t => t.completed).length;
+    const totalTasks = tasks.length;
+    const taskCompletionValue = totalTasks > 0
+        ? `${Math.round((completedTasks / totalTasks) * 100)}%`
+        : "—";
+
+    const metrics = [
+        {
+            label: "Study Hours",
+            value: "—", // Backend endpoint needed: GET /api/me/study-hours
+            change: "",
+            positive: true,
+            hero: true,
+            icon: Clock
+        },
+        {
+            label: "Courses Active",
+            value: isLoadingRecent ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : uniqueCourseIds.size.toString(), // Needs backend ENROLLMENT endpoint for true accuracy
+            change: "",
+            positive: true,
+            icon: BookOpen
+        },
+        {
+            label: "Tasks Done",
+            value: taskCompletionValue, // Needs backend COURSE PROGRESS endpoint
+            change: totalTasks > 0 ? `${completedTasks}/${totalTasks}` : "",
+            positive: true,
+            icon: TrendingUp
+        },
+        {
+            label: "XP Earned",
+            value: isLoadingRep ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : (reputation ? `${reputation.totalPoints}` : "—"),
+            change: "",
+            positive: true,
+            icon: Zap
+        },
+    ];
+
+    // Dynamic weekly activity - filtering to current week
+    const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+    const weekEnd = endOfWeek(new Date(), { weekStartsOn: 0 });
+
+    const weeklyActivity = DAY_LABELS.map((day, index) => {
+        const count = (recentFiles ?? []).filter(f => {
+            const d = new Date(f.viewedAt);
+            return (
+                d.getDay() === index &&
+                isWithinInterval(d, { start: weekStart, end: weekEnd })
+            );
+        }).length;
+        return { day, value: Math.min(count * 20, 100) }; // scale to percentage
+    });
+
+    const displayTasks = (selectedDate
         ? tasks.filter(t => t.date === selectedDate)
-        : tasks;
+        : tasks
+    ).filter(t => showCompleted || !t.completed);
 
     return (
         <div className="space-y-8 animate-fade-in">
             {/* ── Continue Studying Hero ── */}
-            {lastFile && (
+            {isLoadingRecent ? (
+                <Skeleton className="h-[104px] w-full rounded-2xl bg-white/[0.02] border border-purple-500/10" />
+            ) : lastFile && (
                 <Link to={`/courses/${lastFile.courseId}/files/${lastFile.id}`} className="block group">
                     <div className="liquid-glass rounded-2xl p-6 flex items-center gap-5 border-purple-500/15 hover:border-purple-500/30 transition-all glow-purple-soft">
                         <div className="w-14 h-14 rounded-2xl gradient-bg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-lg">
@@ -732,7 +788,7 @@ export default function Dashboard() {
                                 {lastFile.title}
                             </h2>
                             <p className="text-[12px] text-white/35 mt-1 flex items-center gap-2">
-                                <span className="uppercase">{lastFile.courseId}</span>
+                                <span className="uppercase">{lastFileCourse?.name ?? lastFile.courseId}</span>
                                 <span>•</span>
                                 <Clock className="h-3 w-3" />
                                 <span>{formatDistanceToNow(new Date(lastFile.viewedAt), { addSuffix: true })}</span>
@@ -753,7 +809,7 @@ export default function Dashboard() {
                         Dashboard
                     </h1>
                     <p className="text-[14px] text-white/45 mt-2">
-                        Welcome back, {user?.displayName || 'Student'}. Here's your learning overview.
+                        {getGreeting()}, {user?.displayName || 'Student'}. Here's your learning overview.
                     </p>
                 </div>
             </div>
@@ -767,7 +823,10 @@ export default function Dashboard() {
                             } stagger-${i + 1}`}
                     >
                         <div className="flex items-center justify-between mb-4">
-                            <span className="text-[12px] text-white/45 font-medium">{metric.label}</span>
+                            <div className="flex items-center gap-2">
+                                <metric.icon className="h-4 w-4 text-purple-400/60" />
+                                <span className="text-[12px] text-white/45 font-medium">{metric.label}</span>
+                            </div>
                             <span className={`text-[12px] font-display font-semibold ${metric.positive ? "text-emerald-400" : "text-red-400"
                                 }`}>
                                 {metric.change}
@@ -800,42 +859,61 @@ export default function Dashboard() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {recentCourses.map((course, i) => (
-                                <Link
-                                    key={course.id}
-                                    to={`/courses/${course.id}/materials`}
-                                    className={`glass-card overflow-hidden group cursor-pointer animate-fade-in-up opacity-0 stagger-${i + 1}`}
-                                >
-                                    <div className="h-[120px] bg-white/[0.03] flex items-center justify-center border-b border-white/[0.06]">
-                                        <BookOpen className="h-8 w-8 text-white/15 group-hover:text-white/25 transition-colors" />
-                                    </div>
-                                    <div className="p-5 space-y-3">
-                                        <h3 className="text-[15px] font-display font-semibold text-white leading-tight group-hover:text-purple-300 transition-colors">
-                                            {course.name}
-                                        </h3>
-                                        <p className="text-[12px] text-white/40">{course.meta}</p>
-                                        {course.lastAccess && (
-                                            <p className="text-[11px] text-white/25 flex items-center gap-1.5">
-                                                <Clock className="h-3 w-3" />
-                                                Opened {formatDistanceToNow(new Date(course.lastAccess), { addSuffix: true })}
-                                            </p>
-                                        )}
-                                        <div className="space-y-2">
-                                            <div className="w-full h-1 rounded-full bg-white/[0.06] overflow-hidden">
-                                                <div
-                                                    className={`h-full rounded-full ${progressColors[course.color]} ${progressGlows[course.color]} transition-all`}
-                                                    style={{ width: `50%` }}
-                                                />
+                            {isLoadingRecent ? (
+                                Array(3).fill(0).map((_, i) => (
+                                    <Skeleton key={i} className="h-[190px] rounded-2xl bg-white/[0.02] border border-white/[0.05]" />
+                                ))
+                            ) : recentCourses.length === 0 ? (
+                                <div className="col-span-1 md:col-span-3 liquid-glass rounded-2xl p-10 text-center">
+                                    <BookOpen className="h-10 w-10 text-white/15 mx-auto mb-3" />
+                                    <p className="text-[15px] font-display font-semibold text-white/50">
+                                        No courses yet
+                                    </p>
+                                    <p className="text-[13px] text-white/30 mt-1 mb-4">
+                                        Browse courses to get started
+                                    </p>
+                                    <Link to="/courses">
+                                        <Button className="gradient-bg border-0 glow-purple-soft">Browse Courses</Button>
+                                    </Link>
+                                </div>
+                            ) : (
+                                recentCourses.map((course, i) => (
+                                    <Link
+                                        key={course.id}
+                                        to={`/courses/${course.id}/materials`}
+                                        className={`glass-card overflow-hidden group cursor-pointer animate-fade-in-up opacity-0 stagger-${i + 1}`}
+                                    >
+                                        <div className="h-[120px] bg-white/[0.03] flex items-center justify-center border-b border-white/[0.06]">
+                                            <BookOpen className="h-8 w-8 text-white/15 group-hover:text-white/25 transition-colors" />
+                                        </div>
+                                        <div className="p-5 space-y-3">
+                                            <h3 className="text-[15px] font-display font-semibold text-white leading-tight group-hover:text-purple-300 transition-colors">
+                                                {course.name}
+                                            </h3>
+                                            <p className="text-[12px] text-white/40">{course.meta}</p>
+                                            {course.lastAccess && (
+                                                <p className="text-[11px] text-white/25 flex items-center gap-1.5">
+                                                    <Clock className="h-3 w-3" />
+                                                    Opened {formatDistanceToNow(new Date(course.lastAccess), { addSuffix: true })}
+                                                </p>
+                                            )}
+                                            <div className="space-y-2">
+                                                <div className="w-full h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                                                    <div
+                                                        className={`h-full rounded-full ${progressColors[course.color]} ${progressGlows[course.color]} transition-all`}
+                                                        style={{ width: `${course.progress}%` }}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
+                                    </Link>
+                                ))
+                            )}
                         </div>
                     </div>
 
                     {/* ── Recent Files ── */}
-                    {recentFiles && recentFiles.length > 0 && (
+                    {(isLoadingRecent || (recentFiles && recentFiles.length > 0)) && (
                         <div className="space-y-4">
                             <div className="flex items-end justify-between">
                                 <h2 className="text-[22px] font-display font-bold text-white tracking-[-0.02em]">
@@ -847,26 +925,35 @@ export default function Dashboard() {
                                 </Link>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                {recentFiles.slice(0, 4).map((file) => (
-                                    <Link key={file.id} to={`/courses/${file.courseId}/files/${file.id}`}>
-                                        <div className="glass-card p-4 flex items-center gap-4 group">
-                                            <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center shrink-0">
-                                                <FileText className="h-4.5 w-4.5 text-white/40 group-hover:text-purple-400 transition-colors" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[14px] font-medium text-white truncate group-hover:text-purple-300 transition-colors">
-                                                    {file.title}
-                                                </p>
-                                                <p className="text-[11px] text-white/35 flex items-center gap-1.5 mt-0.5">
-                                                    <span className="uppercase">{file.courseId}</span>
-                                                    <span>•</span>
-                                                    <Clock className="h-3 w-3" />
-                                                    {formatDistanceToNow(new Date(file.viewedAt), { addSuffix: true })}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
+                                {isLoadingRecent ? (
+                                    Array(4).fill(0).map((_, i) => (
+                                        <Skeleton key={i} className="h-[74px] rounded-2xl bg-white/[0.02] border border-white/[0.05]" />
+                                    ))
+                                ) : (
+                                    recentFiles!.slice(0, 4).map((file) => {
+                                        const fileCourse = allCourses?.find(c => c.id === file.courseId);
+                                        return (
+                                            <Link key={file.id} to={`/courses/${file.courseId}/files/${file.id}`}>
+                                                <div className="glass-card p-4 flex items-center gap-4 group">
+                                                    <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center shrink-0">
+                                                        <FileText className="h-4.5 w-4.5 text-white/40 group-hover:text-purple-400 transition-colors" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-[14px] font-medium text-white truncate group-hover:text-purple-300 transition-colors">
+                                                            {file.title}
+                                                        </p>
+                                                        <p className="text-[11px] text-white/35 flex items-center gap-1.5 mt-0.5">
+                                                            <span className="uppercase">{fileCourse?.name ?? file.courseId.toUpperCase()}</span>
+                                                            <span>•</span>
+                                                            <Clock className="h-3 w-3" />
+                                                            {formatDistanceToNow(new Date(file.viewedAt), { addSuffix: true })}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        );
+                                    })
+                                )}
                             </div>
                         </div>
                     )}
@@ -891,6 +978,13 @@ export default function Dashboard() {
                                 }
                             </h3>
                             <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setShowCompleted(!showCompleted)}
+                                    className={`text-[11px] px-2 py-1.5 rounded-md transition-all ${showCompleted ? "bg-white/[0.1] text-white" : "text-white/40 hover:text-white/70 hover:bg-white/[0.06]"
+                                        }`}
+                                >
+                                    {showCompleted ? "Hide Done" : "Show Done"}
+                                </button>
                                 {selectedDate && (
                                     <button
                                         onClick={() => setSelectedDate(null)}
@@ -985,20 +1079,37 @@ export default function Dashboard() {
                                 This Week
                             </span>
                         </div>
-                        <div className="flex items-end gap-3 h-[120px] border-b border-white/[0.06] pb-1">
-                            {weeklyActivity.map((day) => (
-                                <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
-                                    <div
-                                        className={`w-full rounded-md transition-all ${day.value > 50
-                                            ? "bg-purple-500/80 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
-                                            : "bg-white/[0.08]"
-                                            }`}
-                                        style={{ height: `${day.value}%` }}
-                                    />
-                                    <span className="text-[11px] text-white/35">{day.day}</span>
-                                </div>
-                            ))}
-                        </div>
+                        {!isLoadingRecent && !weeklyActivity.some(d => d.value > 0) ? (
+                            <div className="h-[120px] border-b border-white/[0.06] flex items-center justify-center">
+                                <p className="text-[12px] text-white/25 text-center">
+                                    No activity recorded this week
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex items-end gap-3 h-[120px] border-b border-white/[0.06] pb-1">
+                                {isLoadingRecent ? (
+                                    DAY_LABELS.map((day, i) => (
+                                        <div key={day} className="flex-1 flex flex-col items-center justify-end gap-2 h-full">
+                                            <Skeleton className="w-full rounded-md bg-white/[0.04]" style={{ height: `${[40, 70, 30, 80, 50, 90, 60][i]}%` }} />
+                                            <span className="text-[11px] text-white/35 opacity-50">{day}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    weeklyActivity.map((day) => (
+                                        <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
+                                            <div
+                                                className={`w-full rounded-md transition-all ${day.value > 50
+                                                    ? "bg-purple-500/80 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
+                                                    : "bg-white/[0.08]"
+                                                    }`}
+                                                style={{ height: `${day.value}%` }}
+                                            />
+                                            <span className="text-[11px] text-white/35">{day.day}</span>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {/* Reputation Card */}
@@ -1024,29 +1135,6 @@ export default function Dashboard() {
                     onAdd={addTask}
                 />
             )}
-        </div>
-    );
-}
-
-function DashboardSkeleton() {
-    return (
-        <div className="space-y-8">
-            <Skeleton className="h-[80px] w-full rounded-2xl bg-white/[0.06]" />
-            <div>
-                <Skeleton className="h-10 w-56 bg-white/[0.06]" />
-                <Skeleton className="h-4 w-80 bg-white/[0.04] mt-3" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-[120px] rounded-2xl bg-white/[0.06]" />
-                ))}
-            </div>
-            <Skeleton className="h-[280px] w-full rounded-2xl bg-white/[0.06]" />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-[200px] rounded-2xl bg-white/[0.06]" />
-                ))}
-            </div>
         </div>
     );
 }
