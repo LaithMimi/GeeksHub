@@ -33,7 +33,7 @@ import {
 } from "@/services/requestService";
 import { toast } from "sonner";
 import type { RejectReason, FileStatus } from "@/types/domain";
-import { DEMO_ADMIN } from "@/mock/mock-db";
+import { useAuth } from "@/context/AuthContext";
 
 // ============================================================================
 // USER HOOKS
@@ -113,9 +113,10 @@ export const useRequestStats = () => useQuery({
  */
 export const useApproveRequest = () => {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
     return useMutation({
         mutationFn: ({ requestId }: { requestId: string }) =>
-            approveRequest(requestId, DEMO_ADMIN.id, DEMO_ADMIN.name),
+            approveRequest(requestId, user!.id, user!.displayName ?? user!.email),
         onSuccess: (result, variables) => {
             queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
             queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
@@ -126,7 +127,7 @@ export const useApproveRequest = () => {
                     action: {
                         label: "Undo",
                         onClick: async () => {
-                            await undoApprove(variables.requestId, DEMO_ADMIN.id, DEMO_ADMIN.name);
+                            await undoApprove(variables.requestId, user!.id, user!.displayName ?? user!.email);
                             queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
                             queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
                             toast.info("Approval undone");
@@ -146,9 +147,10 @@ export const useApproveRequest = () => {
  */
 export const useRejectRequest = () => {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
     return useMutation({
         mutationFn: ({ requestId, reason, note }: { requestId: string; reason: RejectReason; note?: string }) =>
-            rejectRequest(requestId, DEMO_ADMIN.id, reason, note, DEMO_ADMIN.name),
+            rejectRequest(requestId, user!.id, reason, user!.displayName ?? user!.email, note),
         onSuccess: (result, variables) => {
             queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
             queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
@@ -159,7 +161,7 @@ export const useRejectRequest = () => {
                     action: {
                         label: "Undo",
                         onClick: async () => {
-                            await undoReject(variables.requestId, DEMO_ADMIN.id, DEMO_ADMIN.name);
+                            await undoReject(variables.requestId, user!.id, user!.displayName ?? user!.email);
                             queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
                             queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
                             toast.info("Rejection undone");
@@ -179,9 +181,10 @@ export const useRejectRequest = () => {
  */
 export const useBulkApprove = () => {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
     return useMutation({
         mutationFn: (requestIds: string[]) =>
-            bulkApprove(requestIds, DEMO_ADMIN.id, DEMO_ADMIN.name),
+            bulkApprove(requestIds, user!.id, user!.displayName ?? user!.email),
         onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
             queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
@@ -199,9 +202,10 @@ export const useBulkApprove = () => {
  */
 export const useBulkReject = () => {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
     return useMutation({
         mutationFn: ({ requestIds, reason }: { requestIds: string[]; reason: RejectReason }) =>
-            bulkReject(requestIds, DEMO_ADMIN.id, reason, DEMO_ADMIN.name),
+            bulkReject(requestIds, user!.id, reason, user!.displayName ?? user!.email),
         onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
             queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });

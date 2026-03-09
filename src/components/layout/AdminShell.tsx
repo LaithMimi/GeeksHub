@@ -18,7 +18,26 @@ import {
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { DEMO_ADMIN } from "@/mock/mock-db";
+import { useAuth } from "@/context/AuthContext";
+
+function AdminSidebarFooter() {
+    const { user } = useAuth();
+    return (
+        <SidebarFooter>
+            <div className="p-2">
+                <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center text-white text-sm font-medium">
+                        {user?.avatarInitials ?? "A"}
+                    </div>
+                    <div className="flex-1 truncate text-sm text-start">
+                        <p className="font-medium truncate">{user?.displayName ?? "Admin"}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user?.role ?? "ADMIN"}</p>
+                    </div>
+                </div>
+            </div>
+        </SidebarFooter>
+    );
+}
 
 function AdminSidebar() {
     const location = useLocation();
@@ -105,19 +124,7 @@ function AdminSidebar() {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter>
-                <div className="p-2">
-                    <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center text-white text-sm font-medium">
-                            A
-                        </div>
-                        <div className="flex-1 truncate text-sm text-start">
-                            <p className="font-medium truncate">{DEMO_ADMIN.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">{DEMO_ADMIN.role}</p>
-                        </div>
-                    </div>
-                </div>
-            </SidebarFooter>
+            <AdminSidebarFooter />
         </Sidebar>
     );
 }

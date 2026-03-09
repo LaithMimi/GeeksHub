@@ -656,7 +656,7 @@ const progressGlows: Record<string, string> = {
 // ────────────────────────────────────────────
 export default function Dashboard() {
     const { user } = useAuth();
-    const userId = user?.id ?? "u1";
+    const userId = user!.id;
     const { data: recentFiles, isLoading: isLoadingRecent, isError: isErrorRecent } = useRecentFiles();
     const { data: reputation, isLoading: isLoadingRep } = useReputation(userId);
     const { data: _requests, isLoading: isLoadingRequests } = useMyRequests(userId);

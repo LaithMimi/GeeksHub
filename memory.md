@@ -53,13 +53,13 @@ src/
 ├── hooks/                      # React hooks (localStorage-based state)
 │   ├── useTasks.ts             # Learning plan tasks (CRUD, localStorage)
 │   ├── usePinnedCourses.ts     # Pinned course IDs (localStorage)
-│   ├── useRecentFiles.ts       # Recent file history (localStorage) — DUPLICATE of queries/useFiles
 │   ├── useTheme.tsx            # Theme provider + useTheme hook (light/dark/system)
 │   ├── useReducedMotion.ts     # Accessibility: prefers-reduced-motion
 │   └── use-mobile.tsx          # Breakpoint detection (768px)
 ├── context/
 │   └── AuthContext.tsx          # Auth state (user, signIn, signUp, signOut). Persists to localStorage.
 ├── lib/
+│   ├── apiClient.ts            # Centralized fetch wrapper (typed, token injection, error handling)
 │   ├── router.tsx              # All route definitions
 │   └── utils.ts                # cn() — Tailwind class merge helper
 ├── components/
@@ -123,12 +123,25 @@ Every service returns a `Promise`. Query hooks wrap services with TanStack Query
 ### State Management
 - **Server state**: TanStack Query (all data fetching)
 - **Local state**: React `useState` + `localStorage` (tasks, pinned courses, recent files, theme)
-- **Auth state**: React Context (`AuthContext`)
+- **Auth state**: React Context (`AuthContext`). Token stored in `localStorage` (future: HTTP-only cookies)
 - **Theme state**: React Context (`ThemeProvider`)
 
 ---
 
-## 5. Domain Model (key types in `types/domain.ts`)
+## 5. API Client (`lib/apiClient.ts`)
+
+Centralized HTTP client used by all service files.
+- `api<T>(path, init?)` — typed fetch wrapper
+- Auto-injects `Authorization: Bearer <token>` from `localStorage`
+- Uses `credentials: "include"` (ready for HTTP-only cookies)
+- Throws `ApiError` with `status`, `message`, `data` on non-OK responses
+- Handles `204 No Content` gracefully
+
+**Usage**: `import { api, ApiError } from "@/lib/apiClient"`
+
+---
+
+## 6. Domain Model (key types in `types/domain.ts`)
 
 | Type | Purpose |
 |---|---|
@@ -148,20 +161,20 @@ Every service returns a `Promise`. Query hooks wrap services with TanStack Query
 
 ---
 
-## 6. Known Issues & Technical Debt
+## 7. Known Issues & Technical Debt
 
 ### Critical
 1. **Backend approval flow bug**: `POST /api/v1/admin/requests/{id}/approve` deletes file metadata instead of persisting it to a `files` table. Approved files are lost.
 2. **No `GET /api/v1/files` endpoint**: Backend has no way to list approved files. Frontend uses mock data.
 
 ### High
-3. **Duplicate recent files system**: `hooks/useRecentFiles.ts` (localStorage) and `queries/useFiles.ts` → `services/fileService.ts` (mock) both track recent files. Consolidate into the query-based approach when backend is ready.
-4. **Hardcoded `DEMO_USER_ID`**: `UserUploads.tsx` and `RequestFileModal.tsx` both hardcode `"u1"` instead of reading from `AuthContext`.
-5. **Hardcoded `DEMO_ADMIN`**: Admin query hooks import `DEMO_ADMIN` from mock-db. Replace with actual auth when backend is ready.
+3. ~~**Duplicate recent files system**~~: ✅ FIXED — Deleted `hooks/useRecentFiles.ts`. Only `queries/useFiles.ts` remains.
+4. ~~**Hardcoded `DEMO_USER_ID`**~~: ✅ FIXED — `UserUploads.tsx`, `RequestFileModal.tsx`, and `Dashboard.tsx` now read from `useAuth().user.id`.
+5. ~~**Hardcoded `DEMO_ADMIN`**~~: ✅ FIXED — `useRequests.ts`, `AdminShell.tsx`, and `requestService.ts` now read admin identity from `useAuth()`.
 6. **Dashboard greeting hardcoded**: `Dashboard.tsx` line 756 says "Welcome back, Deena" — should use `user.name` from `AuthContext`.
 
 ### Medium
-7. **`lecturerId` filter not implemented**: `fileService.listFiles()` accepts `lecturerId` but doesn't filter (empty block was removed during cleanup).
+7. **`lecturerId` filter not implemented**: `fileService.listFiles()` accepts `lecturerId` but doesn't filter.
 8. **`MyPath.tsx` is a placeholder**: The learning path page has no real content.
 9. **Course metadata hardcoded in Dashboard**: `COURSE_META` map in `Dashboard.tsx` duplicates data from `mock-db.ts`.
 10. **`requestPasswordReset` is mock-only**: Uses `delay()` and returns static success. Backend endpoint not implemented yet.
@@ -169,11 +182,11 @@ Every service returns a `Promise`. Query hooks wrap services with TanStack Query
 ### Low / Polish
 11. **Adobe PDF Embed API key hardcoded**: `FileViewer.tsx` line 58 has a hardcoded `clientId`.
 12. **`listTopContributors` returns mock stubs**: Data is seeded in `mock-db.ts`, not ever calculated.
-13. **`useYears` enabled logic**: `enabled: !!majorId || true` — the `|| true` makes the `majorId` guard useless.
+13. ~~**`useYears` enabled logic**~~: ✅ FIXED — Changed to `enabled: true` with `staleTime: Infinity`.
 
 ---
 
-## 7. Conventions
+## 8. Conventions
 
 - **File naming**: PascalCase for components, camelCase for services/hooks/queries
 - **JSDoc `@backend`**: Annotates mock functions with the real API endpoint they should call
@@ -185,7 +198,7 @@ Every service returns a `Promise`. Query hooks wrap services with TanStack Query
 
 ---
 
-## 8. How to Run
+## 9. How to Run
 
 ```bash
 # Install dependencies
@@ -203,12 +216,15 @@ npm run build
 
 ---
 
-## 9. Backend Connection
+## 10. Backend Connection
 
-The frontend expects the backend at `http://localhost:8000/api/v1`. Currently only `authService.ts` makes real API calls. All other services use mock data from `mock/mock-db.ts`.
+The frontend expects the backend at `http://localhost:8000/api/v1` (configurable via `VITE_API_URL` env var). Currently only `authService.ts` makes real API calls. All other services use mock data from `mock/mock-db.ts`.
+
+The frontend now has `lib/apiClient.ts` — a centralized fetch wrapper ready for real API calls.
 
 To connect the full backend:
-1. Update each service file to replace mock implementations with `fetch` calls
+1. Update each service file to replace mock implementations with `api()` calls from `@/lib/apiClient`
 2. Query hooks (`queries/`) need **no changes** — they call services which return Promises
 3. Remove `@backend` annotations and migration guide headers once migration is complete
-4. Delete `mock/mock-db.ts` and `hooks/useRecentFiles.ts` (consolidated into query layer)
+4. Delete `mock/mock-db.ts` when all services are migrated
+5. Backend must set `Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict` on signin to enable HTTP-only cookie auth (frontend already sends `credentials: "include"`)

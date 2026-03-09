@@ -16,9 +16,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMajors, useYears, useSemesters, useCourses, useLecturers } from "@/queries/useCatalog";
 import { useCreateRequest } from "@/queries/useRequests";
 import type { MaterialType } from "@/types/domain";
+import { useAuth } from "@/context/AuthContext";
 
 const DEMO_TYPES: MaterialType[] = ["Slides", "Homeworks", "Past Papers", "Notes"];
-const DEMO_USER_ID = "u1";
 
 interface RequestFileModalProps {
     open: boolean;
@@ -34,6 +34,7 @@ interface RequestFileModalProps {
 }
 
 export default function RequestFileModal({ open, onOpenChange, initialData }: RequestFileModalProps) {
+    const { user } = useAuth();
     const defaultForm = {
         major: "",
         year: "",
@@ -88,7 +89,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
 
     const handleSubmit = () => {
         submitRequest({
-            userId: DEMO_USER_ID,
+            userId: user!.id,
             courseId: requestForm.course,
             lecturerId: requestForm.lecturer, // In real app, name lookup or ID
             type: requestForm.type as MaterialType,

@@ -39,7 +39,7 @@
  * ============================================================================
  */
 
-import { fileRequests, randomDelay, pointsTransactions, auditLog, DEMO_ADMIN } from "@/mock/mock-db";
+import { fileRequests, randomDelay, pointsTransactions, auditLog } from "@/mock/mock-db";
 import type { FileRequest, MaterialType, RejectReason, RequestStats, AuditLogEntry, FileStatus } from "@/types/domain";
 
 
@@ -175,7 +175,7 @@ export const getRequestStats = async (): Promise<RequestStats> => {
  * IDEMPOTENT: If already approved, returns without double-awarding.
  * @backend PATCH /api/admin/file-requests/:requestId/approve
  */
-export const approveRequest = async (requestId: string, adminId: string, adminName: string = DEMO_ADMIN.name): Promise<FileRequest | null> => {
+export const approveRequest = async (requestId: string, adminId: string, adminName: string): Promise<FileRequest | null> => {
 
     await randomDelay(300, 600);
     const request = fileRequests.find(r => r.id === requestId);
@@ -226,8 +226,8 @@ export const rejectRequest = async (
     requestId: string,
     adminId: string,
     reason: RejectReason,
-    note?: string,
-    adminName: string = DEMO_ADMIN.name
+    adminName: string,
+    note?: string
 ): Promise<FileRequest | null> => {
 
     await randomDelay(300, 600);
@@ -259,7 +259,7 @@ export const rejectRequest = async (
  * IDEMPOTENT: Skips already-approved requests.
  * @backend POST /api/admin/file-requests/bulk-approve
  */
-export const bulkApprove = async (requestIds: string[], adminId: string, adminName: string = DEMO_ADMIN.name): Promise<{ approved: number; skipped: number }> => {
+export const bulkApprove = async (requestIds: string[], adminId: string, adminName: string): Promise<{ approved: number; skipped: number }> => {
     await randomDelay(500, 1000);
 
     let approved = 0;
@@ -317,7 +317,7 @@ export const bulkReject = async (
     requestIds: string[],
     adminId: string,
     reason: RejectReason,
-    adminName: string = DEMO_ADMIN.name
+    adminName: string
 ): Promise<{ rejected: number; skipped: number }> => {
     await randomDelay(500, 1000);
 
@@ -355,7 +355,7 @@ export const bulkReject = async (
  * Undo approval (admin only) - reverts to pending and removes points.
  * @backend POST /api/admin/file-requests/:requestId/undo-approve
  */
-export const undoApprove = async (requestId: string, adminId: string, adminName: string = DEMO_ADMIN.name): Promise<boolean> => {
+export const undoApprove = async (requestId: string, adminId: string, adminName: string): Promise<boolean> => {
     await randomDelay(300, 600);
     const request = fileRequests.find(r => r.id === requestId);
 
@@ -385,7 +385,7 @@ export const undoApprove = async (requestId: string, adminId: string, adminName:
  * Undo rejection (admin only) - reverts to pending.
  * @backend POST /api/admin/file-requests/:requestId/undo-reject
  */
-export const undoReject = async (requestId: string, adminId: string, adminName: string = DEMO_ADMIN.name): Promise<boolean> => {
+export const undoReject = async (requestId: string, adminId: string, adminName: string): Promise<boolean> => {
     await randomDelay(300, 600);
     const request = fileRequests.find(r => r.id === requestId);
 

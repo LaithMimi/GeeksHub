@@ -32,13 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signIn = useCallback(async (email: string, password: string) => {
         setState((s) => ({ ...s, isLoading: true, error: null }));
         try {
-            const {user, token} = await authService.signIn({ email, password }); // Removed { }
+            const { user, token } = await authService.signIn({ email, password }); // Removed { }
             const newUser = {
                 id: user.id,
                 email,
                 displayName: user.name, // Note: backend uses 'name'
                 role: user.role as Role,
-                avatarInitials: user.name.charAt(0).toUpperCase()    
+                avatarInitials: user.name.charAt(0).toUpperCase()
             };
             localStorage.setItem("mock_user_session", JSON.stringify(newUser));
             localStorage.setItem("token", token);
@@ -83,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signOut = useCallback(() => {
         localStorage.removeItem("mock_user_session");
+        localStorage.removeItem("token");
         setState({ user: null, isLoading: false, error: null });
     }, []);
 

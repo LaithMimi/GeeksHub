@@ -7,14 +7,15 @@ import RequestFileModal from "@/components/features/RequestFileModal";
 import { formatDistanceToNow } from "date-fns";
 import type { FileRequest } from "@/types/domain";
 import { toast } from "sonner";
-
-const DEMO_USER_ID = "u1";
+import { useAuth } from "@/context/AuthContext";
 
 export default function UserUploads() {
+    const { user } = useAuth();
+    const userId = user!.id;
     const [isRequestOpen, setIsRequestOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-    const { data: userRequests, isLoading, isError } = useMyRequests(DEMO_USER_ID);
+    const { data: userRequests, isLoading, isError } = useMyRequests(userId);
     const { mutate: withdrawRequest, isPending: isDeleting } = useWithdrawRequest();
 
     const getStatusIcon = (status: string) => {
@@ -35,7 +36,8 @@ export default function UserUploads() {
 
     const handleDelete = (request: FileRequest) => {
         withdrawRequest(
-            { requestId: request.id, userId: DEMO_USER_ID },
+            { requestId: request.id, userId },
+
             {
                 onSuccess: () => {
                     setDeleteConfirmId(null);

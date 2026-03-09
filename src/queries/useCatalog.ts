@@ -68,7 +68,8 @@ export const useMajors = () => useQuery({
 export const useYears = (majorId?: string) => useQuery({
     queryKey: ['years', majorId],
     queryFn: () => listYears(majorId),
-    enabled: !!majorId || true // Always enabled for now as years are static
+    enabled: true,
+    staleTime: Infinity,
 });
 
 /**
