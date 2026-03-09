@@ -101,7 +101,8 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
             auth0_id=auth0_id,
             email=clean_email,
             name=payload.username,
-            role="STUDENT"
+            role="STUDENT",
+            major_id=payload.major_id # [FRONTEND UPDATE]: Saving the chosen major UUID into the database
         )
         session.add(new_user)
         session.commit()
@@ -154,9 +155,9 @@ def get_my_profile(current_user: User = Depends(get_verified_user)):
 
 @app.get("/api/v1/majors", response_model=List[Major])
 def list_majors(
-    session: Session = Depends(get_session),
-    # Use Depends instead of Security(auth0.require_auth)
-    current_user: User = Depends(get_verified_user) 
+    session: Session = Depends(get_session)
+    # [FRONTEND UPDATE]: Removed 'current_user: User = Depends(get_verified_user)' 
+    #   because unauthenticated users need to fetch the majors list during the Sign Up process.
 ):
     return session.exec(select(Major)).all()
 

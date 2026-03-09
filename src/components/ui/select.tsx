@@ -56,7 +56,7 @@ SelectTrigger.displayName = "SelectTrigger"
 const SelectValue = React.forwardRef<
     HTMLSpanElement,
     React.HTMLAttributes<HTMLSpanElement> & { placeholder?: string }
->(({ className, placeholder, ...props }, ref) => {
+>(({ className, children, placeholder, ...props }, ref) => {
     const { value } = React.useContext(SelectContext)
     return (
         <span
@@ -64,7 +64,7 @@ const SelectValue = React.forwardRef<
             className={cn("line-clamp-1", className)}
             {...props}
         >
-            {value || placeholder}
+            {children || value || placeholder}
         </span>
     )
 })

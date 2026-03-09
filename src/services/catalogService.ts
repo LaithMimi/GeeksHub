@@ -54,16 +54,16 @@
  * ============================================================================
  */
 
-import { majors, years, semesters, courses, lecturers, randomDelay } from "@/mock/mock-db";
+import { years, semesters, courses, lecturers, randomDelay } from "@/mock/mock-db";
 import type { Course, Lecturer, Major, Semester, AcademicYear } from "@/types/domain";
+import { api } from "@/lib/apiClient";
 
 /**
  * Fetches all available majors.
  * @backend GET /api/majors
  */
 export const listMajors = async (): Promise<Major[]> => {
-    await randomDelay();
-    return majors;
+    return await api<Major[]>("/majors");
 };
 
 /**

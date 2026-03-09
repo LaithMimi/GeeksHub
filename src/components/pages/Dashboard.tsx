@@ -753,7 +753,7 @@ export default function Dashboard() {
                         Dashboard
                     </h1>
                     <p className="text-[14px] text-white/45 mt-2">
-                        Welcome back, Deena. Here's your learning overview.
+                        Welcome back, {user?.displayName || 'Student'}. Here's your learning overview.
                     </p>
                 </div>
             </div>

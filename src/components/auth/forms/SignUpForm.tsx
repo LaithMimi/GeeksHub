@@ -3,11 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Facebook, Twitter } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMajors } from "@/queries/useCatalog";
+import { toast } from "sonner";
 
 export default function SignUpForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [majorId, setMajorId] = useState("");
+    const { data: majors, isLoading: isMajorsLoading, isError: isMajorsError } = useMajors();
+
     const { signUp } = useAuth();
     const navigate = useNavigate();
 
@@ -19,8 +27,21 @@ export default function SignUpForm() {
         const formData = new FormData(e.target as HTMLFormElement);
         const data = Object.fromEntries(formData);
 
+        if (data.password !== data.confirmPassword) {
+            setError("Passwords do not match");
+            setIsLoading(false);
+            return;
+        }
+
+        if (!majorId) {
+            setError("Please select a major");
+            setIsLoading(false);
+            return;
+        }
+
         try {
-            await signUp(data.name as string, data.email as string, data.password as string);
+            await signUp(data.name as string, data.email as string, data.password as string, majorId);
+            toast.success("Account created successfully!");
             navigate("/");
         } catch (err: any) {
             setError(err.message || "An error occurred.");
@@ -32,27 +53,11 @@ export default function SignUpForm() {
     return (
         <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8">
 
-            {/* Social Container */}
-            <div className="flex gap-4 my-2">
-                <Button variant="outline" size="icon" className="rounded-full border-muted-foreground/20 hover:border-muted-foreground/50 w-10 h-10" type="button">
-                    <span className="font-bold text-lg">G</span>
-                </Button>
-                <Button variant="outline" size="icon" className="rounded-full border-muted-foreground/20 hover:border-muted-foreground/50 w-10 h-10" type="button">
-                    <Facebook className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="rounded-full border-muted-foreground/20 hover:border-muted-foreground/50 w-10 h-10" type="button">
-                    <Twitter className="h-4 w-4" />
-                </Button>
-            </div>
-
-            <span className="text-xs text-[#333] my-4">or use your email for registration</span>
-
-            {/* Form Inputs */}
-            <div className="w-full space-y-3">
+            <div className="w-full space-y-3 mt-4">
                 <Input
                     name="name"
                     type="text"
-                    placeholder="Name"
+                    placeholder="Full name"
                     className="h-10"
                     required
                     autoFocus
@@ -60,18 +65,61 @@ export default function SignUpForm() {
                 <Input
                     name="email"
                     type="email"
-                    placeholder="Email"
+                    placeholder="University email"
                     className="h-10"
                     required
                 />
-                <Input
-                    name="password"
-                    type="password"
-                    placeholder="Password"
-                    className="h-10"
-                    required
-                    minLength={8}
-                />
+
+                <Select value={majorId} onValueChange={setMajorId} disabled={isMajorsLoading || isMajorsError}>
+                    <SelectTrigger className="h-10">
+                        <SelectValue placeholder={isMajorsLoading ? "Loading majors..." : isMajorsError ? "Failed to load majors" : "Select Major"}>
+                            {majors?.find((m) => m.id === majorId)?.name}
+                        </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                        {majors?.map((major) => (
+                            <SelectItem key={major.id} value={major.id}>
+                                {major.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <div className="relative">
+                    <Input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        className="h-10 pr-10"
+                        required
+                        minLength={8}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                </div>
+
+                <div className="relative">
+                    <Input
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm password"
+                        className="h-10 pr-10"
+                        required
+                        minLength={8}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                        {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                </div>
             </div>
 
             <Button

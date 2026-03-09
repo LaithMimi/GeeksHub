@@ -61,7 +61,6 @@ export default function SlidingAuth() {
                             <div className="social-container mb-4">
                                 {/* Social Icons handled inside form */}
                             </div>
-                            <span className="text-xs text-muted-foreground mb-4">or use your email for registration</span>
                             <div className="w-full">
                                 <SignUpForm />
                             </div>
@@ -88,7 +87,6 @@ export default function SlidingAuth() {
                                     <div className="social-container mb-4">
                                         {/* Social Icons handled inside form */}
                                     </div>
-                                    <span className="text-xs text-muted-foreground mb-4">or use your account</span>
                                     <div className="w-full">
                                         <SignInForm onForgotPassword={() => setIsForgot(true)} />
                                     </div>

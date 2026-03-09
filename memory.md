@@ -171,7 +171,7 @@ Centralized HTTP client used by all service files.
 3. ~~**Duplicate recent files system**~~: ✅ FIXED — Deleted `hooks/useRecentFiles.ts`. Only `queries/useFiles.ts` remains.
 4. ~~**Hardcoded `DEMO_USER_ID`**~~: ✅ FIXED — `UserUploads.tsx`, `RequestFileModal.tsx`, and `Dashboard.tsx` now read from `useAuth().user.id`.
 5. ~~**Hardcoded `DEMO_ADMIN`**~~: ✅ FIXED — `useRequests.ts`, `AdminShell.tsx`, and `requestService.ts` now read admin identity from `useAuth()`.
-6. **Dashboard greeting hardcoded**: `Dashboard.tsx` line 756 says "Welcome back, Deena" — should use `user.name` from `AuthContext`.
+6. ~~**Dashboard greeting hardcoded**~~: ✅ FIXED — `Dashboard.tsx` now uses `user?.displayName` instead of "Deena".
 
 ### Medium
 7. **`lecturerId` filter not implemented**: `fileService.listFiles()` accepts `lecturerId` but doesn't filter.

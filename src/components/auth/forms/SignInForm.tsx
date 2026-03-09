@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Facebook, Twitter } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface SignInFormProps {
     onForgotPassword?: () => void;
@@ -12,6 +13,7 @@ interface SignInFormProps {
 export default function SignInForm({ onForgotPassword }: SignInFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const { signIn } = useAuth();
     const navigate = useNavigate();
 
@@ -23,9 +25,10 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
         const formData = new FormData(e.target as HTMLFormElement);
         const email = formData.get("email") as string;
         const password = formData.get("password") as string;
+        const rememberMe = formData.get("rememberMe") === "on";
 
         try {
-            await signIn(email, password);
+            await signIn(email, password, rememberMe);
             navigate("/");
         } catch (err: any) {
             setError(err.message || "An error occurred.");
@@ -37,20 +40,6 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
     return (
         <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8">
 
-            {/* Social Container */}
-            <div className="flex gap-4 my-2">
-                <Button variant="outline" size="icon" className="rounded-full border-muted-foreground/20 hover:border-muted-foreground/50 w-10 h-10" type="button">
-                    <span className="font-bold text-lg">G</span> {/* Google */}
-                </Button>
-                <Button variant="outline" size="icon" className="rounded-full border-muted-foreground/20 hover:border-muted-foreground/50 w-10 h-10" type="button">
-                    <Facebook className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="rounded-full border-muted-foreground/20 hover:border-muted-foreground/50 w-10 h-10" type="button">
-                    <Twitter className="h-4 w-4" />
-                </Button>
-            </div>
-
-            {/* Form Inputs */}
             <div className="w-full space-y-3 mt-4">
                 <Input
                     name="email"
@@ -60,24 +49,42 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
                     required
                     autoFocus
                 />
-                <Input
-                    name="password"
-                    type="password"
-                    placeholder="Password"
-                    className="h-10"
-                    required
-                />
+                <div className="relative">
+                    <Input
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Password"
+                        className="h-10 pr-10"
+                        required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                </div>
             </div>
 
-            {/* Forgot Password Link */}
-            <button
-                type="button"
-                onClick={onForgotPassword}
-                className="text-xs text-[#333] my-4 hover:underline bg-transparent border-none cursor-pointer"
-            >
-                Forgot your password?
-            </button>
+            <div className="w-full flex items-center justify-between mt-4 text-sm">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                    <Checkbox name="rememberMe" />
+                    <span className="text-muted-foreground">Remember me</span>
+                </label>
+                {/* Forgot Password Link */}
+                <button
+                    type="button"
+                    onClick={onForgotPassword}
+                    className="text-[#333] hover:underline bg-transparent border-none cursor-pointer"
+                >
+                    Forgot your password?
+                </button>
+            </div>
 
+            <div>
+                <br />
+            </div>
             {/* Submit Button */}
             <Button
                 className="rounded-full w-full px-12 py-6 font-bold uppercase text-xs tracking-wider transition-transform active:scale-95"

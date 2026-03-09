@@ -9,8 +9,8 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-    signIn: (email: string, password: string) => Promise<void>;
-    signUp: (name: string, email: string, password: string) => Promise<void>;
+    signIn: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+    signUp: (name: string, email: string, password: string, majorId: string) => Promise<void>;
     signOut: () => void;
 }
 
@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [state, setState] = useState<AuthState>(() => {
-        const saved = localStorage.getItem("mock_user_session");
+        const saved = localStorage.getItem("mock_user_session") || sessionStorage.getItem("mock_user_session");
         return {
             user: saved ? JSON.parse(saved) : null,
             isLoading: false,
@@ -29,10 +29,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
     });
 
-    const signIn = useCallback(async (email: string, password: string) => {
+    const signIn = useCallback(async (email: string, password: string, rememberMe: boolean = false) => {
         setState((s) => ({ ...s, isLoading: true, error: null }));
         try {
-            const { user, token } = await authService.signIn({ email, password }); // Removed { }
+            const { user } = await authService.signIn({ email, password, rememberMe });
             const newUser = {
                 id: user.id,
                 email,
@@ -40,8 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 role: user.role as Role,
                 avatarInitials: user.name.charAt(0).toUpperCase()
             };
-            localStorage.setItem("mock_user_session", JSON.stringify(newUser));
-            localStorage.setItem("token", token);
+            if (rememberMe) {
+                localStorage.setItem("mock_user_session", JSON.stringify(newUser));
+                sessionStorage.removeItem("mock_user_session");
+            } else {
+                sessionStorage.setItem("mock_user_session", JSON.stringify(newUser));
+                localStorage.removeItem("mock_user_session");
+            }
             setState({
                 user: newUser,
                 isLoading: false,
@@ -53,10 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    const signUp = useCallback(async (name: string, email: string, password: string) => {
+    const signUp = useCallback(async (name: string, email: string, password: string, majorId: string) => {
         setState((s) => ({ ...s, isLoading: true, error: null }));
         try {
-            const user = await authService.signUp({ name, email, password }); // Removed { }
+            const user = await authService.signUp({ name, email, password, majorId });
             const newUser = {
                 id: user.id,
                 email,
@@ -69,7 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     .toUpperCase()
                     .slice(0, 2),
             };
-            localStorage.setItem("mock_user_session", JSON.stringify(newUser));
+            // Note: Since you'll ask them to login, we probably shouldn't set the session yet, 
+            // but if you want auto-login, do it here. 
+            // Let's assume we do auto-login for now (but the UI handles auto-login failure logic too)
+            sessionStorage.setItem("mock_user_session", JSON.stringify(newUser));
             setState({
                 user: newUser,
                 isLoading: false,
@@ -83,7 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signOut = useCallback(() => {
         localStorage.removeItem("mock_user_session");
+        sessionStorage.removeItem("mock_user_session");
         localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
         setState({ user: null, isLoading: false, error: null });
     }, []);
 

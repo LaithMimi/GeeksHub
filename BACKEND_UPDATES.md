@@ -9,9 +9,18 @@
 
 The frontend has been refactored to eliminate hardcoded identities, create a centralized API client, and prepare for real backend integration. This document lists what changed and what the backend needs to support.
 
+## 1. New Signup Flow & `major_id` Requirement
+The Signup frontend form no longer uses OAuth and now requires the student to select an academic major from a dropdown.
+
+**Backend Changes Made**:
+- `models.py`: Added `major_id` (foreign key UUID linking to the `majors` table) to the `User` DB model and `UserSignUp` Pydantic payload. Added clear Docstrings to all DB models.
+- `main.py`: Updated the `POST /api/v1/signup` endpoint to extract `major_id` from the payload and insert it during User creation. 
+- `main.py`: Removed the `current_user` dependency from `GET /api/v1/majors`. **This endpoint must remain public** because unauthenticated users need to fetch the list of majors to populate the dropdown during signup.
+- **Database Migration**: A quick python script (`add_column.py`) was executed to manually run `ALTER TABLE users ADD COLUMN major_id UUID REFERENCES majors(id);` against the Neon database.
+
 ---
 
-## 1. New API Client — `src/lib/apiClient.ts`
+## 2. New API Client — `src/lib/apiClient.ts`
 
 A centralized fetch wrapper is now in place:
 
