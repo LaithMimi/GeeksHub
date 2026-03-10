@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import jwt
 from sqlmodel import Session, select
 from typing import List, Optional
 from auth0.authentication import GetToken
@@ -135,6 +136,16 @@ def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(
             audience=os.getenv("AUTH0_AUDIENCE"),
             realm="Username-Password-Authentication"
         )
+
+        # Check if email is verified before allowing sign in
+        id_token = auth0_response.get("id_token")
+        if id_token:
+            # We can decode without verifying signature here because it came directly from Auth0 over secure HTTPS
+            token_payload = jwt.decode(id_token, options={"verify_signature": False})
+            print(f"DEBUG ID Token: {token_payload}")
+            if not token_payload.get("email_verified"):
+                raise HTTPException(status_code=403, detail="Email not verified. Please verify your email before signing in.")
+            
         access_token = auth0_response.get("access_token")
 
         # SET THE HTTP-ONLY COOKIE

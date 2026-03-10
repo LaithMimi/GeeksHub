@@ -41,8 +41,14 @@ export default function SignUpForm() {
 
         try {
             await signUp(data.name as string, data.email as string, data.password as string, majorId);
-            toast.success("Account created successfully!");
-            navigate("/");
+            toast.success("Account created! 📧 Please check your email to verify before logging in.", {
+                duration: 8000, // Keep it on screen a bit longer so they read it
+            });
+            
+            // [backend update] Since we now require email verification, we won't auto-login the user after sign-up.
+            // 2. Route them to the sign-in page so they can log in AFTER verifying.
+            // (If your sliding auth page is on a specific route like "/auth", change this to that route)
+            navigate("/auth");
         } catch (err: any) {
             setError(err.message || "An error occurred.");
         } finally {

@@ -64,15 +64,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // 1. Create the account in Neon and Auth0
             await authService.signUp({ name, email, password, majorId });
             
-            // 2. REAL Auto-Login: Trigger the sign-in flow to get the secure cookie!
-            // We pass 'false' for rememberMe by default for new signups
-            await signIn(email, password, false); 
+            // Just clear the loading state. 
+            // Your React UI (like SignUpForm.tsx) can now catch this success 
+            // and redirect them to a "Check Your Email!" success screen. 
+            setState((s) => ({ ...s, isLoading: false })); 
 
         } catch (err: any) {
             setState((s) => ({ ...s, isLoading: false, error: err.message || "An error occurred" }));
             throw err;
         }
-    }, [signIn]);
+    }, []);
 
     const signOut = useCallback(async () => {
         try {
