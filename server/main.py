@@ -4,11 +4,12 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import jwt
+import requests
 from sqlmodel import Session, select
 from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from models import FileRequest,FileRequestCreate, Major, User, Course, UserSignUp, UserSignIn
+from models import FileRequest,FileRequestCreate, Major, User, Course, UserSignUp, UserSignIn, ForgotPassword
 from auth_utils import get_verified_user
 from database import get_session, init_db
 from uuid import UUID
@@ -168,6 +169,26 @@ def sign_out(response: Response):
     # This clears the cookie on the browser side
     response.delete_cookie("auth_token")
     return {"message": "Logged out successfully"}
+
+@app.post("/api/v1/forgot-password")
+def forgot_password(payload: ForgotPassword):
+    domain = os.getenv("AUTH0_DOMAIN")
+    client_id = os.getenv("AUTH0_M2M_ID") 
+    
+    url = f"https://{domain}/dbconnections/change_password"
+    data = {
+        "client_id": client_id,
+        "email": payload.email.lower().strip(),
+        "connection": "Username-Password-Authentication"
+    }
+    
+    # Trigger the email from Auth0
+    response = requests.post(url, json=data)
+    
+    # SECURITY BEST PRACTICE: Always return a generic success message.
+    # If you return a 404 "User not found", hackers can use this to guess 
+    # which emails are registered in your database (Email Enumeration).
+    return {"message": "If an account with that email exists, a password reset link has been sent."}
 
 @app.get("/api/v1/me", response_model=User)
 def get_my_profile(current_user: User = Depends(get_verified_user)):

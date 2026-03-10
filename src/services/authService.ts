@@ -105,9 +105,21 @@ export const authService = {
         }
     },
 
-    requestPasswordReset: async ({ email: _email }: { email: string }) => {
-        await delay(400);
-        return { success: true, message: "If an account exists, a reset link has been sent." };
+
+
+    requestPasswordReset: async (email: string) => {
+        const response = await fetch(`${API_URL}/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || "Failed to request password reset");
+        }
+        
+        return response.json();
     },
 
     confirmPasswordReset: async ({ token, password }: Record<string, string>) => {

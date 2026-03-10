@@ -126,4 +126,7 @@ class UserSignUp(BaseModel):
     
 class UserSignIn(BaseModel):
     email: str
-    password: str    
+    password: str   
+
+class ForgotPassword(BaseModel):
+    email: str 
