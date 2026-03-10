@@ -20,7 +20,7 @@ export default function ForgotForm({ onBack }: ForgotFormProps) {
         const email = formData.get("email") as string;
 
         try {
-            await authService.requestPasswordReset({ email });
+            await authService.requestPasswordReset(email);
             setSuccess(true);
         } catch (err) {
             // In forgot password, we typically don't show errors for security (enumeration)

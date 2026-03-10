@@ -9,7 +9,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const API_URL = "http://localhost:8000/api/v1";
 
 export const authService = {
-    signIn: async ({ email, password, rememberMe = false }: Record<string, any>) => {
+    signIn: async ({ email, password }: Record<string, any>) => {
         const response = await fetch(`${API_URL}/signin`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -18,6 +18,10 @@ export const authService = {
         });
 
         if (!response.ok) {
+            if (response.status === 403) {
+                throw { message: "Please check your email to verify your account before logging in." };
+            }
+
             const errorData = await response.json();
             let errorMessage = "Login failed";
             if (errorData.detail) {
@@ -34,18 +38,9 @@ export const authService = {
 
         const data = await response.json();
 
-        // Save the real token
-        if (rememberMe) {
-            localStorage.setItem('token', data.token);
-            sessionStorage.removeItem('token');
-        } else {
-            sessionStorage.setItem('token', data.token);
-            localStorage.removeItem('token');
-        }
-
-        // Return BOTH token and user to the AuthContext
+        // Token is now set securely via HttpOnly cookie by the backend
+        // We only need to return the user payload to populate the app state
         return {
-            token: data.token,
             user: data.user
         };
     },
@@ -61,6 +56,7 @@ export const authService = {
                 password_confirm: password,
                 major_id: majorId
             }),
+            credentials: 'include'
         });
 
         if (!response.ok) {
@@ -81,7 +77,7 @@ export const authService = {
         return await response.json();
     },
 
-    
+
     // [backend update] Signout now calls the API to clear the cookie on the server side
     signOut: async () => {
         try {
@@ -90,18 +86,18 @@ export const authService = {
                 headers: { 'Content-Type': 'application/json' },
                 // VERY IMPORTANT: This tells the browser to send the cookie 
                 // so the backend knows which session to destroy!
-                credentials: 'include', 
+                credentials: 'include',
             });
 
             if (!response.ok) {
                 console.warn("Server-side signout returned an error, clearing local state anyway.");
             }
-            
+
             return { success: true };
         } catch (error) {
             console.error("Network error during signout:", error);
             // We still return success so the AuthContext clears the frontend UI
-            return { success: true }; 
+            return { success: true };
         }
     },
 
@@ -112,13 +108,14 @@ export const authService = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email }),
+            credentials: 'include'
         });
 
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.detail || "Failed to request password reset");
         }
-        
+
         return response.json();
     },
 

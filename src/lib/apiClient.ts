@@ -48,17 +48,10 @@ export class ApiError extends Error {
  * ```
  */
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-    const token = localStorage.getItem("token");
-
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
         ...(init?.headers as Record<string, string> ?? {}),
     };
-
-    // @backend Remove this block when using HTTP-only cookies
-    if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-    }
 
     const res = await fetch(`${API_BASE_URL}${path}`, {
         ...init,
