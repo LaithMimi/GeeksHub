@@ -81,6 +81,30 @@ export const authService = {
         return await response.json();
     },
 
+    
+    // [backend update] Signout now calls the API to clear the cookie on the server side
+    signOut: async () => {
+        try {
+            const response = await fetch(`${API_URL}/signout`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // VERY IMPORTANT: This tells the browser to send the cookie 
+                // so the backend knows which session to destroy!
+                credentials: 'include', 
+            });
+
+            if (!response.ok) {
+                console.warn("Server-side signout returned an error, clearing local state anyway.");
+            }
+            
+            return { success: true };
+        } catch (error) {
+            console.error("Network error during signout:", error);
+            // We still return success so the AuthContext clears the frontend UI
+            return { success: true }; 
+        }
+    },
+
     requestPasswordReset: async ({ email: _email }: { email: string }) => {
         await delay(400);
         return { success: true, message: "If an account exists, a reset link has been sent." };

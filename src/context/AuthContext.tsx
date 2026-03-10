@@ -61,40 +61,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signUp = useCallback(async (name: string, email: string, password: string, majorId: string) => {
         setState((s) => ({ ...s, isLoading: true, error: null }));
         try {
-            const user = await authService.signUp({ name, email, password, majorId });
-            const newUser = {
-                id: user.id,
-                email,
-                displayName: name,
-                role: user.role as Role,
-                avatarInitials: name
-                    .split(" ")
-                    .map((n: string) => n[0])
-                    .join("")
-                    .toUpperCase()
-                    .slice(0, 2),
-            };
-            // Note: Since you'll ask them to login, we probably shouldn't set the session yet, 
-            // but if you want auto-login, do it here. 
-            // Let's assume we do auto-login for now (but the UI handles auto-login failure logic too)
-            sessionStorage.setItem("mock_user_session", JSON.stringify(newUser));
-            setState({
-                user: newUser,
-                isLoading: false,
-                error: null,
-            });
+            // 1. Create the account in Neon and Auth0
+            await authService.signUp({ name, email, password, majorId });
+            
+            // 2. REAL Auto-Login: Trigger the sign-in flow to get the secure cookie!
+            // We pass 'false' for rememberMe by default for new signups
+            await signIn(email, password, false); 
+
         } catch (err: any) {
             setState((s) => ({ ...s, isLoading: false, error: err.message || "An error occurred" }));
             throw err;
         }
-    }, []);
+    }, [signIn]);
 
-    const signOut = useCallback(() => {
-        localStorage.removeItem("mock_user_session");
-        sessionStorage.removeItem("mock_user_session");
-        localStorage.removeItem("token");
-        sessionStorage.removeItem("token");
-        setState({ user: null, isLoading: false, error: null });
+    const signOut = useCallback(async () => {
+        try {
+            // Tell the backend to delete the HttpOnly cookie
+            await authService.signOut(); 
+        } catch (error) {
+            console.error("Failed to sign out from server", error);
+        } finally {
+            // Wipe frontend state regardless
+            localStorage.removeItem("mock_user_session");
+            sessionStorage.removeItem("mock_user_session");
+            setState({ user: null, isLoading: false, error: null });
+        }
     }, []);
 
     return (
