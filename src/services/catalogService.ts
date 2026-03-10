@@ -87,18 +87,17 @@ export const listSemesters = async (_majorId?: string): Promise<Semester[]> => {
 }
 
 /**
- * Fetches courses with optional filters.
+ * Fetches courses with optional filters from the Live Backend.
  * @param filters - Filter by majorId, yearId, semesterId
  * @backend GET /api/courses?majorId=...&semesterId=...
  */
 export const listCourses = async (filters: { majorId?: string, yearId?: string, semesterId?: string }): Promise<Course[]> => {
-    await randomDelay(500, 1500);
+    const params = new URLSearchParams();
+    if (filters.majorId) params.append("major_id", filters.majorId);
+    if (filters.yearId) params.append("year_id", filters.yearId.toString());
+    if (filters.semesterId) params.append("semester_id", filters.semesterId.toString());
 
-    return courses.filter(c => {
-        if (filters.majorId && c.majorId !== filters.majorId) return false;
-        if (filters.semesterId && c.semesterId !== filters.semesterId) return false;
-        return true;
-    });
+    return await api<Course[]>(`/courses?${params.toString()}`);
 };
 
 /**

@@ -81,6 +81,7 @@ export interface User {
     displayName: string;
     role: Role;
     avatarInitials: string; // e.g., "JD" - consider avatarUrl for production
+    majorId?: string;
 }
 
 // ============================================================================
@@ -128,6 +129,8 @@ export interface Course {
     term: string; // Display string like "Fall 2024"
     color: string; // Tailwind gradient classes for UI
     progress?: number; // Optional: user's progress in course
+    year_id?: number;
+    semester?: number;
 }
 
 /**

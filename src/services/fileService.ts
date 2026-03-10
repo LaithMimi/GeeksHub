@@ -88,7 +88,13 @@ export const listFiles = async (filters: FileFilters): Promise<File[]> => {
     let result = files;
 
     if (filters.courseId) {
-        result = result.filter(f => f.courseId === filters.courseId);
+        // If the courseId is a real UUID from the backend, 
+        // fallback to showing a universal mock subset so the UI isn't empty.
+        if (filters.courseId.includes("-") && filters.courseId.length > 20) {
+            result = result.slice(0, 4); // return 4 sample files
+        } else {
+            result = result.filter(f => f.courseId === filters.courseId);
+        }
     }
     if (filters.type) {
         result = result.filter(f => f.type === filters.type as MaterialType);

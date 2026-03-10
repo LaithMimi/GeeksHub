@@ -10,6 +10,15 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
+## 1.1 Highlights of Recent Updates (March 2026)
+- **Auth Hardening:** Switched to `HttpOnly` cookie-based JWTs. `credentials: 'include'` now applied to all API calls. Added 403 blocks for unverified emails on sign-in.
+- **Backend APIs Connected:** Real integration with live Neon Postgres endpoints for `/majors` and `/courses`.
+- **Course Library Rework:** Reverted the UI to cascading dropdowns (Major → Year → Semester → Course). The user's major is now auto-fetched from their profile via `useAuth().user.majorId`, locking the dropdown and dynamically filtering subsequent selections natively.
+- **Dashboard Refinements:** Cleaned up progressive skeleton loaders, replaced hardcoded generic IDs (`"u1"`, `"DEMO_ADMIN"`) with contextual auth data, and stubbed out real metrics queries.
+- **New Task List Generated:** A `backend_tasks.md` was passed to the backend engineer detailing the exact REST APIs still missing (e.g., file endpoints, reputation, requests, audit).
+
+---
+
 ## 2. Tech Stack
 
 | Layer | Technology |
@@ -223,8 +232,8 @@ The frontend expects the backend at `http://localhost:8000/api/v1` (configurable
 The frontend now has `lib/apiClient.ts` — a centralized fetch wrapper ready for real API calls.
 
 To connect the full backend:
-1. Update each service file to replace mock implementations with `api()` calls from `@/lib/apiClient`
+1. Update each service file to replace mock implementations with `api()` calls from `@/lib/apiClient`. (Currently `authService.ts` and parts of `catalogService.ts` are migrated).
 2. Query hooks (`queries/`) need **no changes** — they call services which return Promises
 3. Remove `@backend` annotations and migration guide headers once migration is complete
 4. Delete `mock/mock-db.ts` when all services are migrated
-5. Backend must set `Set-Cookie: token=...; HttpOnly; Secure; SameSite=Strict` on signin to enable HTTP-only cookie auth (frontend already sends `credentials: "include"`)
+5. **Cookie Auth:** Backend now sets `Set-Cookie: auth_token=...; HttpOnly; Secure; SameSite=Strict` on signin. The frontend `apiClient` manages sending `credentials: "include"`, so `localStorage` is no longer used for JWTs.

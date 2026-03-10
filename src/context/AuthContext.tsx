@@ -38,7 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email,
                 displayName: user.name, // Note: backend uses 'name'
                 role: user.role as Role,
-                avatarInitials: user.name.charAt(0).toUpperCase()
+                avatarInitials: user.name.charAt(0).toUpperCase(),
+                majorId: user.major_id
             };
             if (rememberMe) {
                 localStorage.setItem("mock_user_session", JSON.stringify(newUser));
@@ -63,11 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             // 1. Create the account in Neon and Auth0
             await authService.signUp({ name, email, password, majorId });
-            
+
             // Just clear the loading state. 
             // Your React UI (like SignUpForm.tsx) can now catch this success 
             // and redirect them to a "Check Your Email!" success screen. 
-            setState((s) => ({ ...s, isLoading: false })); 
+            setState((s) => ({ ...s, isLoading: false }));
 
         } catch (err: any) {
             setState((s) => ({ ...s, isLoading: false, error: err.message || "An error occurred" }));
@@ -78,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signOut = useCallback(async () => {
         try {
             // Tell the backend to delete the HttpOnly cookie
-            await authService.signOut(); 
+            await authService.signOut();
         } catch (error) {
             console.error("Failed to sign out from server", error);
         } finally {
