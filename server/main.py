@@ -1,6 +1,6 @@
 import datetime
 import os
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from sqlmodel import Session, select
@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="GeeksHub API", lifespan=lifespan)
 
-
+# CORS Middleware to allow frontend (running on localhost:5173) to communicate with this API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -102,7 +102,7 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
             email=clean_email,
             name=payload.username,
             role="STUDENT",
-            major_id=payload.major_id # [FRONTEND UPDATE]: Saving the chosen major UUID into the database
+            major_id=payload.major_id # Saving the chosen major UUID into the database
         )
         session.add(new_user)
         session.commit()
@@ -118,7 +118,7 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
         raise HTTPException(status_code=400, detail=f"Registration failed: {str(e)}")
 
 @app.post("/api/v1/signin")
-def sign_in(payload: UserSignIn, session: Session = Depends(get_session)):
+def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(get_session)):
     clean_email = payload.email.lower().strip()
     # Use payload.email and payload.password instead of email/password
     user = session.exec(select(User).where(User.email == clean_email)).first()
@@ -135,13 +135,28 @@ def sign_in(payload: UserSignIn, session: Session = Depends(get_session)):
             audience=os.getenv("AUTH0_AUDIENCE"),
             realm="Username-Password-Authentication"
         )
-        return {
-            "token": auth0_response.get("access_token"),
-            "user": user
-        }
+        access_token = auth0_response.get("access_token")
+
+        # SET THE HTTP-ONLY COOKIE
+        response.set_cookie(
+            key = "auth_token",
+            value = access_token,
+            httponly=True,  # Prevents JS from reading the token
+            secure=False,    # Only send cookie over HTTPS
+            samesite="lax", # CSRF protection
+            max_age=86400 # 24 hours
+        )
+        return {"user": user}
+    
     except Exception as e:
         print(f"Auth0 Login Error: {e}") 
         raise HTTPException(status_code=401, detail=str(e))
+    
+@app.post("/api/v1/signout")
+def sign_out(response: Response):
+    # This clears the cookie on the browser side
+    response.delete_cookie("auth_token")
+    return {"message": "Logged out successfully"}
 
 @app.get("/api/v1/me", response_model=User)
 def get_my_profile(current_user: User = Depends(get_verified_user)):

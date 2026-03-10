@@ -1,17 +1,28 @@
 import jwt
 import requests
 import os
-from fastapi import HTTPException, Security, Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import HTTPException, Security, Depends, Request
+from fastapi.security import HTTPBearer
 from sqlmodel import Session, select
 from models import User
 from database import get_session
 
 token_auth_scheme = HTTPBearer()
 
-def get_verified_user(auth_credentials: HTTPAuthorizationCredentials = Security(token_auth_scheme),
-     session: Session = Depends(get_session)):
-    token = auth_credentials.credentials
+# Utility function to verify Auth0 JWT and retrieve the corresponding user from the database
+def get_verified_user(request: Request,
+    session: Session = Depends(get_session)):
+    token = request.cookies.get("auth_token")
+
+    # First check for token in cookies, then fallback to Authorization header (for API clients)
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+    
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated: No cookie or header found")
+
     domain = os.getenv("AUTH0_DOMAIN")
     audience = os.getenv("AUTH0_AUDIENCE")
 
