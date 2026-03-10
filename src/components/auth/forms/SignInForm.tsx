@@ -14,6 +14,7 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false);
     const { signIn } = useAuth();
     const navigate = useNavigate();
 
@@ -25,7 +26,6 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
         const formData = new FormData(e.target as HTMLFormElement);
         const email = formData.get("email") as string;
         const password = formData.get("password") as string;
-        const rememberMe = formData.get("rememberMe") === "on";
 
         try {
             await signIn(email, password, rememberMe);
@@ -68,10 +68,10 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
             </div>
 
             <div className="w-full flex items-center justify-between mt-4 text-sm">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                    <Checkbox name="rememberMe" />
-                    <span className="text-muted-foreground">Remember me</span>
-                </label>
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="rememberMe" name="rememberMe" checked={rememberMe} onCheckedChange={(val) => setRememberMe(val === true)} />
+                    <label htmlFor="rememberMe" className="text-muted-foreground cursor-pointer select-none">Remember me</label>
+                </div>
                 {/* Forgot Password Link */}
                 <button
                     type="button"
