@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:all": "concurrently -n \"FRONT,BACK\" -c \"cyan,magenta\" \"vite\" \"cd server && ..\\\\venv\\\\Scripts\\\\python -m uvicorn main:app --reload --port 8000\"",
+    "dev:front": "vite",
+    "dev:back": "server\\venv\\Scripts\\python.exe -m uvicorn main:app --reload --port 8000 --app-dir server",
+    "dev:all": "concurrently -n \"FRONT,BACK\" -c \"cyan,magenta\" \"npm run dev:front\" \"npm run dev:back\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
