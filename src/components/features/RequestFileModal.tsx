@@ -11,14 +11,19 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useMajors, useYears, useSemesters, useCourses, useLecturers } from "@/queries/useCatalog";
+import { useMajors, useCourses, useLecturers } from "@/queries/useCatalog";
 import { useCreateRequest } from "@/queries/useRequests";
-import type { MaterialType } from "@/types/domain";
 import { useAuth } from "@/context/AuthContext";
 
-const DEMO_TYPES: MaterialType[] = ["Slides", "Homeworks", "Past Papers", "Notes"];
+const DEMO_TYPES = [
+    { id: "11111111-1111-1111-1111-111111111111", name: "Slides" },
+    { id: "22222222-2222-2222-2222-222222222222", name: "Homeworks" },
+    { id: "33333333-3333-3333-3333-333333333333", name: "Past Papers" },
+    { id: "44444444-4444-4444-4444-444444444444", name: "Notes" }
+];
 
 interface RequestFileModalProps {
     open: boolean;
@@ -26,7 +31,6 @@ interface RequestFileModalProps {
     initialData?: {
         major?: string;
         year?: string;
-        semester?: string;
         course?: string;
         lecturer?: string;
         type?: string;
@@ -35,22 +39,24 @@ interface RequestFileModalProps {
 
 export default function RequestFileModal({ open, onOpenChange, initialData }: RequestFileModalProps) {
     const { user } = useAuth();
+    const currentYear = new Date().getFullYear();
+    const PAST_YEARS = Array.from({ length: 10 }, (_, i) => currentYear - i);
+
     const defaultForm = {
         major: "",
         year: "",
-        semester: "",
         course: "",
         lecturer: "",
         type: "",
-        description: ""
+        title: "",
+        description: "",
+        file: null as File | null
     };
 
     const [requestForm, setRequestForm] = useState(defaultForm);
 
     // Queries
     const { data: majors } = useMajors();
-    const { data: years } = useYears(requestForm.major);
-    const { data: semesters } = useSemesters(requestForm.major);
     // Only fetch courses if major is selected
     const { data: courses, isLoading: loadingCourses } = useCourses({ majorId: requestForm.major });
     const { data: lecturers } = useLecturers({ courseId: requestForm.course });
@@ -63,11 +69,12 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                 setRequestForm({
                     major: initialData.major || "",
                     year: initialData.year || "",
-                    semester: initialData.semester || "",
                     course: initialData.course || "",
                     lecturer: initialData.lecturer || "",
                     type: initialData.type || "",
-                    description: ""
+                    title: "",
+                    description: "",
+                    file: null
                 });
             } else {
                 setRequestForm(defaultForm);
@@ -82,19 +89,22 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
     const isRequestValid =
         requestForm.major &&
         requestForm.year &&
-        requestForm.semester &&
         requestForm.course &&
         requestForm.lecturer &&
-        requestForm.type;
+        requestForm.type &&
+        requestForm.title &&
+        requestForm.file;
 
     const handleSubmit = () => {
         submitRequest({
             userId: user!.id,
             courseId: requestForm.course,
-            lecturerId: requestForm.lecturer, // In real app, name lookup or ID
-            type: requestForm.type as MaterialType,
-            title: "New Request", // Title isn't in form? Adding default or need input
-            notes: requestForm.description
+            lecturerId: requestForm.lecturer,
+            type: requestForm.type,
+            title: requestForm.title,
+            year: parseInt(requestForm.year),
+            notes: requestForm.description,
+            file: requestForm.file!
         }, {
             onSuccess: () => {
                 onOpenChange(false);
@@ -132,7 +142,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                     <SelectValue placeholder="Year" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {years?.map(y => <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>)}
+                                    {PAST_YEARS.map(y => <SelectItem key={y} value={y.toString()}>{y}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -140,15 +150,13 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Semester</Label>
-                            <Select value={requestForm.semester} onValueChange={(v) => handleRequestSelect("semester", v)} disabled={!requestForm.major}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Semester" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {semesters?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                            <Label htmlFor="title">Title</Label>
+                            <Input
+                                id="title"
+                                placeholder="e.g. Midterm 2023 Solutions"
+                                value={requestForm.title}
+                                onChange={(e) => handleRequestSelect("title", e.target.value)}
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label>Course {loadingCourses && <Loader2 className="h-3 w-3 animate-spin inline" />}</Label>
@@ -184,7 +192,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                     <SelectValue placeholder="Type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {DEMO_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                    {DEMO_TYPES.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -200,9 +208,20 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                         />
                     </div>
 
-                    <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-muted/50">
+                    <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 relative">
+                        <input 
+                            type="file" 
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                    handleRequestSelect("file", e.target.files[0] as any);
+                                }
+                            }}
+                        />
                         <UploadCloud className="h-6 w-6 mb-2" />
-                        <span className="text-xs">Drag & drop or Click to browse</span>
+                        <span className="text-xs">
+                            {requestForm.file ? requestForm.file.name : "Drag & drop or Click to browse"}
+                        </span>
                     </div>
                 </div>
                 <DialogFooter>

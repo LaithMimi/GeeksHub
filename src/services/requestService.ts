@@ -40,7 +40,7 @@
  */
 
 import { fileRequests, randomDelay, pointsTransactions, auditLog } from "@/mock/mock-db";
-import type { FileRequest, MaterialType, RejectReason, RequestStats, AuditLogEntry, FileStatus } from "@/types/domain";
+import type { FileRequest, RejectReason, RequestStats, AuditLogEntry, FileStatus } from "@/types/domain";
 
 
 
@@ -78,37 +78,38 @@ const writeAuditLog = (
 // USER FUNCTIONS
 // ============================================================================
 
+import { api } from "@/lib/apiClient";
+
 /**
  * Creates a new file upload request.
- * @backend POST /api/file-requests
+ * @backend POST /api/v1/courses/{course_id}/upload
  */
 export const createFileRequest = async (payload: {
     userId: string;
     courseId: string;
     lecturerId: string;
-    type: MaterialType;
+    type: string; // type_id
     title: string;
+    year: number;
     notes?: string;
     file?: File;
 }): Promise<FileRequest> => {
-    await randomDelay(500, 1000);
+    const formData = new FormData();
+    formData.append("title", payload.title);
+    formData.append("lecturer_id", payload.lecturerId);
+    formData.append("type_id", payload.type);
+    formData.append("year", payload.year.toString());
+    if (payload.notes) {
+        formData.append("description", payload.notes);
+    }
+    if (payload.file) {
+        formData.append("file", payload.file);
+    }
 
-    const newRequest: FileRequest = {
-        id: generateId(),
-        userId: payload.userId,
-        uploaderName: "Current User",
-        courseId: payload.courseId,
-        lecturerId: payload.lecturerId,
-        lecturerName: "Unknown Lecturer",
-        type: payload.type,
-        title: payload.title,
-        notes: payload.notes,
-        status: "pending",
-        createdAt: new Date().toISOString()
-    };
-
-    fileRequests.push(newRequest);
-    return newRequest;
+    return api<FileRequest>(`/courses/${payload.courseId}/upload`, {
+        method: "POST",
+        body: formData
+    });
 };
 
 /**

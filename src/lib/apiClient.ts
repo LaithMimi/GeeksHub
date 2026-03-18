@@ -53,6 +53,10 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
         ...(init?.headers as Record<string, string> ?? {}),
     };
 
+    if (init?.body instanceof FormData) {
+        delete headers["Content-Type"];
+    }
+
     const res = await fetch(`${API_BASE_URL}${path}`, {
         ...init,
         headers,
