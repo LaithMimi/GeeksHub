@@ -42,7 +42,7 @@ These tables **exist** in `server/models.py`:
 | `majors` | `Major` | `id` is UUID, has `name` + `slug` |
 | `courses` | `Course` | Has `major_id`, `year_id` (int), `semester` (int) |
 | `lecturers` | `Lecturer` | `id` (UUID), `name`, `email` |
-| `material_types` | `MaterialType` | `id` (string slug), `display_name` |
+| `material_types` | `MaterialType` | `id` (string slug), `display_name` (must include 'homework') |
 | `files` | `File` | Approved files with `course_id`, `type`, `lecturer`, `file_url` |
 | `file_requests` | `FileRequest` | Pending uploads with `lecturer_id` FK, `type_id` FK |
 
@@ -78,29 +78,11 @@ These tables **exist** in `server/models.py`:
 | `GET` | `/api/v1/types` | `listTypes()` | ✅ |
 | `GET` | `/api/v1/courses?major_id=&year_id=&query=` | `listCourses(filters)` | ✅ |
 | `GET` | `/api/v1/courses/{course_id}` | `getCourse(courseId)` | 🔴 |
-| `GET` | `/api/v1/years` | `listYears()` | 🔴 |
-| `GET` | `/api/v1/semesters` | `listSemesters()` | 🔴 |
 | `GET` | `/api/v1/lecturers?course_id=` | `listLecturers(filters)` | 🔴 |
 
 ### Implementation Notes
 
-**`GET /years`** — No DB table exists. Return a static JSON array:
-```json
-[
-  { "id": "1", "label": "Freshman" },
-  { "id": "2", "label": "Sophomore" },
-  { "id": "3", "label": "Junior" },
-  { "id": "4", "label": "Senior" }
-]
-```
 
-**`GET /semesters`** — No DB table exists. Return a static JSON array:
-```json
-[
-  { "id": "1", "name": "Fall" },
-  { "id": "2", "name": "Spring" }
-]
-```
 
 **`GET /courses/{course_id}`** — Simple single-row lookup:
 ```python
@@ -296,14 +278,12 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 ## 14. Implementation Priority
 
 ### 🔴 P0 — App is broken without these (frontend calls them NOW)
-1. `GET /api/v1/years` (static return)
-2. `GET /api/v1/semesters` (static return)
-3. `GET /api/v1/lecturers` (DB query)
-4. `GET /api/v1/courses/{course_id}` (single course lookup)
-5. `GET /api/v1/files` (list approved files with filters)
-6. `GET /api/v1/files/{file_id}` (single file + downloadUrl)
-7. `GET /api/v1/me/requests` (user's own submissions)
-8. `GET /api/v1/admin/requests` (admin moderation queue)
+1. `GET /api/v1/lecturers` (DB query)
+2. `GET /api/v1/courses/{course_id}` (single course lookup)
+3. `GET /api/v1/files` (list approved files with filters)
+4. `GET /api/v1/files/{file_id}` (single file + downloadUrl)
+5. `GET /api/v1/me/requests` (user's own submissions)
+6. `GET /api/v1/admin/requests` (admin moderation queue)
 
 ### 🔴 P1 — Admin dashboard is broken without these
 9. `GET /api/v1/admin/requests/stats`

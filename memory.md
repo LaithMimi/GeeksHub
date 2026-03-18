@@ -16,7 +16,8 @@ A university course materials platform where students **share, browse, and study
 - **Course Library Rework:** Reverted the UI to cascading dropdowns (Major → Year → Semester → Course). The user's major is now auto-fetched from their profile via `useAuth().user.majorId`.
 - **Mock Data Fully Removed (March 19):** All 6 services (`catalogService`, `fileService`, `requestService`, `reputationService`, `auditService`, `assistantService`) now call live API endpoints via `apiClient.ts`. Both `Courses.tsx` and `Settings.tsx` were cleaned of direct mock imports and switched to `useCourses()`, `useMajors()`, `useYears()` hooks. **`src/mock/mock-db.ts` and the `src/mock/` directory have been deleted.**
 - **Frontend Upload Fix:** Fixed the `422 Unprocessable Content` error on file upload. Corrected the lecturer ID mapping in `Courses.tsx` (was sending name instead of UUID) and the FormData key in `requestService.ts` (`"description"` → `"notes"`).
-- **PDF Viewer + AI Assistant Integration:** Created `FilePage.tsx` to bridge `FileViewer` and `AssistantPanel`. Added text-selection tooltip ("Ask AI") over PDF content. Simplified `FileShell.tsx` to a passthrough layout.
+- **QueryClient Retry Config (March 19):** Configured `QueryClient` in `main.tsx` to not retry queries on 4xx errors (like 404 Not Found), preventing console spam for unimplemented backend endpoints.
+- **Request File Modal Rework (March 19):** Updated `RequestFileModal.tsx` to use the same cascading filter pattern as the Course Library (Major → Year → Semester → Course). Years and semesters are now derived dynamically from the `useCourses` data instead of hardcoded lists. Added max-height scrolling to all dropdowns. Add support for "Homework" material type.
 - **Consolidated Backend Tasks:** Merged `BACKEND_TASKS.md` and `backend.md` into a single prioritized task document aligned with the current frontend service calls.
 
 ---
@@ -249,6 +250,8 @@ The frontend expects the backend at `http://localhost:8000/api/v1` (configurable
 - ✅ `assistantService.ts` — fully live (`/assistant/chat`, `/me/notes`)
 
 **All mock data has been removed.** `src/mock/mock-db.ts` and the `src/mock/` directory are deleted.
+
+> ⚠️ **Note on 404 Errors in Console:** The frontend makes calls to endpoints like `/me/recent-files`, `/me/reputation`, `/me/requests`, and `/lecturers`, which return `404 Not Found` because the backend hasn't implemented them yet. This is expected behavior until the backend catches up. Retries on 4xx errors have been disabled to reduce console spam.
 
 Query hooks (`queries/`) need **no changes** — they call services which return Promises.
 
