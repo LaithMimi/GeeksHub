@@ -84,6 +84,14 @@ def health_check(session: Session = Depends(get_session)):
 def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
     clean_email = payload.email.lower().strip()
     
+    # --- DOMAIN CHECK ---
+    ALLOWED_DOMAINS = ["@post.jce.ac.il"]
+    if not any(clean_email.endswith(domain) for domain in ALLOWED_DOMAINS):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Registration is currently restricted to Azrieli College students ({ALLOWED_DOMAINS})."
+        )
+
     # 1. Check Neon DB first
     existing_user = session.exec(select(User).where(User.email == clean_email)).first()
     if existing_user:

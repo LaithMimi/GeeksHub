@@ -33,6 +33,14 @@ export default function SignUpForm() {
             return;
         }
 
+        // --- DOMAIN CHECK ---
+        const userEmail = (data.email as string).toLowerCase().trim();
+        if (!userEmail.endsWith("@post.jce.ac.il")) {
+            setError("You must use an Azrieli College email (@post.jce.ac.il) to join.");
+            setIsLoading(false);
+            return;
+        }
+
         if (!majorId) {
             setError("Please select a major");
             setIsLoading(false);
