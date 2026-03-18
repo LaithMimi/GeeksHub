@@ -39,7 +39,7 @@ export const createFileRequest = async (payload: {
  * Lists all file requests for a specific user.
  * @backend GET /api/v1/me/requests
  */
-export const listMyRequests = async (userId: string): Promise<FileRequest[]> => {
+export const listMyRequests = async (_userId: string): Promise<FileRequest[]> => {
     return api<FileRequest[]>("/me/requests");
 };
 
@@ -47,7 +47,7 @@ export const listMyRequests = async (userId: string): Promise<FileRequest[]> => 
  * Withdraws/deletes a pending file request.
  * @backend DELETE /api/v1/me/requests/:requestId
  */
-export const withdrawRequest = async (requestId: string, userId: string): Promise<void> => {
+export const withdrawRequest = async (requestId: string, _userId: string): Promise<void> => {
     await api(`/me/requests/${requestId}`, { method: "DELETE" });
 };
 

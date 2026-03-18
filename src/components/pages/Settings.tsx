@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { Bell, Monitor, Globe, BookOpen, Brain, Clock, CheckCircle, Sun, Moon, Laptop, Palette, Sparkles } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { majors, years } from "@/mock/mock-db";
+import { useMajors, useYears } from "@/queries/useCatalog";
 import { Link } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -35,8 +35,10 @@ export default function Settings() {
         weeklyDigest: false,
         soundEffects: true,
     });
-    const [defaultMajor, setDefaultMajor] = useState(majors[0]?.id ?? "");
-    const [defaultYear, setDefaultYear] = useState(years[0]?.id ?? "");
+    const { data: majors = [] } = useMajors();
+    const { data: years = [] } = useYears();
+    const [defaultMajor, setDefaultMajor] = useState("");
+    const [defaultYear, setDefaultYear] = useState("");
     const [aiSourceExpanded, setAiSourceExpanded] = useState(true);
     const [aiScope, setAiScope] = useState("file");
     const [reduceMotion, setReduceMotion] = useState(() => {

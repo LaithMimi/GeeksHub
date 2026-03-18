@@ -12,10 +12,12 @@ A university course materials platform where students **share, browse, and study
 
 ## 1.1 Highlights of Recent Updates (March 2026)
 - **Auth Hardening:** Switched to `HttpOnly` cookie-based JWTs. `credentials: 'include'` now applied to all API calls. Added 403 blocks for unverified emails on sign-in.
-- **Backend APIs Connected:** Real integration with live Neon Postgres endpoints for `/majors` and `/courses`.
-- **Course Library Rework:** Reverted the UI to cascading dropdowns (Major → Year → Semester → Course). The user's major is now auto-fetched from their profile via `useAuth().user.majorId`, locking the dropdown and dynamically filtering subsequent selections natively.
-- **Dashboard Refinements:** Cleaned up progressive skeleton loaders, replaced hardcoded generic IDs (`"u1"`, `"DEMO_ADMIN"`) with contextual auth data, and stubbed out real metrics queries.
-- **New Task List Generated:** A `backend_tasks.md` was passed to the backend engineer detailing the exact REST APIs still missing (e.g., file endpoints, reputation, requests, audit).
+- **Backend APIs Connected:** Real integration with live Neon Postgres endpoints for `/majors`, `/courses`, and `/types`.
+- **Course Library Rework:** Reverted the UI to cascading dropdowns (Major → Year → Semester → Course). The user's major is now auto-fetched from their profile via `useAuth().user.majorId`.
+- **Mock Data Fully Removed (March 19):** All 6 services (`catalogService`, `fileService`, `requestService`, `reputationService`, `auditService`, `assistantService`) now call live API endpoints via `apiClient.ts`. Both `Courses.tsx` and `Settings.tsx` were cleaned of direct mock imports and switched to `useCourses()`, `useMajors()`, `useYears()` hooks. **`src/mock/mock-db.ts` and the `src/mock/` directory have been deleted.**
+- **Frontend Upload Fix:** Fixed the `422 Unprocessable Content` error on file upload. Corrected the lecturer ID mapping in `Courses.tsx` (was sending name instead of UUID) and the FormData key in `requestService.ts` (`"description"` → `"notes"`).
+- **PDF Viewer + AI Assistant Integration:** Created `FilePage.tsx` to bridge `FileViewer` and `AssistantPanel`. Added text-selection tooltip ("Ask AI") over PDF content. Simplified `FileShell.tsx` to a passthrough layout.
+- **Consolidated Backend Tasks:** Merged `BACKEND_TASKS.md` and `backend.md` into a single prioritized task document aligned with the current frontend service calls.
 
 ---
 
@@ -44,15 +46,14 @@ src/
 ├── main.tsx                    # Entry point: ErrorBoundary → AuthProvider → ThemeProvider → QueryClientProvider → Router
 ├── index.css                   # Global styles + Liquid Glass design system tokens
 ├── types/domain.ts             # All TypeScript domain interfaces (User, Course, File, FileRequest, etc.)
-├── mock/mock-db.ts             # In-memory mock data (seed data for all entities)
-├── services/                   # Service layer (mock implementations with @backend annotations)
+├── services/                   # Service layer — ALL migrated to live API calls
 │   ├── authService.ts          # Real fetch calls to /api/v1/signin, /api/v1/signup. Mock for password reset.
-│   ├── fileService.ts          # File listing, details, recent files, top contributors
-│   ├── catalogService.ts       # Majors, years, semesters, courses, lecturers
-│   ├── requestService.ts       # File request CRUD + admin approval/rejection + audit logging
-│   ├── reputationService.ts    # User reputation/points summary
-│   ├── assistantService.ts     # AI chat + user notes (localStorage)
-│   └── auditService.ts         # Admin audit log queries
+│   ├── fileService.ts          # ✅ calls /files, /reputation/leaderboard, /me/recent-files
+│   ├── catalogService.ts       # ✅ calls /majors, /types, /years, /semesters, /courses, /lecturers
+│   ├── requestService.ts       # ✅ calls /courses/{id}/upload, /me/requests, /admin/requests/*
+│   ├── reputationService.ts    # ✅ calls /me/reputation
+│   ├── assistantService.ts     # ✅ calls /assistant/chat, /me/notes
+│   └── auditService.ts         # ✅ calls /admin/audit-logs
 ├── queries/                    # TanStack Query hooks (thin wrappers over services)
 │   ├── useFiles.ts             # useFiles, useFile, useTopContributors, useRecentFiles
 │   ├── useCatalog.ts           # useMajors, useYears, useSemesters, useCourses, useLecturers
@@ -91,9 +92,11 @@ src/
 │   │   ├── AppShell.tsx        # Main app shell with sidebar
 │   │   ├── AdminShell.tsx      # Admin area shell
 │   │   ├── CourseShell.tsx     # Course detail shell (tabs: materials/notes/exams)
-│   │   └── FileShell.tsx       # File viewer shell (resizable panels)
+│   │   └── FileShell.tsx       # File viewer shell (simplified passthrough layout)
+│   ├── pages/
+│   │   └── FilePage.tsx        # NEW — bridges FileViewer + AssistantPanel + selectedText state
 │   ├── viewer/
-│   │   └── FileViewer.tsx      # Adobe PDF Embed API viewer
+│   │   └── FileViewer.tsx      # react-pdf viewer with text selection tooltip ("Ask AI")
 │   ├── auth/                   # Auth UI components
 │   │   ├── SlidingAuth.tsx     # Sign-in / sign-up sliding panel
 │   │   ├── AuthCard.tsx        # Auth card wrapper
@@ -116,8 +119,7 @@ src/
 
 ### Data Flow
 ```
-Component → Query Hook (queries/) → Service (services/) → Mock Data (mock/mock-db.ts)
-                                                          └→ Real API (authService only)
+Component → Query Hook (queries/) → Service (services/) → apiClient.ts → /api/v1/* (backend)
 ```
 
 ### Service → Query Separation
@@ -174,24 +176,32 @@ Centralized HTTP client used by all service files.
 
 ### Critical
 1. **Backend approval flow bug**: `POST /api/v1/admin/requests/{id}/approve` deletes file metadata instead of persisting it to a `files` table. Approved files are lost.
-2. **No `GET /api/v1/files` endpoint**: Backend has no way to list approved files. Frontend uses mock data.
-
-### High
-3. ~~**Duplicate recent files system**~~: ✅ FIXED — Deleted `hooks/useRecentFiles.ts`. Only `queries/useFiles.ts` remains.
-4. ~~**Hardcoded `DEMO_USER_ID`**~~: ✅ FIXED — `UserUploads.tsx`, `RequestFileModal.tsx`, and `Dashboard.tsx` now read from `useAuth().user.id`.
-5. ~~**Hardcoded `DEMO_ADMIN`**~~: ✅ FIXED — `useRequests.ts`, `AdminShell.tsx`, and `requestService.ts` now read admin identity from `useAuth()`.
-6. ~~**Dashboard greeting hardcoded**~~: ✅ FIXED — `Dashboard.tsx` now uses `user?.displayName` instead of "Deena".
+2. **Many P0 backend endpoints missing**: See `BACKEND_TASKS.md` §14. Frontend calls are wired up but the backend doesn't serve them yet (years, semesters, lecturers, files, requests, etc.).
 
 ### Medium
-7. **`lecturerId` filter not implemented**: `fileService.listFiles()` accepts `lecturerId` but doesn't filter.
-8. **`MyPath.tsx` is a placeholder**: The learning path page has no real content.
-9. **Course metadata hardcoded in Dashboard**: `COURSE_META` map in `Dashboard.tsx` duplicates data from `mock-db.ts`.
-10. **`requestPasswordReset` is mock-only**: Uses `delay()` and returns static success. Backend endpoint not implemented yet.
+3. **`MyPath.tsx` is a placeholder**: The learning path page has no real content.
+4. **Course metadata hardcoded in Dashboard**: `COURSE_META` map in `Dashboard.tsx` duplicates data.
+5. **`requestPasswordReset` is mock-only**: Uses `delay()` and returns static success.
 
 ### Low / Polish
-11. **Adobe PDF Embed API key hardcoded**: `FileViewer.tsx` line 58 has a hardcoded `clientId`.
-12. **`listTopContributors` returns mock stubs**: Data is seeded in `mock-db.ts`, not ever calculated.
-13. ~~**`useYears` enabled logic**~~: ✅ FIXED — Changed to `enabled: true` with `staleTime: Infinity`.
+6. **`listTopContributors` calls `/reputation/leaderboard`** — backend endpoint doesn't exist yet.
+7. ~~**Adobe PDF Embed API key hardcoded**~~: FileViewer now uses `react-pdf` instead.
+8. ~~**Mock data remnants**~~: ✅ RESOLVED — `mock-db.ts` deleted, all services and components fully migrated.
+
+---
+
+## 7.1 Frontend Next Steps (For Frontend Engineer)
+
+### After Backend P0 Endpoints Land
+1. **Test the full course browsing flow** — verify the cascading dropdowns work with real `/years`, `/semesters`, `/lecturers` data.
+2. **Test the file listing** — verify `GET /files?course_id=...` returns real approved files for course material pages.
+3. **Test the PDF viewer** — verify `GET /files/{id}` returns `downloadUrl` and the `react-pdf` viewer loads it.
+4. **Test the upload flow end-to-end** — upload → pending → admin approve → file appears in library.
+
+### After Backend P1–P2 Endpoints Land
+5. **Wire up the admin moderation dashboard** — test bulk approve/reject, undo, stats.
+6. **Wire up the reputation / leaderboard display** — verify points awarded on approval.
+7. **Wire up the audit log viewer** — verify admin actions are logged and displayed.
 
 ---
 
@@ -227,13 +237,21 @@ npm run build
 
 ## 10. Backend Connection
 
-The frontend expects the backend at `http://localhost:8000/api/v1` (configurable via `VITE_API_URL` env var). Currently only `authService.ts` makes real API calls. All other services use mock data from `mock/mock-db.ts`.
+The frontend expects the backend at `http://localhost:8000/api/v1` (configurable via `VITE_API_URL` env var).
 
-The frontend now has `lib/apiClient.ts` — a centralized fetch wrapper ready for real API calls.
+**Migration status:**
+- ✅ `authService.ts` — fully live
+- ✅ `catalogService.ts` — fully live (`/majors`, `/types`, `/years`, `/semesters`, `/courses`, `/lecturers`)
+- ✅ `fileService.ts` — fully live (`/files`, `/files/{id}`, `/reputation/leaderboard`, `/me/recent-files`)
+- ✅ `requestService.ts` — fully live (`/courses/{id}/upload`, `/me/requests`, `/admin/requests/*`)
+- ✅ `reputationService.ts` — fully live (`/me/reputation`)
+- ✅ `auditService.ts` — fully live (`/admin/audit-logs`)
+- ✅ `assistantService.ts` — fully live (`/assistant/chat`, `/me/notes`)
 
-To connect the full backend:
-1. Update each service file to replace mock implementations with `api()` calls from `@/lib/apiClient`. (Currently `authService.ts` and parts of `catalogService.ts` are migrated).
-2. Query hooks (`queries/`) need **no changes** — they call services which return Promises
-3. Remove `@backend` annotations and migration guide headers once migration is complete
-4. Delete `mock/mock-db.ts` when all services are migrated
-5. **Cookie Auth:** Backend now sets `Set-Cookie: auth_token=...; HttpOnly; Secure; SameSite=Strict` on signin. The frontend `apiClient` manages sending `credentials: "include"`, so `localStorage` is no longer used for JWTs.
+**All mock data has been removed.** `src/mock/mock-db.ts` and the `src/mock/` directory are deleted.
+
+Query hooks (`queries/`) need **no changes** — they call services which return Promises.
+
+**Cookie Auth:** Backend sets `Set-Cookie: auth_token=...; HttpOnly; SameSite=Lax` on signin. The frontend `apiClient` sends `credentials: "include"` automatically.
+
+**See `BACKEND_TASKS.md`** for the full list of endpoints the backend engineer needs to implement.

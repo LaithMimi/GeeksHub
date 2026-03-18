@@ -9,19 +9,17 @@ import RequestFileModal from "@/components/features/RequestFileModal";
 import { useMajors, useCourses, useLecturers, useTypes } from "@/queries/useCatalog";
 import { useFiles, useTopContributors } from "@/queries/useFiles";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
-import { courses as allCourses } from "@/mock/mock-db";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Courses() {
     const { user } = useAuth();
     const [searchParams] = useSearchParams();
     const initialCourseId = searchParams.get("course");
-    const initialCourse = initialCourseId ? allCourses.find(c => c.id === initialCourseId) : null;
 
     const [selections, setSelections] = useState({
-        major: initialCourse?.majorId || user?.majorId || "",
+        major: user?.majorId || "",
         year: "",
-        semester: initialCourse?.semesterId || "",
+        semester: "",
         course: initialCourseId || "",
         lecturer: "",
         type: ""
@@ -37,9 +35,6 @@ export default function Courses() {
     const [isRequestOpen, setIsRequestOpen] = useState(false);
     const { pinnedIds, togglePin, isPinned } = usePinnedCourses();
 
-    // Resolve pinned course IDs to full course objects
-    const pinnedCourses = allCourses.filter(c => pinnedIds.includes(c.id));
-
     // -- Queries --
     const { data: majors, isLoading: bgMajors } = useMajors();
     const { data: allMajorCourses, isLoading: bgMajorCourses } = useCourses({
@@ -49,6 +44,9 @@ export default function Courses() {
         courseId: selections.course
     });
     const { data: types, isLoading: bgTypes } = useTypes();
+
+    // Resolve pinned course IDs to full course objects from the API data
+    const pinnedCourses = (allMajorCourses || []).filter(c => pinnedIds.includes(c.id));
 
     const isReadyForFiles = !!selections.course;
     const { data: files, isLoading: isLoadingFiles, isError: isErrorFiles } = useFiles({
