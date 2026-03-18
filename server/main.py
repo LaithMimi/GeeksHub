@@ -1,17 +1,20 @@
 import datetime
 import os
 from pathlib import Path
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Response
+import uuid
+from fastapi import FastAPI, Depends, Form, HTTPException, UploadFile, File, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import jwt
 import requests
+import shutil
 from sqlmodel import Session, select
 from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from models import FileRequest,FileRequestCreate, Major, User, Course, UserSignUp, UserSignIn, ForgotPassword
-from auth_utils import get_verified_user
+from models import FileRequest, Major, User, Course, UserSignUp, UserSignIn, ForgotPassword
+from utils.auth_utils import get_verified_user, get_admin_user
+from utils.upload_utils import validate_uploaded_file
 from database import get_session, init_db
 from uuid import UUID
 from google.cloud import storage
@@ -57,6 +60,22 @@ async def lifespan(app: FastAPI):
     init_db()
     yield 
     print("Shutting down...")
+
+async def upload_to_gcs(file: UploadFile, destination_blob_name: str):
+    """
+    Uploads a file to the Google Cloud Storage bucket.
+    (Currently mocked to save locally until GCS credentials are added)
+    """
+    # TODO: Replace with actual Google Cloud Storage library code
+    # e.g., bucket.blob(destination_blob_name).upload_from_file(file.file)
+    
+    # For local testing, we will just save it to a local folder
+    import os
+    os.makedirs(os.path.dirname(destination_blob_name), exist_ok=True)
+    with open(destination_blob_name, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    return f"gs://your-bucket-name/{destination_blob_name}"
 
 app = FastAPI(title="GeeksHub API", lifespan=lifespan)
 
@@ -216,31 +235,9 @@ def get_my_profile(current_user: User = Depends(get_verified_user)):
 
 @app.get("/api/v1/majors", response_model=List[Major])
 def list_majors(
-    session: Session = Depends(get_session)
-    # [FRONTEND UPDATE]: Removed 'current_user: User = Depends(get_verified_user)' 
-    #   because unauthenticated users need to fetch the majors list during the Sign Up process.
+    session: Session = Depends(get_session) 
 ):
     return session.exec(select(Major)).all()
-
-@app.post("/api/v1/requests", status_code=201)
-def create_file_request(
-    payload: FileRequestCreate, 
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_verified_user)
-):
-    new_request = FileRequest(
-        user_id=current_user.id,
-        course_id=payload.course_id,
-        type=payload.type,
-        lecturer=payload.lecturer, 
-        title=payload.title,
-        file_url="pending_upload/",
-        status="PENDING"
-    )
-    session.add(new_request)
-    session.commit()
-    session.refresh(new_request)
-    return {"message": "Request created!", "id": new_request.id}
 
 @app.get("/api/v1/courses", response_model=List[Course])
 def search_courses(
@@ -270,53 +267,61 @@ def search_courses(
 # --- FILE STORAGE ROUTES ---
 
 @app.post("/api/v1/courses/{course_id}/upload")
-async def request_upload(
+async def upload_course_file(
     course_id: UUID,
-    title: str,
-    type_id: str,
-    lecturer: str,
+    # Using Form(...) because we are receiving multipart/form-data, not JSON!
+    title: str = Form(...),
+    year: int = Form(...),
+    type_id: UUID = Form(...), 
+    lecturer_id: UUID = Form(...),
+    notes: str = Form(None),
     file: UploadFile = File(...),
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_verified_user)
+    current_user: User = Depends(get_verified_user),
+    session: Session = Depends(get_session)
 ):
-    # 1. Create a unique filename for the "Temp" area
-    file_ext = file.filename.split(".")[-1]
-    unique_filename = f"{UUID}.{file_ext}"
-    # Put it in a 'pending' folder in GCS
-    temp_gcs_path = f"pending/{unique_filename}"
+    # 1. THE SECURITY BOUNCER
+    # This will throw a 400/413 error if it's a virus, too big, or fake extension
+    safe_ext = await validate_uploaded_file(file)
 
-    # 2. Upload to GCS
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(temp_gcs_path)
+    # 2. FILENAME SANITIZATION
+    # We completely ignore the user's original filename (e.g., "my_virus.exe").
+    # We generate a random UUID and append the safe extension we verified.
+    secure_filename = f"{uuid.uuid4()}{safe_ext}"
     
-    content = await file.read()
-    blob.upload_from_string(content, content_type=file.content_type)
+    # 3. CLOUD ISOLATION (The "Pending" Folder)
+    # We save it in a specific 'pending' folder so it doesn't mix with approved files
+    storage_path = f"pending_uploads/{course_id}/{secure_filename}"
+    
+    # Reset the file pointer after our magic bytes check in validate_uploaded_file
+    await file.seek(0) 
+    gcs_uri = await upload_to_gcs(file, storage_path)
 
-    # 3. Save to Neon with PENDING status
+    # 4. DATABASE INSERTION
     new_request = FileRequest(
         user_id=current_user.id,
         course_id=course_id,
+        lecturer_id=lecturer_id,
         type_id=type_id,
+        year=year,
         title=title,
-        lecturer=lecturer,
-        storage_path=temp_gcs_path,
-        status="PENDING" # <--- Initial State
+        notes=notes,
+        status="pending",
+        file_url=gcs_uri # We store where the file lives in the cloud
     )
+    
     session.add(new_request)
     session.commit()
-    
-    return {"message": "Request submitted for admin approval.", "request_id": new_request.id}
+    session.refresh(new_request)
+
+    return new_request
 
 @app.post("/api/v1/admin/requests/{request_id}/approve")
 def approve_file(
     request_id: UUID,
     approve: bool, # True to approve, False to reject
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_verified_user)
+    admin: User = Depends(get_admin_user)
 ):
-    # SECURITY: Check if user is actually an admin
-    if current_user.role != "ADMIN":
-        raise HTTPException(status_code=403, detail="Admin privileges required.")
 
     request = session.get(FileRequest, request_id)
     if not request:

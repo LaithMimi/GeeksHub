@@ -53,3 +53,8 @@ def get_verified_user(request: Request,
 
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
+    
+def get_admin_user(current_user: User = Depends(get_verified_user)):
+    if current_user.role != "ADMIN":
+        raise HTTPException(status_code=403, detail="Admin privileges required.")
+    return current_user

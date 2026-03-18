@@ -2,7 +2,7 @@ import re
 from typing import Optional, Self
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
-from sqlmodel import SQLModel, Field
+from sqlmodel import Relationship, SQLModel, Field
 from pydantic import BaseModel, field_validator, model_validator
 
 # User Identity
@@ -42,6 +42,16 @@ class Course(SQLModel, table=True):
     year_id: int # Academic year the course is typically offered (e.g., 1 for freshman year)
     semester: int # Semester the course is typically offered (e.g., 1 for Fall, 2 for Spring)
 
+class Lecturer(SQLModel, table=True):
+    """
+    Represents a lecturer or professor associated with courses and materials.
+    """
+    __tablename__ = "lecturers"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
+    name: str = Field(index=True) # Full name of the lecturer (e.g., "Dr. Jane Smith")
+    email: str | None = Field(default=None, unique=True, index=True) # Optional email for the lecturer
+
 # Reference Data
 class MaterialType(SQLModel, table=True):
     """
@@ -79,10 +89,13 @@ class FileRequest(SQLModel, table=True):
     course_id: UUID = Field(foreign_key="courses.id") # Course the requested file is for
     type_id: str = Field(foreign_key="material_types.id") # Type of material being requested
     title: str # Proposed title for the file
+    year: int # year the material is relevant to
     file_url: str # Temporary GCS path - URL to the uploaded file awaiting approval
-    lecturer: str # Lecturer associated with the material
+    lecturer_id: UUID = Field(foreign_key="lecturers.id") # Lecturer associated with the material
     status: str = "PENDING" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
+    notes: str | None = None # Optional field for moderators to provide feedback on the request
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of request submission
+    lecturer: Lecturer| None = Relationship()
 
 # Used for the Upload/Request endpoint
 class FileRequestCreate(BaseModel):
