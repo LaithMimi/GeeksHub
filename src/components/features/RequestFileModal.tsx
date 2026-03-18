@@ -14,16 +14,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useMajors, useCourses, useLecturers } from "@/queries/useCatalog";
+import { useMajors, useCourses, useLecturers, useTypes } from "@/queries/useCatalog";
 import { useCreateRequest } from "@/queries/useRequests";
 import { useAuth } from "@/context/AuthContext";
-
-const DEMO_TYPES = [
-    { id: "11111111-1111-1111-1111-111111111111", name: "Slides" },
-    { id: "22222222-2222-2222-2222-222222222222", name: "Homeworks" },
-    { id: "33333333-3333-3333-3333-333333333333", name: "Past Papers" },
-    { id: "44444444-4444-4444-4444-444444444444", name: "Notes" }
-];
 
 interface RequestFileModalProps {
     open: boolean;
@@ -57,6 +50,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
 
     // Queries
     const { data: majors } = useMajors();
+    const { data: types, isLoading: loadingTypes } = useTypes();
     // Only fetch courses if major is selected
     const { data: courses, isLoading: loadingCourses } = useCourses({ majorId: requestForm.major });
     const { data: lecturers } = useLecturers({ courseId: requestForm.course });
@@ -128,7 +122,9 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             <Label>Major</Label>
                             <Select value={requestForm.major} onValueChange={(v) => handleRequestSelect("major", v)}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Major" />
+                                    <SelectValue placeholder="Major">
+                                        {requestForm.major ? (majors?.find(m => m.id === requestForm.major)?.name || requestForm.major) : undefined}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {majors?.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
@@ -162,7 +158,9 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             <Label>Course {loadingCourses && <Loader2 className="h-3 w-3 animate-spin inline" />}</Label>
                             <Select value={requestForm.course} onValueChange={(v) => handleRequestSelect("course", v)} disabled={!requestForm.major || loadingCourses}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select Course" />
+                                    <SelectValue placeholder="Select Course">
+                                        {requestForm.course ? (courses?.find(c => c.id === requestForm.course)?.code + " - " + courses?.find(c => c.id === requestForm.course)?.name || requestForm.course) : undefined}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {courses?.map(c => (
@@ -178,7 +176,9 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             <Label>Lecturer</Label>
                             <Select value={requestForm.lecturer} onValueChange={(v) => handleRequestSelect("lecturer", v)} disabled={!requestForm.course}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Lecturer" />
+                                    <SelectValue placeholder="Lecturer">
+                                        {requestForm.lecturer ? (lecturers?.find(l => l.id === requestForm.lecturer)?.name || requestForm.lecturer) : undefined}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {lecturers?.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
@@ -186,13 +186,15 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Type</Label>
+                            <Label>Type {loadingTypes && <Loader2 className="h-3 w-3 animate-spin inline" />}</Label>
                             <Select value={requestForm.type} onValueChange={(v) => handleRequestSelect("type", v)}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Type" />
+                                    <SelectValue placeholder="Type">
+                                        {requestForm.type ? (types?.find(t => t.id === requestForm.type)?.display_name || requestForm.type) : undefined}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {DEMO_TYPES.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                    {types?.map(t => <SelectItem key={t.id} value={t.id}>{t.display_name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -209,8 +211,8 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                     </div>
 
                     <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 relative">
-                        <input 
-                            type="file" 
+                        <input
+                            type="file"
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             onChange={(e) => {
                                 if (e.target.files && e.target.files[0]) {

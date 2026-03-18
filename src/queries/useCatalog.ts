@@ -50,7 +50,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { listMajors, listYears, listSemesters, listCourses, listLecturers, getCourse } from "@/services/catalogService";
+import { listMajors, listYears, listSemesters, listCourses, listLecturers, getCourse, listTypes } from "@/services/catalogService";
 
 /**
  * Fetches all majors. Cached indefinitely as majors rarely change.
@@ -110,4 +110,13 @@ export const useLecturers = (filters: Parameters<typeof listLecturers>[0]) => us
     queryKey: ['lecturers', filters],
     queryFn: () => listLecturers(filters),
     enabled: !!filters.courseId
+});
+
+/**
+ * Fetches all material types.
+ */
+export const useTypes = () => useQuery({
+    queryKey: ['types'],
+    queryFn: listTypes,
+    staleTime: Infinity 
 });

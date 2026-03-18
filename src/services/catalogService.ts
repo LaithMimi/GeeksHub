@@ -67,6 +67,14 @@ export const listMajors = async (): Promise<Major[]> => {
 };
 
 /**
+ * Fetches all available material types.
+ * @backend GET /api/v1/types
+ */
+export const listTypes = async (): Promise<{id: string, display_name: string}[]> => {
+    return await api<{id: string, display_name: string}[]>("/types");
+};
+
+/**
  * Fetches academic years (Freshman, Sophomore, etc.)
  * @param majorId - Optional filter (currently unused in mock)
  * @backend GET /api/years

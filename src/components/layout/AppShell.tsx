@@ -89,6 +89,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CommandPalette } from "../ui/command-palette";
 import { isMac } from "@/lib/utils";
+import { useCourse } from "@/queries/useCatalog";
+import { useFile } from "@/queries/useFiles";
 
 // Language config
 const languages = [
@@ -111,10 +113,31 @@ const Breadcrumbs = () => {
     const location = useLocation();
     const pathnames = location.pathname.split("/").filter((x) => x);
 
-    const formatLabel = (value: string) => {
+    // Assuming paths like /courses/:courseId/files/:fileId
+    const potentialCourseId = pathnames[0] === "courses" ? pathnames[1] : undefined;
+    const potentialFileId = pathnames[2] === "files" ? pathnames[3] : undefined;
+
+    const { data: course } = useCourse(potentialCourseId || "");
+    const { data: file } = useFile(potentialFileId || "");
+
+    const formatLabel = (value: string, index: number) => {
+        if (index === 1 && potentialCourseId === value && course) {
+            return course.code || course.name; 
+        }
+        if (index === 3 && potentialFileId === value && file) {
+            // Trim extension if it's a file
+            return file.title.replace(/\.[^/.]+$/, "");
+        }
+
         if (value.startsWith("cs") || value.startsWith("math") || value.startsWith("phys")) {
             return value.toUpperCase();
         }
+        
+        // Return ID truncated if it's a UUID and nothing matched
+        if (value.length > 20 && value.includes("-")) {
+            return "Details";
+        }
+
         return value.charAt(0).toUpperCase() + value.slice(1);
     };
 
@@ -122,33 +145,34 @@ const Breadcrumbs = () => {
 
     return (
         <Breadcrumb>
-            <BreadcrumbList>
+            <BreadcrumbList className="gap-1.5 sm:gap-2">
                 <BreadcrumbItem>
-                    <BreadcrumbLink href="/" className="flex items-center gap-1.5 text-white/50 hover:text-white/80 transition-colors">
+                    <BreadcrumbLink href="/" className="flex items-center gap-1.5 px-2 py-1 rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-all text-xs sm:text-sm font-medium">
                         <Home className="h-3.5 w-3.5" />
-                        Home
+                        <span className="hidden sm:inline">Home</span>
                     </BreadcrumbLink>
                 </BreadcrumbItem>
-                {pathnames.length > 0 && <BreadcrumbSeparator className="text-white/30 rtl:rotate-180" />}
+                {pathnames.length > 0 && <BreadcrumbSeparator className="text-white/20 rtl:rotate-180" />}
                 {pathnames.map((value, index) => {
                     const to = `/${pathnames.slice(0, index + 1).join("/")}`;
                     const isLast = index === pathnames.length - 1;
                     const isNonClickable = nonClickablePaths.includes(value);
+                    const label = formatLabel(value, index);
 
                     return (
-                        <div key={to} className="flex items-center gap-2">
+                        <div key={to} className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
                             <BreadcrumbItem>
                                 {isLast || isNonClickable ? (
-                                    <BreadcrumbPage className={isNonClickable ? "text-white/40" : "text-white/90 font-medium"}>
-                                        {formatLabel(value)}
+                                    <BreadcrumbPage className={`px-2 py-1 rounded-md text-xs sm:text-sm ${isNonClickable ? "text-white/40" : "text-white font-semibold bg-white/10 shadow-sm"}`}>
+                                        {label}
                                     </BreadcrumbPage>
                                 ) : (
-                                    <BreadcrumbLink href={to} className="text-white/50 hover:text-white/80 transition-colors">
-                                        {formatLabel(value)}
+                                    <BreadcrumbLink href={to} className="px-2 py-1 rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-all text-xs sm:text-sm font-medium">
+                                        {label}
                                     </BreadcrumbLink>
                                 )}
                             </BreadcrumbItem>
-                            {!isLast && <BreadcrumbSeparator className="text-white/30 rtl:rotate-180" />}
+                            {!isLast && <BreadcrumbSeparator className="text-white/20 rtl:rotate-180" />}
                         </div>
                     );
                 })}

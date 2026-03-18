@@ -6,14 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import RequestFileModal from "@/components/features/RequestFileModal";
 
-import { useMajors, useCourses, useLecturers } from "@/queries/useCatalog";
+import { useMajors, useCourses, useLecturers, useTypes } from "@/queries/useCatalog";
 import { useFiles, useTopContributors } from "@/queries/useFiles";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
 import { courses as allCourses } from "@/mock/mock-db";
-import type { MaterialType } from "@/types/domain";
 import { useAuth } from "@/context/AuthContext";
-
-const DEMO_TYPES: MaterialType[] = ["Slides", "Homeworks", "Past Papers", "Notes"];
 
 export default function Courses() {
     const { user } = useAuth();
@@ -51,6 +48,7 @@ export default function Courses() {
     const { data: lecturers, isLoading: bgLecturers } = useLecturers({
         courseId: selections.course
     });
+    const { data: types, isLoading: bgTypes } = useTypes();
 
     const isReadyForFiles = !!selections.course;
     const { data: files, isLoading: isLoadingFiles, isError: isErrorFiles } = useFiles({
@@ -99,7 +97,7 @@ export default function Courses() {
         { key: "semester", label: "Semester", data: semesterData, loading: bgMajorCourses && !!selections.major, step: 2, placeholder: "Select Semester" },
         { key: "course", label: "Course", data: courseData, loading: bgMajorCourses && !!selections.major, step: 3, placeholder: "Select Course" },
         { key: "lecturer", label: "Lecturer", data: lecturers?.map(l => ({ id: l.name, label: l.name })), loading: bgLecturers, step: 4, placeholder: "Select Lecturer" },
-        { key: "type", label: "Type", data: DEMO_TYPES.map(t => ({ id: t, label: t })), loading: false, step: -1, placeholder: "Select Type" },
+        { key: "type", label: "Type", data: types?.map(t => ({ id: t.id, label: t.display_name })), loading: bgTypes, step: -1, placeholder: "Select Type" },
     ];
 
     return (
@@ -123,10 +121,9 @@ export default function Courses() {
                     initialData={{
                         major: selections.major,
                         year: selections.year,
-                        semester: selections.semester,
                         course: selections.course,
                         lecturer: selections.lecturer,
-                        type: selections.type || "Notes"
+                        type: selections.type || types?.find(t => t.display_name === "Notes")?.id
                     }}
                 />
             </div>

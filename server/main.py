@@ -12,7 +12,7 @@ from sqlmodel import Session, select
 from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from models import FileRequest, Major, User, Course, UserSignUp, UserSignIn, ForgotPassword
+from models import FileRequest, Major, User, Course, UserSignUp, UserSignIn, ForgotPassword, MaterialType
 from utils.auth_utils import get_verified_user, get_admin_user
 from utils.upload_utils import validate_uploaded_file
 from database import get_session, init_db
@@ -238,6 +238,12 @@ def list_majors(
     session: Session = Depends(get_session) 
 ):
     return session.exec(select(Major)).all()
+
+@app.get("/api/v1/types", response_model=List[MaterialType])
+def list_material_types(
+    session: Session = Depends(get_session) 
+):
+    return session.exec(select(MaterialType)).all()
 
 @app.get("/api/v1/courses", response_model=List[Course])
 def search_courses(
