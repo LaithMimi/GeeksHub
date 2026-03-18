@@ -209,7 +209,6 @@ def forgot_password(payload: ForgotPassword):
 def get_my_profile(current_user: User = Depends(get_verified_user)):
     """
     Returns the current user's profile based on the JWT in the Authorization header.
-    Matches Task 1: GET /api/me/profile
     """
     return current_user
 

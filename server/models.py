@@ -102,7 +102,7 @@ class UserSignUp(BaseModel):
     email: str
     password: str
     password_confirm: str
-    major_id: UUID  # [FRONTEND UPDATE]: Added major_id to allow selecting a major during signup
+    major_id: UUID 
 
     # 1. Field Validator: Checks the strength of the password
     @field_validator('password')
@@ -114,6 +114,8 @@ class UserSignUp(BaseModel):
             raise ValueError('Password must contain at least one uppercase letter')
         if not re.search(r"[0-9]", v):
             raise ValueError('Password must contain at least one number')
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+            raise ValueError('Password must contain at least one special character')
         return v
 
     # 2. Model Validator: Checks if the two passwords match
