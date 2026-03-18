@@ -23,8 +23,22 @@ import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/hooks/useTheme"
 import { AuthProvider } from "@/context/AuthContext"
 import ErrorBoundary from "@/components/ErrorBoundary"
+import { ApiError } from "@/lib/apiClient"
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: (failureCount, error) => {
+                // Don't retry on 4xx errors (404 = not found, 401 = unauth, 403 = forbidden)
+                if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+                    return false;
+                }
+                return failureCount < 2; // Retry server errors up to 2 times
+            },
+            refetchOnWindowFocus: false,
+        },
+    },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
