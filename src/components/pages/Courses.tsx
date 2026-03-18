@@ -96,7 +96,7 @@ export default function Courses() {
         { key: "year", label: "Year", data: yearData, loading: bgMajorCourses && !!selections.major, step: 1, placeholder: "Select Year" },
         { key: "semester", label: "Semester", data: semesterData, loading: bgMajorCourses && !!selections.major, step: 2, placeholder: "Select Semester" },
         { key: "course", label: "Course", data: courseData, loading: bgMajorCourses && !!selections.major, step: 3, placeholder: "Select Course" },
-        { key: "lecturer", label: "Lecturer", data: lecturers?.map(l => ({ id: l.name, label: l.name })), loading: bgLecturers, step: 4, placeholder: "Select Lecturer" },
+        { key: "lecturer", label: "Lecturer", data: lecturers?.map(l => ({ id: l.id, label: l.name })), loading: bgLecturers, step: 4, placeholder: "Select Lecturer" },
         { key: "type", label: "Type", data: types?.map(t => ({ id: t.id, label: t.display_name })), loading: bgTypes, step: -1, placeholder: "Select Type" },
     ];
 

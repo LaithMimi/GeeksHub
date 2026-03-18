@@ -3,7 +3,7 @@ import AppShell from "@/components/layout/AppShell";
 import AdminShell from "@/components/layout/AdminShell";
 import CourseShell from "@/components/layout/CourseShell";
 import FileShell from "@/components/layout/FileShell";
-import FileViewer from "@/components/viewer/FileViewer";
+import FilePage from "@/components/pages/FilePage";
 import Dashboard from "@/components/pages/Dashboard";
 import UserUploads from "@/components/pages/UserUploads";
 import Recent from "@/components/pages/Recent";
@@ -100,7 +100,7 @@ export const router = createBrowserRouter([
                                         children: [
                                             {
                                                 index: true,
-                                                element: <FileViewer />
+                                                element: <FilePage />
                                             }
                                         ]
                                     }

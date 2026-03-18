@@ -100,7 +100,7 @@ export const createFileRequest = async (payload: {
     formData.append("type_id", payload.type);
     formData.append("year", payload.year.toString());
     if (payload.notes) {
-        formData.append("description", payload.notes);
+        formData.append("notes", payload.notes);
     }
     if (payload.file) {
         formData.append("file", payload.file);

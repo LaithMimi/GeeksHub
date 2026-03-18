@@ -5,10 +5,9 @@ import {
     ExternalLink, ChevronLeft, ChevronRight,
     ZoomIn, ZoomOut, RotateCw, Sparkles,
 } from "lucide-react";
-import { useParams, useOutletContext } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useFile, useAddRecentFile } from '@/queries/useFiles';
 import { Button } from '@/components/ui/button';
-import type { FileShellOutletContext } from '@/components/shell/FileShell';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -19,24 +18,31 @@ function isPdf(title: string): boolean {
     return title.toLowerCase().endsWith('.pdf');
 }
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 interface TooltipPos {
     x: number;
     y: number;
+}
+
+interface FileViewerProps {
+    /**
+     * Called when the user selects text in the PDF and clicks "Ask AI".
+     * The parent should forward this to AssistantPanel's selectedText prop.
+     */
+    onTextSelect?: (text: string) => void;
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export default function FileViewer() {
+export default function FileViewer({ onTextSelect }: FileViewerProps) {
     const { courseId, fileId } = useParams();
     const { data: file, isLoading, isError } = useFile(fileId || "");
     const { mutate: addToRecent } = useAddRecentFile();
-
-    // Consume onTextSelect from FileShell via React Router outlet context.
-    // useOutletContext returns undefined if this component is rendered outside
-    // a Shell that provides context, so we default gracefully.
-    const { onTextSelect } = useOutletContext<FileShellOutletContext>() ?? {};
 
     const [numPages, setNumPages] = useState<number | null>(null);
     const [pageNumber, setPageNumber] = useState(1);
@@ -132,9 +138,9 @@ export default function FileViewer() {
 
     const goToPrevPage = () => setPageNumber(p => Math.max(1, p - 1));
     const goToNextPage = () => setPageNumber(p => Math.min(numPages ?? 1, p + 1));
-    const zoomIn = () => setScale(s => Math.min(2.5, +(s + 0.2).toFixed(1)));
+    const zoomIn  = () => setScale(s => Math.min(2.5, +(s + 0.2).toFixed(1)));
     const zoomOut = () => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1)));
-    const rotate = () => setRotation(r => (r + 90) % 360);
+    const rotate  = () => setRotation(r => (r + 90) % 360);
 
     // ── Loading ───────────────────────────────────────────────────────────────
     if (isLoading) {
@@ -229,10 +235,10 @@ export default function FileViewer() {
 
     // ── PDF viewer ────────────────────────────────────────────────────────────
     return (
-        <div className="h-full flex flex-col bg-transparent">
+        <div className="h-full flex flex-col bg-background">
 
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-black/20 backdrop-blur-md shrink-0">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-sm shrink-0">
 
                 {/* Page navigation */}
                 <div className="flex items-center gap-1">
