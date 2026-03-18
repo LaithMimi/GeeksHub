@@ -1,5 +1,6 @@
 import datetime
 import os
+from pathlib import Path
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Response
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -14,6 +15,12 @@ from auth_utils import get_verified_user
 from database import get_session, init_db
 from uuid import UUID
 from google.cloud import storage
+
+# Resolve GCP key path relative to this file so it works from any CWD
+_server_dir = Path(__file__).parent
+_gcp_cred = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "gcp_key.json")
+if not Path(_gcp_cred).is_absolute():
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(_server_dir / _gcp_cred)
 
 storage_client = storage.Client()
 bucket_name = os.getenv("BUCKET_NAME")
