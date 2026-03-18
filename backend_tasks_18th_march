@@ -1,0 +1,25 @@
+# Tasks for Backend Engineer
+
+The frontend has been updated to query the live backend DB entirely, completely removing [mock-db.ts](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/mock/mock-db.ts). Because the frontend relies on these APIs, you will need to implement the following missing routes in [server/main.py](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/main.py):
+
+## 1. Missing Catalog Endpoints
+Currently [main.py](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/main.py) only serves `/api/v1/majors` and `/api/v1/courses`. The UI standard [useCatalog.ts](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/queries/useCatalog.ts) queries depend on:
+*   `GET /api/v1/years` -> Return the list of basic Academic Years. (Since [Course](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/models.py#33-44) uses an integer `year_id`, you can just return a static dictionary like `[{"id": "1", "label": "Freshman"}, {"id": "2", "label": "Sophomore"}]`).
+*   `GET /api/v1/semesters` -> Return static semesters or map them if you create a DB table. (e.g. `[{"id": "fall2024", "name": "Fall 2024"}]`).
+*   `GET /api/v1/lecturers` -> `SELECT * FROM lecturers` (potentially filtering by `courseId` query param).
+*   `GET /api/v1/courses/{course_id}` -> Return a single [Course](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/models.py#33-44) object instead of an array.
+
+## 2. File & Request Endpoints
+*   `GET /api/v1/files` -> Filter approved files by query parameters (`course_id`, `type_id`, `lecturer_id`). Join with the [Lecturer](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#140-144) table to return the lecturer string for the frontend model.
+*   `GET /api/v1/files/recent` -> Return the 5 most recently uploaded or most downloaded files.
+*   `GET /api/v1/me/file-requests` -> Query the [FileRequest](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#172-193) table specifically for `request.user_id == current_user.id` so students can see their own pending/approved uploads.
+*   `GET /api/v1/admin/requests` -> Admin route returning all [FileRequest](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#172-193) rows across the app.
+
+## 3. Gamification & Audit System
+The schema ([models.py](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/server/models.py)) currently lacks tables representing the gamification loop the frontend anticipates. You will need to build the tables/endpoints:
+*   **Leaderboard**: `GET /api/v1/reputation/leaderboard` -> Return top users based on a points ledger.
+*   **User Reputation**: `GET /api/v1/users/{user_id}/reputation` -> Return user's total points, badge, and recent [PointsTransaction](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#227-235) history.
+*   **Transactions**: Create a [PointsTransaction](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#227-235) DB table (id, user_id, amount, reason, date, request_id) so admins can reward points for file uploads.
+*   **Audit Logging**: `GET /api/v1/admin/audit-logs` -> Return [AuditLogEntry](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/GeeksHub/src/types/domain.ts#250-266) rows tracking admin approvals/rejections.
+
+Thank you!
