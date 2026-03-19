@@ -110,6 +110,17 @@ class FileRequestCreate(BaseModel):
     title: str
     lecturer_id: UUID
 
+class FileRequestEnriched(BaseModel):
+    id: UUID
+    title: str
+    status: str
+    academic_year: int
+    material_year: int
+    course_name: str
+    lecturer_name: str
+    material_id: UUID | None = None
+    points_awarded: int
+
 class PointsTransaction(SQLModel, table=True):
     __tablename__ = "points_transactions"
     

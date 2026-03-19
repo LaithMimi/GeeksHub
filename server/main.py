@@ -4,8 +4,6 @@ import random
 import string
 import jwt
 import requests
-import shutil
-import uuid
 from uuid import UUID
 from google.cloud import storage
 from pathlib import Path
@@ -13,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from models import FileRequest, Major, Material, User, Course, Lecturer, UserSignUp, UserSignIn, AdminApprovePayload, BulkActionPayload, ForgotPassword, MaterialType, PointsTransaction
+from models import FileRequest, Major, Material, User, Course, Lecturer, UserSignUp, UserSignIn,FileRequestEnriched, AdminApprovePayload, BulkActionPayload, ForgotPassword, MaterialType, PointsTransaction
 from fastapi import FastAPI, HTTPException, UploadFile,Response, Query, File, Depends, Form
 from sqlmodel import Session, select
 from contextlib import asynccontextmanager
@@ -21,6 +19,8 @@ from utils.auth_utils import get_verified_user, get_admin_user
 from utils.upload_utils import validate_uploaded_file
 from database import get_session, init_db
 
+
+XP_UPLOAD_APPROVAL = 25
 
 # Resolve GCP key path relative to this file so it works from any CWD
 _server_dir = Path(__file__).parent
@@ -31,8 +31,7 @@ if not Path(_gcp_cred).is_absolute():
 storage_client = storage.Client()
 bucket_name = os.getenv("BUCKET_NAME")
 
-# Admin Helper
-from auth0.management import Auth0
+# Admin Helpers
 
 def get_auth0_admin():
     try:
@@ -93,7 +92,7 @@ app = FastAPI(title="GeeksHub API", lifespan=lifespan)
 # CORS Middleware to allow frontend (running on localhost:5173) to communicate with this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:5173")],
     allow_credentials=True,   # Allows cookies to be sent in cross-origin requests
     allow_methods=["*"],  # Allows GET, POST, OPTIONS, etc.
     allow_headers=["*"],  # Allows the Authorization header for JWTs
@@ -381,17 +380,31 @@ def get_single_course(course_id: UUID, session: Session = Depends(get_session)):
     return course
 
 # THE STUDENT FILE REQUESTS 
-@app.get("/api/v1/me/requests", response_model=List[FileRequest])
+@app.get("/api/v1/me/requests", response_model=List[FileRequestEnriched])
 def get_my_requests(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_verified_user)
 ):
-    """
-    Returns only the file requests uploaded by the currently logged-in student.
-    Laith's frontend ignores the userId parameter and relies on this secure JWT check.
-    """
-    statement = select(FileRequest).where(FileRequest.user_id == current_user.id)
-    return session.exec(statement).all()
+    """Enriched student queue (Tasks 2 & 10)"""
+    # Join the tables to grab the real names instead of just UUIDs
+    statement = select(FileRequest, Course, Lecturer).join(Course).join(Lecturer).where(FileRequest.user_id == current_user.id)
+    results = session.exec(statement).all()
+    
+    enriched_list = []
+    for request, course, lecturer in results:
+        # Check if this was approved (if so, the Material ID matches the Request ID)
+        mat_id = request.id if request.status == "approved" else None
+        pts = 25 if request.status == "approved" else 0
+        
+        enriched_list.append(
+            FileRequestEnriched(
+                id=request.id, title=request.title, status=request.status,
+                academic_year=request.academic_year, material_year=request.material_year,
+                course_name=course.name, lecturer_name=lecturer.name,
+                material_id=mat_id, points_awarded=pts
+            )
+        )
+    return enriched_list
 
 
 # --- FILE STORAGE ROUTES ---
@@ -471,7 +484,6 @@ def list_admin_requests(
 @app.post("/api/v1/admin/requests/{request_id}/approve")
 def approve_file(
     request_id: UUID,
-    payload: AdminApprovePayload,  # expects a JSON body!
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
@@ -479,52 +491,40 @@ def approve_file(
     if not request:
         raise HTTPException(status_code=404, detail="Request not found.")
 
-    if payload.approve:
-        # 1. FETCH THE COURSE NAME
-        course = session.get(Course, request.course_id)
-        safe_course_name = course.name.replace(" ", "_") # Replaces spaces for safe web URLs
-        
-        # 2. MOVE TO COURSE FOLDER
-        filename = request.file_url.split('/')[-1] 
-        final_gcs_path = f"{safe_course_name}/{filename}" # e.g. "Linear_Algebra_1/Midterm_x7b2.pdf"
+    if request.status == "approved":
+        raise HTTPException(status_code=409, detail="Request already approved.")
 
-        try:
-            bucket = storage_client.bucket(bucket_name)
-            temp_blob = bucket.blob(request.file_url) # This is the temporary "pending" file
-            bucket.rename_blob(temp_blob, final_gcs_path) # This moves the file to its final destination
-        except Exception as e:
-            # Fallback if your GCS credentials aren't fully configured yet locally
-            print(f"GCS Move failed: {e}")
-            raise HTTPException(status_code=500, detail="Cloud storage error.")
-            
-        # 2. CREATE THE OFFICIAL CATALOG ENTRY (Plugging the Black Hole!)
-        new_material = Material(
-            title=request.title,
-            academic_year=request.academic_year,
-            material_year=request.material_year,
-            course_id=request.course_id,
-            lecturer_id=request.lecturer_id,
-            type_id=request.type_id,
-            uploader_id=request.user_id,
-            notes=request.notes,
-            file_url=final_gcs_path # Saving the real URL
-        )
-        session.add(new_material)
+    course = session.get(Course, request.course_id)
+    safe_course_name = course.name.replace(" ", "_")
+    
+    filename = request.file_url.split('/')[-1] 
+    final_gcs_path = f"{safe_course_name}/{filename}"
+    
+    try:
+        bucket = storage_client.bucket(bucket_name)
+        temp_blob = bucket.blob(request.file_url)
+        bucket.rename_blob(temp_blob, final_gcs_path) 
+    except Exception as e:
+        print(f"GCS Move failed: {e}")
+        raise HTTPException(status_code=500, detail="Cloud storage error.")
 
-        # 3. AWARD GAMIFICATION XP!
-        reward = PointsTransaction(
-            user_id=request.user_id,
-            amount=10,
-            reason=f"File Approved: {request.title}",
-            request_id=request.id
-        )
-        session.add(reward)
+    new_material = Material(
+        id=request.id,
+        title=request.title, academic_year=request.academic_year, material_year=request.material_year, 
+        course_id=request.course_id, lecturer_id=request.lecturer_id, type_id=request.type_id,
+        uploader_id=request.user_id, notes=request.notes, file_url=final_gcs_path
+    )
+    session.add(new_material)
 
-        # 4. CLEAN UP
-        request.status = "APPROVED" 
-            
-        session.commit()
-        return {"message": "File approved, moved to Cloud, and 10 XP awarded!"}
+    reward = PointsTransaction(
+        user_id=request.user_id, amount=XP_UPLOAD_APPROVAL,
+        reason=f"File Approved: {request.title}", request_id=request.id
+    )
+    session.add(reward)
+
+    request.status = "approved"
+    session.commit()
+    return {"message": "File approved!"}
 
 @app.post("/api/v1/admin/requests/{request_id}/reject")
 def reject_request(
@@ -548,7 +548,7 @@ def reject_request(
         print(f"GCS Delete failed or file not found: {e}")
 
     # 2. Update the status in the database
-    request.status = "REJECTED" 
+    request.status = "rejected"
     
     session.commit()
     return {"message": "Request rejected and file deleted from Cloud storage."}
@@ -561,15 +561,14 @@ def withdraw_request(
 ):
     """Allows a student to delete their own pending request."""
     request = session.get(FileRequest, request_id)
-    
-    # Security check: Make sure the file exists AND belongs to this user!
     if not request or request.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Request not found.")
     
-    # Clean up the local file so it doesn't waste your hard drive space
-    local_path = request.file_url.replace("gs://your-bucket-name/", "")
-    if os.path.exists(local_path):
-        os.remove(local_path)
+    try:
+        bucket = storage_client.bucket(bucket_name)
+        bucket.blob(request.file_url).delete()
+    except Exception as e:
+        print(f"GCS Delete failed: {e}")
 
     session.delete(request)
     session.commit()
@@ -588,7 +587,7 @@ def bulk_approve_requests(
     for req_id in payload.request_ids:
         request = session.get(FileRequest, req_id)
         # Skip if it doesn't exist or is already processed
-        if not request or request.status != "PENDING":
+        if not request or request.status != "pending":
             continue 
             
         course = session.get(Course, request.course_id)
@@ -623,7 +622,7 @@ def bulk_approve_requests(
         session.add(reward)
         
         # 4. UPDATE STATUS
-        request.status = "APPROVED"
+        request.status = "approved"
         approved_count += 1
         
     session.commit()
@@ -641,7 +640,7 @@ def bulk_reject_requests(
     
     for req_id in payload.request_ids:
         request = session.get(FileRequest, req_id)
-        if not request or request.status != "PENDING":
+        if not request or request.status != "pending":
             continue
             
         # 1. Delete from Google Cloud Storage
@@ -654,7 +653,7 @@ def bulk_reject_requests(
             # we still want to mark it as rejected in the database.
             
         # 2. Update status in database
-        request.status = "REJECTED"
+        request.status = "rejected"
         rejected_count += 1
         
     session.commit()
@@ -671,7 +670,7 @@ def undo_approve(
     if not request:
         raise HTTPException(status_code=404, detail="Request not found.")
         
-    if request.status != "APPROVED":
+    if request.status != "approved":
         raise HTTPException(status_code=400, detail="Only approved requests can be undone.")
 
     # 1. Revoke the 10 XP Gamification points
@@ -690,7 +689,7 @@ def undo_approve(
         session.delete(material)
 
     # 3. Change status back to PENDING
-    request.status = "PENDING"
+    request.status = "pending"
     
     # Note: For a true enterprise app, you would also move the file back from 
     # 'approved_materials/' to 'pending_uploads/' in Google Cloud here.
@@ -709,11 +708,11 @@ def undo_reject(
     if not request:
         raise HTTPException(status_code=404, detail="Request not found.")
         
-    if request.status != "REJECTED":
+    if request.status != "rejected":
         raise HTTPException(status_code=400, detail="Only rejected requests can be undone.")
 
     # Just flip the status back!
-    request.status = "PENDING"
+    request.status = "pending"
     session.commit()
     
     return {"message": "Rejection undone. File is back in the pending queue."}
