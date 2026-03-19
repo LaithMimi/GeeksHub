@@ -401,7 +401,8 @@ async def upload_course_file(
     course_id: UUID,
     # Using Form(...) because we are receiving multipart/form-data, not JSON!
     title: str = Form(...),
-    year: int = Form(...),
+    academic_year: int = Form(...),
+    material_year: int = Form(...),
     type_id: UUID = Form(...), 
     lecturer_id: UUID = Form(...),
     notes: str = Form(None),
@@ -432,7 +433,8 @@ async def upload_course_file(
         course_id=course_id,
         lecturer_id=lecturer_id,
         type_id=type_id,
-        year=year,
+        academic_year=academic_year,
+        material_year=material_year,
         title=title,
         notes=notes,
         status="pending",
@@ -498,7 +500,8 @@ def approve_file(
         # 2. CREATE THE OFFICIAL CATALOG ENTRY (Plugging the Black Hole!)
         new_material = Material(
             title=request.title,
-            year=request.year,
+            academic_year=request.academic_year,
+            material_year=request.material_year,
             course_id=request.course_id,
             lecturer_id=request.lecturer_id,
             type_id=request.type_id,
@@ -606,8 +609,8 @@ def bulk_approve_requests(
 
         # 2. CREATE THE OFFICIAL CATALOG ENTRY
         new_material = Material(
-            title=request.title, year=request.year, course_id=request.course_id,
-            lecturer_id=request.lecturer_id, type_id=request.type_id,
+            title=request.title, academic_year=request.academic_year, material_year=request.material_year,
+            course_id=request.course_id, lecturer_id=request.lecturer_id, type_id=request.type_id,
             uploader_id=request.user_id, notes=request.notes, file_url=final_gcs_path
         )
         session.add(new_material)
