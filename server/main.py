@@ -1,5 +1,7 @@
 import datetime
 import os
+import random
+import string
 import jwt
 import requests
 import shutil
@@ -65,18 +67,26 @@ async def lifespan(app: FastAPI):
 async def upload_to_gcs(file: UploadFile, destination_blob_name: str):
     """
     Uploads a file to the Google Cloud Storage bucket.
-    (Currently mocked to save locally until GCS credentials are added)
     """
-    # TODO: Replace with actual Google Cloud Storage library code
-    # e.g., bucket.blob(destination_blob_name).upload_from_file(file.file)
-    
-    # For local testing, we will just save it to a local folder
-    import os
-    os.makedirs(os.path.dirname(destination_blob_name), exist_ok=True)
-    with open(destination_blob_name, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    return f"gs://your-bucket-name/{destination_blob_name}"
+    try:
+        # 1. Connect to your specific bucket
+        bucket = storage_client.bucket(bucket_name)
+        
+        # 2. Create a "blob" (Google's term for a file) at the destination path
+        blob = bucket.blob(destination_blob_name)
+        
+        # 3. Ensure we are reading from the very beginning of the file stream
+        file.file.seek(0)
+        
+        # 4. Upload directly from the memory buffer to Google Cloud!
+        blob.upload_from_file(file.file, content_type=file.content_type)
+        
+        # Return the exact path inside the bucket so we can store it in Neon DB
+        return destination_blob_name
+        
+    except Exception as e:
+        print(f"FATAL GCS ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload file to cloud storage.")
 
 app = FastAPI(title="GeeksHub API", lifespan=lifespan)
 
@@ -403,14 +413,14 @@ async def upload_course_file(
     # This will throw a 400/413 error if it's a virus, too big, or fake extension
     safe_ext = await validate_uploaded_file(file)
 
-    # 2. FILENAME SANITIZATION
-    # We completely ignore the user's original filename (e.g., "my_virus.exe").
-    # We generate a random UUID and append the safe extension we verified.
-    secure_filename = f"{uuid.uuid4()}{safe_ext}"
+    # 2. FILENAME KEEP ORIGINAL NAME (with a tiny random string to prevent overwrites)
+    base_name = os.path.splitext(file.filename)[0].replace(" ", "_")
+    random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+    file_name = f"{base_name}_{random_suffix}{safe_ext}"
     
     # 3. CLOUD ISOLATION (The "Pending" Folder)
     # We save it in a specific 'pending' folder so it doesn't mix with approved files
-    storage_path = f"pending_uploads/{course_id}/{secure_filename}"
+    storage_path = f"pending_uploads/{file_name}"
     
     # Reset the file pointer after our magic bytes check in validate_uploaded_file
     await file.seek(0) 
@@ -459,7 +469,7 @@ def list_admin_requests(
 @app.post("/api/v1/admin/requests/{request_id}/approve")
 def approve_file(
     request_id: UUID,
-    payload: AdminApprovePayload,  # <-- FIXED: Now expects a JSON body!
+    payload: AdminApprovePayload,  # expects a JSON body!
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
@@ -467,23 +477,24 @@ def approve_file(
     if not request:
         raise HTTPException(status_code=404, detail="Request not found.")
 
-    # Because our mock upload_to_gcs function prepended "gs://your-bucket-name/", 
-    # we strip it here to get the actual local file path on your hard drive.
-    local_path = request.file_url.replace("gs://your-bucket-name/", "")
-
     if payload.approve:
-        # 1. UPLOAD TO GOOGLE CLOUD STORAGE
-        # Now that it's approved, we finally send it to the expensive cloud storage!
-        final_gcs_path = f"approved_materials/{request.course_id}/{os.path.basename(local_path)}"
+        # 1. FETCH THE COURSE NAME
+        course = session.get(Course, request.course_id)
+        safe_course_name = course.name.replace(" ", "_") # Replaces spaces for safe web URLs
+        
+        # 2. MOVE TO COURSE FOLDER
+        filename = request.file_url.split('/')[-1] 
+        final_gcs_path = f"{safe_course_name}/{filename}" # e.g. "Linear_Algebra_1/Midterm_x7b2.pdf"
+
         try:
             bucket = storage_client.bucket(bucket_name)
-            blob = bucket.blob(final_gcs_path)
-            blob.upload_from_filename(local_path)
+            temp_blob = bucket.blob(request.file_url) # This is the temporary "pending" file
+            bucket.rename_blob(temp_blob, final_gcs_path) # This moves the file to its final destination
         except Exception as e:
             # Fallback if your GCS credentials aren't fully configured yet locally
-            print(f"GCS Upload skipped/failed: {e}")
-            final_gcs_path = local_path 
-
+            print(f"GCS Move failed: {e}")
+            raise HTTPException(status_code=500, detail="Cloud storage error.")
+            
         # 2. CREATE THE OFFICIAL CATALOG ENTRY (Plugging the Black Hole!)
         new_material = Material(
             title=request.title,
@@ -507,10 +518,7 @@ def approve_file(
         session.add(reward)
 
         # 4. CLEAN UP
-        # Delete the old request card, and delete the temporary local file to save space
-        request.status = "APPROVED" # Update status for record-keeping, but we will hide it from the frontend
-        if os.path.exists(local_path):
-            os.remove(local_path)
+        request.status = "APPROVED" 
             
         session.commit()
         return {"message": "File approved, moved to Cloud, and 10 XP awarded!"}
@@ -526,15 +534,21 @@ def reject_request(
     if not request:
         raise HTTPException(status_code=404, detail="Request not found.")
 
-    local_path = request.file_url.replace("gs://your-bucket-name/", "")
+    # 1. Delete the file from Google Cloud Storage
+    try:
+        bucket = storage_client.bucket(bucket_name)
+        temp_blob = bucket.blob(request.file_url)
+        temp_blob.delete()  # Instantly removes it from the cloud!
+    except Exception as e:
+        # We catch the error just in case the file was already deleted manually 
+        # so the database can still update successfully.
+        print(f"GCS Delete failed or file not found: {e}")
+
+    # 2. Update the status in the database
+    request.status = "REJECTED" 
     
-    # Delete from database and local disk
-    request.status = "REJECTED" # Update status for record-keeping, but we will hide it from the frontend
-    if os.path.exists(local_path):
-        os.remove(local_path)
-        
     session.commit()
-    return {"message": "Request rejected and file deleted locally."}
+    return {"message": "Request rejected and file deleted from Cloud storage."}
 
 @app.delete("/api/v1/me/requests/{request_id}")
 def withdraw_request(
@@ -564,33 +578,49 @@ def bulk_approve_requests(
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
-    """Approves multiple files at once."""
+    """Approves multiple files at once and moves them in Google Cloud Storage."""
     approved_count = 0
+    bucket = storage_client.bucket(bucket_name)
     
-    # Loop through the list of IDs sent by the frontend
     for req_id in payload.request_ids:
         request = session.get(FileRequest, req_id)
-        if not request:
-            continue # Skip if it doesn't exist
+        # Skip if it doesn't exist or is already processed
+        if not request or request.status != "PENDING":
+            continue 
             
-        # (Here we do the exact same logic as a single approve: 
-        # Upload to GCS, save to Material table, award 10 XP, and delete the request)
+        course = session.get(Course, request.course_id)
+        safe_course_name = course.name.replace(" ", "_")
+
+        #  MOVE FILE IN GOOGLE CLOUD STORAGE
+        filename = request.file_url.split('/')[-1]
+        final_gcs_path = f"{safe_course_name}/{filename}"
         
-        # ... [Your local staging GCS upload logic here] ...
-        
+        try:
+            temp_blob = bucket.blob(request.file_url)
+            bucket.rename_blob(temp_blob, final_gcs_path) 
+        except Exception as e:
+            print(f"GCS Move failed for request {req_id}: {e}")
+            # IMPORTANT: If the cloud move fails, we skip to the next file! 
+            # We don't want to award XP for a broken file.
+            continue
+
+        # 2. CREATE THE OFFICIAL CATALOG ENTRY
         new_material = Material(
             title=request.title, year=request.year, course_id=request.course_id,
             lecturer_id=request.lecturer_id, type_id=request.type_id,
-            uploader_id=request.user_id, notes=request.notes, file_url=request.file_url
+            uploader_id=request.user_id, notes=request.notes, file_url=final_gcs_path
         )
         session.add(new_material)
         
+        # 3. AWARD GAMIFICATION XP
         reward = PointsTransaction(
             user_id=request.user_id, amount=10, 
             reason=f"File Approved: {request.title}", request_id=request.id
         )
         session.add(reward)
-        session.delete(request)
+        
+        # 4. UPDATE STATUS
+        request.status = "APPROVED"
         approved_count += 1
         
     session.commit()
@@ -602,19 +632,26 @@ def bulk_reject_requests(
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
-    """Rejects multiple files at once and deletes them locally."""
+    """Rejects multiple files at once and deletes them from Google Cloud Storage."""
     rejected_count = 0
+    bucket = storage_client.bucket(bucket_name)
     
     for req_id in payload.request_ids:
         request = session.get(FileRequest, req_id)
-        if not request:
+        if not request or request.status != "PENDING":
             continue
             
-        local_path = request.file_url.replace("gs://your-bucket-name/", "")
-        if os.path.exists(local_path):
-            os.remove(local_path)
+        # 1. Delete from Google Cloud Storage
+        try:
+            temp_blob = bucket.blob(request.file_url)
+            temp_blob.delete()
+        except Exception as e:
+            print(f"GCS Delete failed for {req_id}: {e}")
+            # We don't skip here! Even if GCS fails (e.g. file already gone),
+            # we still want to mark it as rejected in the database.
             
-        session.delete(request)
+        # 2. Update status in database
+        request.status = "REJECTED"
         rejected_count += 1
         
     session.commit()
