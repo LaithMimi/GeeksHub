@@ -171,8 +171,5 @@ class UserSignIn(BaseModel):
 class ForgotPassword(BaseModel):
     email: str 
 
-class AdminApprovePayload(BaseModel):
-    approve: bool
-
 class BulkActionPayload(BaseModel):
     request_ids: List[UUID]

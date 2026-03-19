@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from models import FileRequest, Major, Material, User, Course, Lecturer, UserSignUp, UserSignIn,FileRequestEnriched, AdminApprovePayload, BulkActionPayload, ForgotPassword, MaterialType, PointsTransaction
+from models import FileRequest, Major, Material, User, Course, Lecturer, UserSignUp, UserSignIn,FileRequestEnriched, BulkActionPayload, ForgotPassword, MaterialType, PointsTransaction
 from fastapi import FastAPI, HTTPException, UploadFile,Response, Query, File, Depends, Form
 from sqlmodel import Session, select
 from contextlib import asynccontextmanager
