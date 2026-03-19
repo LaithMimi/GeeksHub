@@ -61,8 +61,11 @@ export type Role = "STUDENT" | "ADMIN" | "MODERATOR";
 /** Status of a file or file request */
 export type FileStatus = "pending" | "approved" | "rejected";
 
+/** Status of user's progress in a course */
+export type CourseStatus = "not_started" | "exploring" | "engaged" | "completed";
+
 /** Badge tiers based on reputation points */
-export type BadgeTier = "Gold" | "Silver" | "Bronze" | "Contributor";
+export type BadgeTier = "diamond" | "gold" | "silver" | "bronze" | "newcomer";
 
 /** Types of course materials */
 export type MaterialType = "Slides" | "Homeworks" | "Past Papers" | "Notes";
@@ -128,9 +131,22 @@ export interface Course {
     semesterId: string; // For filtering
     term: string; // Display string like "Fall 2024"
     color: string; // Tailwind gradient classes for UI
-    progress?: number; // Optional: user's progress in course
     year_id?: number;
     semester?: number;
+}
+
+/**
+ * User's activity status in a course.
+ */
+export interface CourseActivity {
+    courseId: string;
+    courseName?: string; // Denormalized for display in MyPath
+    courseCode?: string; // Denormalized for display in MyPath
+    status: CourseStatus;
+    filesCompleted: number;
+    totalFiles: number;
+    completedAt?: string;
+    updatedAt: string;
 }
 
 /**
@@ -231,6 +247,73 @@ export interface PointsTransaction {
     reason: string; // e.g., "File Approved"
     date: string; // ISO timestamp
     requestId?: string; // Link to file request that earned this
+}
+
+/**
+ * Viewer session state returned by heartbeat.
+ */
+export interface ViewerHeartbeatResponse {
+    sessionId: string;
+    completionScore: number;
+    isComplete: boolean;
+    pointsAwarded: number;
+    courseCompleted: boolean;
+    courseId: string | null;
+    motivationalQuote: string | null;
+    breakReminder: boolean;
+    nextIntervalIn: number;
+}
+
+/**
+ * Platform session state returned by heartbeat.
+ */
+export interface PlatformHeartbeatResponse {
+    activeSeconds: number;
+    pointsAwarded: number;
+    breakReminder: boolean;
+    nextIntervalIn: number;
+}
+
+/**
+ * Aggregated learning path grouped by years and semesters.
+ */
+export interface LearningPath {
+    major: { id: string; name: string };
+    years: {
+        yearId: number;
+        label: string;
+        semesters: {
+            semester: number;
+            label: string;
+            courses: (Course & {
+                hasFiles: boolean;
+                status: CourseStatus;
+                filesCompleted: number;
+                totalFiles: number;
+            })[];
+        }[];
+    }[];
+}
+
+/**
+ * User's dashboard activity summary.
+ */
+export interface ActivitySummary {
+    totalPoints: number;
+    badgeTier: BadgeTier;
+    recentTransactions: {
+        id: string;
+        action: string;
+        points: number;
+        createdAt: string;
+    }[];
+    courseActivity: {
+        courseId: string;
+        courseName: string;
+        status: CourseStatus;
+        filesCompleted: number;
+        totalFiles: number;
+    }[];
 }
 
 // ============================================================================

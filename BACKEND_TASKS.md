@@ -53,6 +53,10 @@ These tables **exist** in `server/models.py`:
 | `points_transactions` | Points ledger for reputation (`user_id`, `amount`, `reason`, `source_id` → idempotent) |
 | `audit_logs` | Admin action log (`actor_id`, `action`, `target_ids`, `metadata`) |
 | `user_recent_files` | Recently viewed files per user (`user_id`, `file_id`, `viewed_at`) |
+| `file_viewing_sessions` | Tracks a single student's viewing session for a specific file (`id`, `user_id`, `file_id`, `course_id`, `started_at`, `active_seconds`, `completion_score`, `is_complete`) |
+| `user_course_activity` | Materialized activity state per user per course (`user_id`, `course_id`, `status`, `files_completed`, `total_files`) |
+| `user_platform_sessions` | Drives the 25-minute break and +2 points interval system (`id`, `user_id`, `started_at`, `active_seconds`, `intervals_awarded`) |
+| `motivational_quotes` | Quotes shown on course completion (`id`, `text`, `author`, `is_active`) |
 
 ---
 
@@ -200,6 +204,35 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 - `GET /me/reputation` returns `{ userId, totalPoints, badge, transactions[] }`
 - Badge tiers: Gold (>1000), Silver (>500), Bronze (default)
 - `GET /reputation/leaderboard` returns top 10 users by total points
+
+---
+
+## 9. Gamification API & Sessions
+
+> **Frontend source:** `src/services/gamificationService.ts`, `src/services/learningPathService.ts`
+
+| Method | Endpoint | Frontend Call | Status |
+|--------|----------|---------------|--------|
+| `POST` | `/api/v1/me/viewer/session-start` | `startViewerSession({ fileId })` | 🔴 |
+| `POST` | `/api/v1/me/viewer/heartbeat` | `sendViewerHeartbeat(...)` | 🔴 |
+| `POST` | `/api/v1/me/viewer/session-end` | `endViewerSession(sessionId)` | 🔴 |
+| `POST` | `/api/v1/me/session/start` | `startPlatformSession()` | 🔴 |
+| `POST` | `/api/v1/me/session/heartbeat` | `sendPlatformHeartbeat(sessionId)` | 🔴 |
+| `POST` | `/api/v1/me/session/end` | `endPlatformSession(sessionId)` | 🔴 |
+| `GET` | `/api/v1/me/learning-path` | `getLearningPath()` | 🔴 |
+| `GET` | `/api/v1/me/activity/summary` | `getActivitySummary()` | 🔴 |
+| `GET` | `/api/v1/files/:file_id/share` | `getShareUrl(fileId)` | 🔴 |
+
+### Implementation Notes
+- **Viewer Sessions**:
+  - `POST /session-start` computes `required_active_seconds` based on file type (PDF: pages × 45s × 0.60; Slides: pages × 30s × 0.60).
+  - `POST /heartbeat` calculates `completion_score` = `(visited_pages / total_pages) * min(active_seconds / required_active_seconds, 1.0)`. If >= 0.85, set `is_complete`, award points, update `user_course_activity`.
+- **Platform Sessions**:
+  - `POST /session/start` tracks cumulative active time.
+  - `POST /session/heartbeat` awards +2 points every 25 mins (1500 seconds) of active time and sets `break_reminder: true`.
+- **Learning Path**: Groups the user's major courses by year and semester, enriching them with their `user_course_activity` status (not_started, exploring, engaged, completed).
+- **Idempotency**: All point transactions (`file_complete`, `study_interval`, `course_complete`) must rely on `points_transactions.source_id` uniqueness. 
+- **Course Status Logic**: `not_started` (0%), `exploring` (<50%), `engaged` (>=50%), `completed` (100%).
 
 ---
 

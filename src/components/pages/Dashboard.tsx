@@ -26,6 +26,7 @@ import { usePinnedCourses } from "@/hooks/usePinnedCourses";
 import { useTasks, type Task } from "@/hooks/useTasks";
 import { useAuth } from "@/context/AuthContext";
 import { useCourses } from "@/queries/useCatalog";
+import { useActivitySummary } from "@/queries/useLearningPath";
 import {
     formatDistanceToNow, format, isToday, isTomorrow, isPast,
     startOfMonth, endOfMonth, eachDayOfInterval, getDay,
@@ -646,6 +647,7 @@ export default function Dashboard() {
     const { data: reputation, isLoading: isLoadingRep } = useReputation(userId);
     const { data: _requests } = useMyRequests(userId);
     const { data: allCourses } = useCourses({}); // Retrieve full course catalog for metadata mapping
+    const { data: activitySummary, isLoading: isLoadingSummary } = useActivitySummary();
     usePinnedCourses();
 
     const { tasks, taskDates, addTask, toggleTask, deleteTask } = useTasks();
@@ -727,7 +729,7 @@ export default function Dashboard() {
         },
         {
             label: "Courses Active",
-            value: isLoadingRecent ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : uniqueCourseIds.size.toString(), // Needs backend ENROLLMENT endpoint for true accuracy
+            value: isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : (activitySummary ? activitySummary.courseActivity.filter(c => c.status === "engaged").length.toString() : "—"),
             change: "",
             positive: true,
             icon: BookOpen
@@ -741,7 +743,7 @@ export default function Dashboard() {
         },
         {
             label: "XP Earned",
-            value: isLoadingRep ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : (reputation ? `${reputation.totalPoints}` : "—"),
+            value: isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : (activitySummary ? `${activitySummary.totalPoints}` : "—"),
             change: "",
             positive: true,
             icon: Zap
@@ -1113,14 +1115,14 @@ export default function Dashboard() {
                     </div>
 
                     {/* Reputation Card */}
-                    {reputation && (
+                    {activitySummary && (
                         <div className="liquid-glass rounded-2xl p-6 border-purple-500/20 glow-purple-soft">
                             <div className="flex items-center gap-2 mb-3">
                                 <Zap className="h-4 w-4 text-purple-400" />
                                 <span className="text-[13px] font-display font-semibold text-white/70">Your Reputation</span>
                             </div>
                             <div className="text-[32px] font-display font-bold text-white leading-none">
-                                {reputation.totalPoints}
+                                {activitySummary.totalPoints}
                             </div>
                             <p className="text-[12px] text-white/35 mt-1">Points earned</p>
                         </div>

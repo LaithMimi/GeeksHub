@@ -91,6 +91,8 @@ import { CommandPalette } from "../ui/command-palette";
 import { isMac } from "@/lib/utils";
 import { useCourse } from "@/queries/useCatalog";
 import { useFile } from "@/queries/useFiles";
+import { usePlatformSession } from "@/hooks/usePlatformSession";
+import { toast } from "sonner";
 
 // Language config
 const languages = [
@@ -285,6 +287,8 @@ function GlassSidebar() {
 }
 
 export default function AppShell() {
+    const { breakReminder } = usePlatformSession();
+
     useEffect(() => {
         const savedLang = localStorage.getItem("language") || "en";
         const selectedLang = languages.find((l) => l.code === savedLang);
@@ -293,6 +297,15 @@ export default function AppShell() {
             document.documentElement.dir = selectedLang.dir;
         }
     }, []);
+
+    useEffect(() => {
+        if (breakReminder) {
+            toast.success("Time for a quick break!", {
+                description: "You've been studying for 25 minutes. +2 Points awarded!",
+                duration: 5000,
+            });
+        }
+    }, [breakReminder]);
 
     return (
         <div className="flex h-screen overflow-hidden relative">

@@ -347,9 +347,9 @@ export default function Courses() {
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5">
                                                 <p className="text-[11px] text-white/30 truncate">{c.major}</p>
-                                                {c.badge === "Gold" && <span className="text-[10px] text-yellow-400 font-medium">Gold</span>}
-                                                {c.badge === "Silver" && <span className="text-[10px] text-slate-300 font-medium">Silver</span>}
-                                                {c.badge === "Bronze" && <span className="text-[10px] text-amber-500 font-medium">Bronze</span>}
+                                                {c.badge === "gold" && <span className="text-[10px] text-yellow-400 font-medium">Gold</span>}
+                                                {c.badge === "silver" && <span className="text-[10px] text-slate-300 font-medium">Silver</span>}
+                                                {c.badge === "bronze" && <span className="text-[10px] text-amber-500 font-medium">Bronze</span>}
                                             </div>
                                         </div>
                                     </div>

@@ -8,6 +8,9 @@ import {
 import { useParams } from 'react-router-dom';
 import { useFile, useAddRecentFile } from '@/queries/useFiles';
 import { Button } from '@/components/ui/button';
+import { useViewerSession } from '@/hooks/useViewerSession';
+import { toast } from 'sonner';
+import CourseCompletionCelebration from '@/components/ui/CourseCompletionCelebration';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -66,6 +69,32 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
             });
         }
     }, [file, courseId, addToRecent]);
+
+    // ── Gamification Viewer Session ───────────────────────────────────────────
+    const {
+        completed,
+        pointsAwarded,
+        courseCompleted,
+        motivationalQuote,
+    } = useViewerSession(fileId || "", pageNumber);
+
+    const [showCelebration, setShowCelebration] = useState(false);
+
+    // Toast for individual file completion
+    useEffect(() => {
+        if (completed && pointsAwarded > 0 && !courseCompleted) {
+            toast.success("File Completed!", {
+                description: `Great job reading this material. +${pointsAwarded} Points!`,
+            });
+        }
+    }, [completed, pointsAwarded, courseCompleted]);
+
+    // Celebration modal for course completion
+    useEffect(() => {
+        if (courseCompleted) {
+            setShowCelebration(true);
+        }
+    }, [courseCompleted]);
 
     // ── Text selection — show "Ask AI" tooltip ────────────────────────────────
     useEffect(() => {
@@ -236,6 +265,12 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
     // ── PDF viewer ────────────────────────────────────────────────────────────
     return (
         <div className="h-full flex flex-col bg-background">
+            <CourseCompletionCelebration
+                open={showCelebration}
+                onClose={() => setShowCelebration(false)}
+                pointsAwarded={pointsAwarded}
+                quote={motivationalQuote}
+            />
 
             {/* Toolbar */}
             <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-sm shrink-0">
