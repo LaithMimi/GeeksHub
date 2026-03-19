@@ -120,7 +120,10 @@ def get_semesters():
     ]
 
 @app.get("/api/v1/lecturers")
-def get_lecturers(session: Session = Depends(get_session)):
+def get_lecturers(
+    course_id: Optional[UUID] = Query(None),
+    session: Session = Depends(get_session)):
+
     """Fetches all lecturers from the database."""
     lecturers = session.exec(select(Lecturer)).all()
     return lecturers
@@ -385,7 +388,7 @@ def get_my_requests(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_verified_user)
 ):
-    """Enriched student queue (Tasks 2 & 10)"""
+    """Enriched student queue"""
     # Join the tables to grab the real names instead of just UUIDs
     statement = select(FileRequest, Course, Lecturer).join(Course).join(Lecturer).where(FileRequest.user_id == current_user.id)
     results = session.exec(statement).all()
@@ -394,7 +397,11 @@ def get_my_requests(
     for request, course, lecturer in results:
         # Check if this was approved (if so, the Material ID matches the Request ID)
         mat_id = request.id if request.status == "approved" else None
-        pts = 25 if request.status == "approved" else 0
+        # Calculate real XP from the database
+        xp_transaction = session.exec(
+            select(PointsTransaction).where(PointsTransaction.request_id == request.id)
+        ).first()
+        pts = xp_transaction.amount if xp_transaction else 0
         
         enriched_list.append(
             FileRequestEnriched(
@@ -476,9 +483,8 @@ def list_admin_requests(
     statement = select(FileRequest)
     
     if status:
-        # We use .upper() just in case the frontend sends "pending" instead of "PENDING"
-        statement = statement.where(FileRequest.status == status.upper())
-        
+        statement = statement.where(FileRequest.status == status.lower())
+      
     return session.exec(statement).all()
 
 @app.post("/api/v1/admin/requests/{request_id}/approve")
@@ -517,8 +523,11 @@ def approve_file(
     session.add(new_material)
 
     reward = PointsTransaction(
-        user_id=request.user_id, amount=XP_UPLOAD_APPROVAL,
-        reason=f"File Approved: {request.title}", request_id=request.id
+        user_id=request.user_id,
+        amount=XP_UPLOAD_APPROVAL,
+        action="upload_approval",
+        reason=f"File Approved: {request.title}",
+        request_id=request.id
     )
     session.add(reward)
 
@@ -608,6 +617,7 @@ def bulk_approve_requests(
 
         # 2. CREATE THE OFFICIAL CATALOG ENTRY
         new_material = Material(
+            id=request.id,
             title=request.title, academic_year=request.academic_year, material_year=request.material_year,
             course_id=request.course_id, lecturer_id=request.lecturer_id, type_id=request.type_id,
             uploader_id=request.user_id, notes=request.notes, file_url=final_gcs_path
@@ -616,8 +626,11 @@ def bulk_approve_requests(
         
         # 3. AWARD GAMIFICATION XP
         reward = PointsTransaction(
-            user_id=request.user_id, amount=10, 
-            reason=f"File Approved: {request.title}", request_id=request.id
+            user_id=request.user_id,
+            amount=XP_UPLOAD_APPROVAL, 
+            action="upload_approval",
+            reason=f"File Approved: {request.title}",
+            request_id=request.id
         )
         session.add(reward)
         
@@ -724,7 +737,7 @@ def get_request_stats(
 ):
     """Returns top-level metrics for the Admin dashboard."""
     # Count how many requests are currently pending
-    statement = select(FileRequest).where(FileRequest.status == "PENDING")
+    statement = select(FileRequest).where(FileRequest.status == "pending")
     pending_count = len(session.exec(statement).all())
     
     # We will wire up the "Today" stats once we build the AuditLogs table in P2!

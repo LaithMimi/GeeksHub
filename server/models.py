@@ -2,7 +2,7 @@ import re
 from typing import List, Optional, Self
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
-from sqlmodel import Relationship, SQLModel, Field
+from sqlmodel import Relationship, SQLModel, Field, UniqueConstraint
 from pydantic import BaseModel, field_validator, model_validator
 
 # User Identity
@@ -97,7 +97,7 @@ class FileRequest(SQLModel, table=True):
     lecturer_id: UUID = Field(foreign_key="lecturers.id") # Lecturer associated with the material
     status: str = "pending" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
     notes: str | None = None # Optional field for moderators to provide feedback on the request
-    admin_notes: str | None = None # Private notes only visible to admins
+    admin_note: str | None = None # Private notes only visible to admins
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of request submission
     lecturer: Lecturer| None = Relationship()
 
@@ -121,6 +121,8 @@ class FileRequestEnriched(BaseModel):
     lecturer_name: str
     material_id: UUID | None = None
     points_awarded: int
+    created_at: datetime
+    admin_note: str | None = None
 
 class PointsTransaction(SQLModel, table=True):
     __tablename__ = "points_transactions"
@@ -128,10 +130,16 @@ class PointsTransaction(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id", index=True)
     amount: int # e.g., +10
+    action: str # e.g., "upload_approval"
     reason: str # e.g., "File Approved: Midterm 2018"
-    request_id: UUID | None = None # To prevent double-awarding XP
-    
+    request_id: UUID | None = Field(default=None, foreign_key="file_requests.id") # To prevent double-awarding XP
+    source_id: str | None = Field(default=None, unique=True, index=True) # Unique string for non-request events (e.g., 'daily_login:2026-03-19')
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    # This prevents double-awarding XP for the exact same file request!
+    __table_args__ = (
+        UniqueConstraint("request_id", "action", name="uq_request_action"),
+    )
 
 class UserSignUp(BaseModel):
     """
