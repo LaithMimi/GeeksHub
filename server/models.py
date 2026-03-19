@@ -2,7 +2,7 @@ import re
 from typing import List, Optional, Self
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
-from sqlmodel import Relationship, SQLModel, Field
+from sqlmodel import Relationship, SQLModel, Field, UniqueConstraint
 from pydantic import BaseModel, field_validator, model_validator
 
 # User Identity
@@ -67,7 +67,6 @@ class Material(SQLModel, table=True):
     
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
     title: str
-    academic_year: int #e.g., 1, 2, 3, or 4
     material_year: int # The year the material is relevant to (e.g., 2020 for "Midterm 2020")
     course_id: UUID = Field(foreign_key="courses.id")
     lecturer_id: UUID = Field(foreign_key="lecturers.id")
@@ -91,13 +90,12 @@ class FileRequest(SQLModel, table=True):
     course_id: UUID = Field(foreign_key="courses.id") # Course the requested file is for
     type_id: UUID = Field(foreign_key="material_types.id") # Type of material being requested
     title: str # Proposed title for the file
-    academic_year: int # e.g., 1, 2, 3, or 4
     material_year: int # e.g., 2020 for "Midterm 2020"
     file_url: str # Temporary GCS path - URL to the uploaded file awaiting approval
     lecturer_id: UUID = Field(foreign_key="lecturers.id") # Lecturer associated with the material
     status: str = "pending" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
     notes: str | None = None # Optional field for moderators to provide feedback on the request
-    admin_notes: str | None = None # Private notes only visible to admins
+    admin_note: str | None = None # Private notes only visible to admins
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of request submission
     lecturer: Lecturer| None = Relationship()
 
@@ -115,12 +113,13 @@ class FileRequestEnriched(BaseModel):
     id: UUID
     title: str
     status: str
-    academic_year: int
     material_year: int
     course_name: str
     lecturer_name: str
     material_id: UUID | None = None
     points_awarded: int
+    created_at: datetime
+    admin_note: str | None = None
 
 class PointsTransaction(SQLModel, table=True):
     __tablename__ = "points_transactions"
@@ -128,8 +127,14 @@ class PointsTransaction(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id", index=True)
     amount: int # e.g., +10
+    action: str # e.g., "upload_approved"
     reason: str # e.g., "File Approved: Midterm 2018"
     request_id: UUID | None = None # To prevent double-awarding XP
+    source_id: str | None = Field(default=None, unique=True, index=True)
+
+    __table_args__ = (
+        UniqueConstraint("request_id", "action", name="uq_request_action"),
+    )
     
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
