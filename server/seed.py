@@ -12,14 +12,15 @@ def seed_database():
         print("Seeding full Software Engineering Catalog from Transcript...")
 
         # 1. Major
-        sw_major = Major(id=uuid.uuid4(), name="Software Engineering", slug="software-engineering")
-        cs_major = Major(id=uuid.uuid4(), name="computer science", slug="computer-science")
+        #sw_major = Major(id=uuid.uuid4(), name="Software Engineering", slug="software-engineering")
+        #cs_major = Major(id=uuid.uuid4(), name="computer science", slug="computer-science")
 
-        session.add(sw_major)
-        session.add(cs_major)
-        session.commit()
+        #session.add(sw_major)
+        #session.add(cs_major)
+        #session.commit()
 
         # 2. Complete Course List from Transcript
+        '''
         transcript_courses = [
             # Year 2022/2023
             Course(code="10003", name="Linear Algebra 1", major_id=sw_major.id, year_id=1, semester=1),
@@ -68,23 +69,24 @@ def seed_database():
             Course(code="10133", name="DevOps", major_id=sw_major.id, year_id=4, semester=1),
             Course(code="96040", name="Engineering Economics", major_id=sw_major.id, year_id=4, semester=2),
         ]
+        '''
 
-        for course in transcript_courses:
-            session.add(course)
+        #for course in transcript_courses:
+        #    session.add(course)
         
         # 3. Material Types
         m_types = [
-            MaterialType(id="summary", display_name="Summary"),
-            MaterialType(id="exam", display_name="Exam"),
-            MaterialType(id="notes", display_name="Lecture Notes"),
-            MaterialType(id="slides", display_name="Slides"),
+            MaterialType( display_name="Summary"),
+            MaterialType( display_name="Exam"),
+            MaterialType( display_name="Lecture Notes"),
+            MaterialType( display_name="Slides"),
         ]
 
         for mt in m_types:
             session.add(mt)    
 
         session.commit()
-        print(f"Success! Seeded {len(transcript_courses)} courses from the Azrieli Transcript.")
+        #print(f"Success! Seeded {len(transcript_courses)} courses from the Azrieli Transcript.")
 
 if __name__ == "__main__":
     seed_database()

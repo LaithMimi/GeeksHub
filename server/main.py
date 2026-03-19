@@ -89,6 +89,8 @@ app.add_middleware(
     allow_headers=["*"],  # Allows the Authorization header for JWTs
 )
 
+# --- CATALOG DATA ROUTES ---
+
 @app.get("/api/v1/years")
 def get_years():
     """Returns static academic years for the frontend dropdowns/MyPath."""
@@ -368,11 +370,11 @@ def approve_file(
         raise HTTPException(status_code=404, detail="Request not found.")
 
     bucket = storage_client.bucket(bucket_name)
-    temp_blob = bucket.blob(request.storage_path)
+    temp_blob = bucket.blob(request.file_url)
 
     if approve:
         # 1. Move file from 'pending/' to the final course folder
-        new_path = f"{request.course_id}/{request.storage_path.split('/')[-1]}"
+        new_path = f"{request.course_id}/{request.file_url.split('/')[-1]}"
         new_blob = bucket.rename_blob(temp_blob, new_path)
         
         # 2. In a real app, you might move this to a 'Materials' table.
@@ -403,7 +405,7 @@ def get_file_download_url(
 
     # 2. Generate a Signed URL (valid for 15 minutes)
     bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(file_record.storage_path)
+    blob = bucket.blob(file_record.file_url)
 
     url = blob.generate_signed_url(
         version="v4",

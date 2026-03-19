@@ -58,25 +58,26 @@ class MaterialType(SQLModel, table=True):
     Defines different types of study materials (e.g., 'slides', 'exam', 'notes').
     """
     __tablename__ = "material_types"
-    id: str = Field(primary_key=True) # e.g. 'slides' - unique identifier for the material type
+    id: UUID = Field(default_factory=uuid4, primary_key=True) # unique identifier for the material type
     display_name: str # User-friendly name for the material type (e.g., "Lecture Slides")
 
-# --- FILES (APPROVED) ---
-class File(SQLModel, table=True):
-    """
-    Represents an approved study material file available for download.
-    """
-    __tablename__ = "files"
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    title: str # Title of the file (e.g., "Week 5 Lecture Slides")
-    course_id: UUID = Field(foreign_key="courses.id") # Foreign key linking to the course this file is for
-    type: str # 'summary' | 'exam' | 'notes' | 'slides' - type of material
-    lecturer: str # Name of the lecturer who taught the course when this material was relevant
-    uploader_id: UUID = Field(foreign_key="users.id") # Foreign key linking to the user who uploaded this file
-    file_url: str # This is your GCS path - URL to the actual file in cloud storage
-    download_count: int = Field(default=0) # Number of times the file has been downloaded
-    rating: float = Field(default=0.0) # Average rating of the file
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of file upload
+# approved files
+class Material(SQLModel, table=True):
+    __tablename__ = "materials"
+    
+    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
+    title: str
+    year: int
+    course_id: UUID = Field(foreign_key="courses.id")
+    lecturer_id: UUID = Field(foreign_key="lecturers.id")
+    type_id: UUID = Field(foreign_key="material_types.id")
+    uploader_id: UUID = Field(foreign_key="users.id") # Keep track of who gets the credit!
+    notes: str | None = None
+    
+    # This will be the REAL Google Cloud Storage URL
+    file_url: str 
+    
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 # Community Contributions
 class FileRequest(SQLModel, table=True):
@@ -87,7 +88,7 @@ class FileRequest(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="users.id") # User who submitted the request
     course_id: UUID = Field(foreign_key="courses.id") # Course the requested file is for
-    type_id: str = Field(foreign_key="material_types.id") # Type of material being requested
+    type_id: UUID = Field(foreign_key="material_types.id") # Type of material being requested
     title: str # Proposed title for the file
     year: int # year the material is relevant to
     file_url: str # Temporary GCS path - URL to the uploaded file awaiting approval
@@ -103,9 +104,20 @@ class FileRequestCreate(BaseModel):
     Pydantic model for creating a new file request from the frontend.
     """
     course_id: UUID
-    type: str
+    type_id: UUID
     title: str
-    lecturer: str
+    lecturer_id: UUID
+
+class PointsTransaction(SQLModel, table=True):
+    __tablename__ = "points_transactions"
+    
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    amount: int # e.g., +10
+    reason: str # e.g., "File Approved: Midterm 2018"
+    request_id: UUID | None = None # To prevent double-awarding XP
+    
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserSignUp(BaseModel):
     """
