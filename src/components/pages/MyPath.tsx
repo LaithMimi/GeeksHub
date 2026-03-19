@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { useMyLearningPath } from "@/queries/useLearningPath";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CourseStatus } from "@/types/domain";
+import type { CourseStatus } from "@/types/domain";
 
 // ─── Config maps ──────────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<CourseStatus | "locked", { ring: string; bg: string; opacity: string }> = {
