@@ -22,15 +22,22 @@ import { useAuth } from "@/context/AuthContext";
 
 function AdminSidebarFooter() {
     const { user } = useAuth();
+
+    // Derive initials from user.name — avatarInitials doesn't exist on the User model
+    const initials = user?.name
+        ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+        : "A";
+
     return (
         <SidebarFooter>
             <div className="p-2">
                 <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
                     <div className="h-8 w-8 rounded-full bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center text-white text-sm font-medium">
-                        {user?.avatarInitials ?? "A"}
+                        {initials}
                     </div>
                     <div className="flex-1 truncate text-sm text-start">
-                        <p className="font-medium truncate">{user?.displayName ?? "Admin"}</p>
+                        {/* user.name is the correct field — displayName doesn't exist on the User model */}
+                        <p className="font-medium truncate">{user?.name ?? "Admin"}</p>
                         <p className="text-xs text-muted-foreground truncate">{user?.role ?? "ADMIN"}</p>
                     </div>
                 </div>
@@ -66,13 +73,18 @@ function AdminSidebar() {
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
+
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupLabel>Moderation</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Dashboard" isActive={isActive("/admin") && location.pathname === "/admin"}>
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip="Dashboard"
+                                    isActive={location.pathname === "/admin"}
+                                >
                                     <Link to="/admin">
                                         <Home className="h-4 w-4" />
                                         <span>Dashboard</span>
@@ -80,7 +92,11 @@ function AdminSidebar() {
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Moderation Queue" isActive={isActive("/admin/requests")}>
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip="Moderation Queue"
+                                    isActive={isActive("/admin/requests")}
+                                >
                                     <Link to="/admin/requests">
                                         <ClipboardList className="h-4 w-4" />
                                         <span>Queue</span>
@@ -88,7 +104,11 @@ function AdminSidebar() {
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Audit Log" isActive={isActive("/admin/audit")}>
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip="Audit Log"
+                                    isActive={isActive("/admin/audit")}
+                                >
                                     <Link to="/admin/audit">
                                         <FileSearch className="h-4 w-4" />
                                         <span>Audit Log</span>
@@ -98,39 +118,45 @@ function AdminSidebar() {
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
+
                 <SidebarGroup>
                     <SidebarGroupLabel>Management</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Catalog (Coming Soon)" disabled className="opacity-50 cursor-not-allowed">
-                                    <span className="flex items-center gap-2">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <span>Catalog</span>
-                                        <Badge variant="outline" className="text-[10px] ml-auto">Soon</Badge>
-                                    </span>
+                                <SidebarMenuButton
+                                    tooltip="Catalog (Coming Soon)"
+                                    disabled
+                                    className="opacity-50 cursor-not-allowed"
+                                >
+                                    <AlertCircle className="h-4 w-4" />
+                                    <span>Catalog</span>
+                                    <Badge variant="outline" className="text-[10px] ml-auto">Soon</Badge>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                                <SidebarMenuButton asChild tooltip="Users (Coming Soon)" disabled className="opacity-50 cursor-not-allowed">
-                                    <span className="flex items-center gap-2">
-                                        <AlertCircle className="h-4 w-4" />
-                                        <span>Users</span>
-                                        <Badge variant="outline" className="text-[10px] ml-auto">Soon</Badge>
-                                    </span>
+                                <SidebarMenuButton
+                                    tooltip="Users (Coming Soon)"
+                                    disabled
+                                    className="opacity-50 cursor-not-allowed"
+                                >
+                                    <AlertCircle className="h-4 w-4" />
+                                    <span>Users</span>
+                                    <Badge variant="outline" className="text-[10px] ml-auto">Soon</Badge>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+
             <AdminSidebarFooter />
         </Sidebar>
     );
 }
 
 export default function AdminShell() {
-    // RTL support
+    // RTL support — reads language preference from localStorage
     useEffect(() => {
         const savedLang = localStorage.getItem("language") || "en";
         const dir = savedLang === "ar" || savedLang === "he" ? "rtl" : "ltr";
@@ -148,11 +174,10 @@ export default function AdminShell() {
                         <Link to="/admin" className="font-semibold text-sm">Admin Panel</Link>
                     </div>
                     <div className="ms-auto flex items-center gap-2">
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Mock Data
-                        </Badge>
-                        <Link to="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                        <Link
+                            to="/"
+                            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
                             ← Back to App
                         </Link>
                     </div>
