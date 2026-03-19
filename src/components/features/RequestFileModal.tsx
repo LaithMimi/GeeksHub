@@ -23,7 +23,6 @@ interface RequestFileModalProps {
     onOpenChange: (open: boolean) => void;
     initialData?: {
         major?: string;
-        year?: string;
         course?: string;
         lecturer?: string;
         type?: string;
@@ -39,10 +38,10 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
         semester: "",
         course: "",
         lecturer: "",
-        type: "",
+        type_id: "",
         title: "",
         description: "",
-        file: null as File | null
+        file: null as File | null,
     };
 
     const [requestForm, setRequestForm] = useState(defaultForm);
@@ -53,56 +52,54 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
     const { data: allMajorCourses, isLoading: loadingCourses } = useCourses({ majorId: requestForm.major });
     const { data: lecturers } = useLecturers({ courseId: requestForm.course });
 
-    // -- Derived Hierarchical Data (same as Courses page) --
-    const availableYears = allMajorCourses
-        ? Array.from(new Set(allMajorCourses.map(c => c.year_id).filter(Boolean) as number[]))
-        : [];
-    const yearData = availableYears
-        .map(y => ({ id: y.toString(), label: y === 1 ? "1st Year" : y === 2 ? "2nd Year" : y === 3 ? "3rd Year" : `${y}th Year` }))
-        .sort((a, b) => Number(a.id) - Number(b.id));
+    // Derive current calendar year list (matches backend `year: int` field — academic year e.g. 2024)
+    const currentYear = new Date().getFullYear();
+    const yearData = Array.from({ length: currentYear - 2016 + 1 }, (_, i) => ({
+        id: (currentYear - i).toString(),
+        label: (currentYear - i).toString(),
+    }));
 
-    const coursesInYear = requestForm.year
-        ? allMajorCourses?.filter(c => c.year_id === parseInt(requestForm.year))
-        : allMajorCourses;
-
-    const availableSemesters = coursesInYear
-        ? Array.from(new Set(coursesInYear.map(c => c.semester).filter(Boolean) as number[]))
+    // Derive available semesters from the fetched course list
+    const availableSemesters = allMajorCourses
+        ? Array.from(new Set(allMajorCourses.map((c) => c.semester).filter(Boolean) as number[]))
         : [];
     const semesterData = availableSemesters
-        .map(s => ({ id: s.toString(), label: `Semester ${s === 1 ? "A" : "B"}` }))
+        .map((s) => ({ id: s.toString(), label: `Semester ${s === 1 ? "A" : "B"}` }))
         .sort((a, b) => Number(a.id) - Number(b.id));
 
+    // Filter courses by chosen semester
     const filteredCourses = requestForm.semester
-        ? coursesInYear?.filter(c => c.semester === parseInt(requestForm.semester))
-        : coursesInYear;
+        ? allMajorCourses?.filter((c) => c.semester === parseInt(requestForm.semester))
+        : allMajorCourses;
 
     const { mutate: submitRequest, isPending: isSubmitting } = useCreateRequest();
 
+    // Reset form when modal opens
     useEffect(() => {
         if (open) {
-            if (initialData) {
-                setRequestForm({
-                    major: initialData.major || "",
-                    year: initialData.year || "",
-                    semester: "",
-                    course: initialData.course || "",
-                    lecturer: initialData.lecturer || "",
-                    type: initialData.type || "",
-                    title: "",
-                    description: "",
-                    file: null
-                });
-            } else {
-                setRequestForm(defaultForm);
-            }
+            setRequestForm(
+                initialData
+                    ? {
+                        major: initialData.major || "",
+                        year: "",
+                        semester: "",
+                        course: initialData.course || "",
+                        lecturer: initialData.lecturer || "",
+                        type_id: initialData.type || "",
+                        title: "",
+                        description: "",
+                        file: null,
+                    }
+                    : defaultForm
+            );
         }
     }, [open, initialData]);
 
+    // Clears all downstream fields when a parent in the cascade changes
     const handleCascadeSelect = (key: string, value: string) => {
-        setRequestForm(prev => {
+        setRequestForm((prev) => {
             const updated = { ...prev, [key]: value };
-            // Clear downstream selections when a parent changes
-            const cascade = ["major", "year", "semester", "course", "lecturer"];
+            const cascade = ["major", "semester", "course", "lecturer"];
             const idx = cascade.indexOf(key);
             if (idx >= 0) {
                 for (let i = idx + 1; i < cascade.length; i++) {
@@ -114,96 +111,137 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
     };
 
     const handleFieldChange = (key: string, value: string) => {
-        setRequestForm(prev => ({ ...prev, [key]: value }));
+        setRequestForm((prev) => ({ ...prev, [key]: value }));
     };
 
+    // Backend requires: course, lecturer, type_id, title, year, file
+    // year is Form(...) on the backend — required
     const isRequestValid =
         requestForm.major &&
         requestForm.course &&
         requestForm.lecturer &&
-        requestForm.type &&
+        requestForm.type_id &&
         requestForm.title &&
+        requestForm.year &&
         requestForm.file;
 
     const handleSubmit = () => {
-        submitRequest({
-            userId: user!.id,
-            courseId: requestForm.course,
-            lecturerId: requestForm.lecturer,
-            type: requestForm.type,
-            title: requestForm.title,
-            year: requestForm.year ? parseInt(requestForm.year) : undefined,
-            notes: requestForm.description,
-            file: requestForm.file!
-        }, {
-            onSuccess: () => {
-                onOpenChange(false);
+        // userId is NOT sent — backend extracts it from the JWT cookie
+        submitRequest(
+            {
+                courseId: requestForm.course,
+                lecturerId: requestForm.lecturer,
+                type_id: requestForm.type_id,   // backend field name: type_id (UUID)
+                title: requestForm.title,
+                year: parseInt(requestForm.year), // backend requires int, not optional
+                notes: requestForm.description || undefined,
+                file: requestForm.file!,
+            },
+            {
+                onSuccess: () => onOpenChange(false),
             }
-        });
+        );
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Request File Addition</DialogTitle>
+                    <DialogTitle>Submit a File</DialogTitle>
                     <DialogDescription>
-                        Please specify the full context for the file you are requesting.
+                        Fill in the full context for the file you are uploading.
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* ALL form rows are inside this single wrapper — fixes the layout bug */}
                 <div className="grid gap-4 py-4">
-                    {/* Row 1: Major + Year */}
+
+                    {/* Row 1: Major + Course */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Major</Label>
-                            <Select value={requestForm.major} onValueChange={(v) => handleCascadeSelect("major", v)}>
+                            <Select
+                                value={requestForm.major}
+                                onValueChange={(v) => handleCascadeSelect("major", v)}
+                            >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Major">
-                                        {requestForm.major ? (majors?.find(m => m.id === requestForm.major)?.name || requestForm.major) : undefined}
+                                    <SelectValue placeholder="Select Major">
+                                        {requestForm.major
+                                            ? majors?.find((m) => m.id === requestForm.major)?.name ?? requestForm.major
+                                            : undefined}
                                     </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px] overflow-y-auto">
-                                    {majors?.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
+                                    {majors?.map((m) => (
+                                        <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="space-y-2">
-                            <Label>Year {loadingCourses && requestForm.major && <Loader2 className="h-3 w-3 animate-spin inline" />}</Label>
-                            <Select value={requestForm.year} onValueChange={(v) => handleCascadeSelect("year", v)} disabled={!requestForm.major || yearData.length === 0}>
+                            <Label>
+                                Course{" "}
+                                {loadingCourses && <Loader2 className="h-3 w-3 animate-spin inline" />}
+                            </Label>
+                            <Select
+                                value={requestForm.course}
+                                onValueChange={(v) => handleCascadeSelect("course", v)}
+                                disabled={!requestForm.major || loadingCourses}
+                            >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select Year" />
+                                    <SelectValue placeholder="Select Course">
+                                        {requestForm.course
+                                            ? (filteredCourses?.find((c) => c.id === requestForm.course)?.code ?? "") +
+                                            " - " +
+                                            (filteredCourses?.find((c) => c.id === requestForm.course)?.name ?? "")
+                                            : undefined}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px] overflow-y-auto">
-                                    {yearData.map(y => <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>)}
+                                    {filteredCourses?.map((c) => (
+                                        <SelectItem key={c.id} value={c.id}>
+                                            {c.code} - {c.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
-                    {/* Row 2: Semester + Course */}
+                    {/* Row 2: Semester + Year */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label>Semester</Label>
-                            <Select value={requestForm.semester} onValueChange={(v) => handleCascadeSelect("semester", v)} disabled={!requestForm.year || semesterData.length === 0}>
+                            <Label>Semester <span className="text-white/30 text-[11px]">(optional)</span></Label>
+                            <Select
+                                value={requestForm.semester}
+                                onValueChange={(v) => handleCascadeSelect("semester", v)}
+                                disabled={!requestForm.major || semesterData.length === 0}
+                            >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select Semester" />
+                                    <SelectValue placeholder="Filter by Semester" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px] overflow-y-auto">
-                                    {semesterData.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
+                                    {semesterData.map((s) => (
+                                        <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="space-y-2">
-                            <Label>Course {loadingCourses && <Loader2 className="h-3 w-3 animate-spin inline" />}</Label>
-                            <Select value={requestForm.course} onValueChange={(v) => handleCascadeSelect("course", v)} disabled={!requestForm.major || loadingCourses}>
+                            {/* Year is required on the backend (Form(...)) */}
+                            <Label>Academic Year <span className="text-red-400 text-[11px]">*</span></Label>
+                            <Select
+                                value={requestForm.year}
+                                onValueChange={(v) => handleFieldChange("year", v)}
+                            >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select Course">
-                                        {requestForm.course ? (filteredCourses?.find(c => c.id === requestForm.course)?.code + " - " + filteredCourses?.find(c => c.id === requestForm.course)?.name || requestForm.course) : undefined}
-                                    </SelectValue>
+                                    <SelectValue placeholder="e.g. 2024" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px] overflow-y-auto">
-                                    {filteredCourses?.map(c => (
-                                        <SelectItem key={c.id} value={c.id}>{c.code} - {c.name}</SelectItem>
+                                    {yearData.map((y) => (
+                                        <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -214,27 +252,46 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Lecturer</Label>
-                            <Select value={requestForm.lecturer} onValueChange={(v) => handleFieldChange("lecturer", v)} disabled={!requestForm.course}>
+                            <Select
+                                value={requestForm.lecturer}
+                                onValueChange={(v) => handleFieldChange("lecturer", v)}
+                                disabled={!requestForm.course}
+                            >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Lecturer">
-                                        {requestForm.lecturer ? (lecturers?.find(l => l.id === requestForm.lecturer)?.name || requestForm.lecturer) : undefined}
+                                    <SelectValue placeholder="Select Lecturer">
+                                        {requestForm.lecturer
+                                            ? lecturers?.find((l) => l.id === requestForm.lecturer)?.name ?? requestForm.lecturer
+                                            : undefined}
                                     </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px] overflow-y-auto">
-                                    {lecturers?.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                                    {lecturers?.map((l) => (
+                                        <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="space-y-2">
-                            <Label>Type {loadingTypes && <Loader2 className="h-3 w-3 animate-spin inline" />}</Label>
-                            <Select value={requestForm.type} onValueChange={(v) => handleFieldChange("type", v)}>
+                            <Label>
+                                Type{" "}
+                                {loadingTypes && <Loader2 className="h-3 w-3 animate-spin inline" />}
+                            </Label>
+                            <Select
+                                value={requestForm.type_id}
+                                onValueChange={(v) => handleFieldChange("type_id", v)}
+                            >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Type">
-                                        {requestForm.type ? (types?.find(t => t.id === requestForm.type)?.display_name || requestForm.type) : undefined}
+                                    <SelectValue placeholder="Select Type">
+                                        {requestForm.type_id
+                                            ? types?.find((t) => t.id === requestForm.type_id)?.display_name ?? requestForm.type_id
+                                            : undefined}
                                     </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px] overflow-y-auto">
-                                    {types?.map(t => <SelectItem key={t.id} value={t.id}>{t.display_name}</SelectItem>)}
+                                    {types?.map((t) => (
+                                        <SelectItem key={t.id} value={t.id}>{t.display_name}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -251,32 +308,44 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                         />
                     </div>
 
+                    {/* Row 5: Description (maps to `notes` on the backend) */}
                     <div className="space-y-2">
-                        <Label htmlFor="desc">Description</Label>
+                        <Label htmlFor="desc">
+                            Description <span className="text-white/30 text-[11px]">(optional)</span>
+                        </Label>
                         <Textarea
                             id="desc"
-                            placeholder="e.g. Week 5 Lecture Slides details"
+                            placeholder="e.g. Week 5 Lecture Slides — covers chapters 3 and 4"
                             value={requestForm.description}
                             onChange={(e) => handleFieldChange("description", e.target.value)}
                         />
                     </div>
 
+                    {/* Row 6: File Upload */}
                     <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 relative">
                         <input
                             type="file"
+                            accept=".pdf,.pptx,.ppt,.docx,.jpg,.png"
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
+                                if (e.target.files?.[0]) {
                                     handleFieldChange("file", e.target.files[0] as any);
                                 }
                             }}
                         />
                         <UploadCloud className="h-6 w-6 mb-2" />
                         <span className="text-xs">
-                            {requestForm.file ? requestForm.file.name : "Drag & drop or Click to browse"}
+                            {requestForm.file
+                                ? requestForm.file.name
+                                : "Drag & drop or click to browse"}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground/50 mt-1">
+                            PDF, PPTX, DOCX, JPG, PNG — max 25 MB
                         </span>
                     </div>
+
                 </div>
+
                 <DialogFooter>
                     <Button
                         type="submit"
@@ -284,7 +353,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                         onClick={handleSubmit}
                     >
                         {isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                        Submit Request
+                        Submit File
                     </Button>
                 </DialogFooter>
             </DialogContent>

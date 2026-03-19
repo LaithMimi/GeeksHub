@@ -1,53 +1,57 @@
 import { api } from "@/lib/apiClient";
 import type { FileRequest, RejectReason, RequestStats, FileStatus } from "@/types/domain";
 
+// ============================================================================
+// USER FUNCTIONS
+// ============================================================================
+
 /**
  * Creates a new file upload request.
+ * userId is NOT sent — backend extracts it from the JWT cookie.
  * @backend POST /api/v1/courses/{course_id}/upload
  */
 export const createFileRequest = async (payload: {
-    userId: string;
     courseId: string;
     lecturerId: string;
-    type: string; // type_id
+    type_id: string;   // UUID — renamed from `type` to match backend Form field
     title: string;
-    year: number;
+    year: number;      // required on backend — academic calendar year e.g. 2024
     notes?: string;
-    file?: File;
+    file: File;
 }): Promise<FileRequest> => {
     const formData = new FormData();
     formData.append("title", payload.title);
     formData.append("lecturer_id", payload.lecturerId);
-    formData.append("type_id", payload.type);
+    formData.append("type_id", payload.type_id);
     formData.append("year", payload.year.toString());
+    formData.append("file", payload.file);
     if (payload.notes) {
         formData.append("notes", payload.notes);
     }
-    if (payload.file) {
-        formData.append("file", payload.file);
-    }
 
-    // Since we're sending FormData, we need to ensure the apiClient doesn't 
-    // force application/json. The apiClient should omit Content-Type for FormData.
+    // FormData must be sent as-is — do NOT set Content-Type manually.
+    // The browser sets it automatically with the correct multipart boundary.
     return api<FileRequest>(`/courses/${payload.courseId}/upload`, {
         method: "POST",
-        body: formData as any
+        body: formData as any,
     });
 };
 
 /**
- * Lists all file requests for a specific user.
+ * Lists all file requests for the current authenticated user.
+ * No userId param — backend resolves identity from the JWT cookie.
  * @backend GET /api/v1/me/requests
  */
-export const listMyRequests = async (_userId: string): Promise<FileRequest[]> => {
+export const listMyRequests = async (): Promise<FileRequest[]> => {
     return api<FileRequest[]>("/me/requests");
 };
 
 /**
- * Withdraws/deletes a pending file request.
+ * Withdraws a pending file request.
+ * No userId sent — backend validates ownership via JWT.
  * @backend DELETE /api/v1/me/requests/:requestId
  */
-export const withdrawRequest = async (requestId: string, _userId: string): Promise<void> => {
+export const withdrawRequest = async (requestId: string): Promise<void> => {
     await api(`/me/requests/${requestId}`, { method: "DELETE" });
 };
 
@@ -56,17 +60,18 @@ export const withdrawRequest = async (requestId: string, _userId: string): Promi
 // ============================================================================
 
 /**
- * Lists all file requests with optional filters (admin only).
- * @backend GET /api/v1/admin/requests
+ * Lists all file requests with optional status filter (admin only).
+ * @backend GET /api/v1/admin/requests?status=
  */
 export const listAllRequests = async (filters?: { status?: FileStatus }): Promise<FileRequest[]> => {
     const params = new URLSearchParams();
     if (filters?.status) params.append("status", filters.status);
-    return api<FileRequest[]>(`/admin/requests?${params.toString()}`);
+    const qs = params.toString();
+    return api<FileRequest[]>(`/admin/requests${qs ? `?${qs}` : ""}`);
 };
 
 /**
- * Lists pending file requests (admin only).
+ * Lists only pending file requests (admin only).
  * @backend GET /api/v1/admin/requests?status=pending
  */
 export const listPendingRequests = async (): Promise<FileRequest[]> => {
@@ -74,7 +79,7 @@ export const listPendingRequests = async (): Promise<FileRequest[]> => {
 };
 
 /**
- * Gets request stats for admin dashboard.
+ * Gets aggregate request stats for the admin dashboard.
  * @backend GET /api/v1/admin/requests/stats
  */
 export const getRequestStats = async (): Promise<RequestStats> => {
@@ -82,78 +87,76 @@ export const getRequestStats = async (): Promise<RequestStats> => {
 };
 
 /**
- * Approves a file request and awards points (admin only).
- * @backend PATCH /api/v1/admin/requests/:requestId/approve
+ * Approves a file request (admin only).
+ * Admin identity is derived from the JWT on the server — not sent in body.
+ * @backend POST /api/v1/admin/requests/:requestId/approve
  */
-export const approveRequest = async (requestId: string, adminId: string, adminName: string): Promise<FileRequest | null> => {
+export const approveRequest = async (requestId: string): Promise<FileRequest | null> => {
     return api<FileRequest>(`/admin/requests/${requestId}/approve`, {
         method: "POST",
-        body: JSON.stringify({ adminId, adminName, approve: true })
+        body: JSON.stringify({ approve: true }),
     });
 };
 
 /**
- * Rejects a file request with reason (admin only).
- * @backend PATCH /api/v1/admin/requests/:requestId/reject
+ * Rejects a file request with a reason (admin only).
+ * Admin identity is derived from the JWT on the server — not sent in body.
+ * @backend POST /api/v1/admin/requests/:requestId/reject
  */
 export const rejectRequest = async (
     requestId: string,
-    adminId: string,
     reason: RejectReason,
-    adminName: string,
     note?: string
 ): Promise<FileRequest | null> => {
     return api<FileRequest>(`/admin/requests/${requestId}/reject`, {
         method: "POST",
-        body: JSON.stringify({ adminId, adminName, reason, note })
+        body: JSON.stringify({ reason, note }),
     });
 };
 
 /**
- * Bulk approve requests (admin only).
+ * Bulk approves multiple requests (admin only).
+ * Admin identity is derived from the JWT on the server — not sent in body.
  * @backend POST /api/v1/admin/requests/bulk-approve
  */
-export const bulkApprove = async (requestIds: string[], adminId: string, adminName: string): Promise<{ approved: number; skipped: number }> => {
+export const bulkApprove = async (
+    requestIds: string[]
+): Promise<{ approved: number; skipped: number }> => {
     return api<{ approved: number; skipped: number }>("/admin/requests/bulk-approve", {
         method: "POST",
-        body: JSON.stringify({ requestIds, adminId, adminName })
+        body: JSON.stringify({ request_ids: requestIds }),  // snake_case — matches BulkActionPayload on backend
     });
 };
 
 /**
- * Bulk reject requests (admin only).
+ * Bulk rejects multiple requests (admin only).
+ * Admin identity is derived from the JWT on the server — not sent in body.
  * @backend POST /api/v1/admin/requests/bulk-reject
  */
 export const bulkReject = async (
     requestIds: string[],
-    adminId: string,
-    reason: RejectReason,
-    adminName: string
+    reason: RejectReason
 ): Promise<{ rejected: number; skipped: number }> => {
     return api<{ rejected: number; skipped: number }>("/admin/requests/bulk-reject", {
         method: "POST",
-        body: JSON.stringify({ requestIds, adminId, adminName, reason })
+        body: JSON.stringify({ request_ids: requestIds, reason }), // snake_case — matches BulkActionPayload
     });
 };
 
 /**
- * Undo approval (admin only) - reverts to pending and removes points.
+ * Reverts an approved request back to pending and removes XP (admin only).
+ * Admin identity is derived from the JWT on the server — not sent in body.
  * @backend POST /api/v1/admin/requests/:requestId/undo-approve
  */
-export const undoApprove = async (requestId: string, adminId: string, adminName: string): Promise<boolean> => {
-    return api<boolean>(`/admin/requests/${requestId}/undo-approve`, {
-        method: "POST",
-        body: JSON.stringify({ adminId, adminName })
-    });
+export const undoApprove = async (requestId: string): Promise<void> => {
+    await api(`/admin/requests/${requestId}/undo-approve`, { method: "POST" });
 };
 
 /**
- * Undo rejection (admin only) - reverts to pending.
+ * Reverts a rejected request back to pending (admin only).
+ * Admin identity is derived from the JWT on the server — not sent in body.
  * @backend POST /api/v1/admin/requests/:requestId/undo-reject
  */
-export const undoReject = async (requestId: string, adminId: string, adminName: string): Promise<boolean> => {
-    return api<boolean>(`/admin/requests/${requestId}/undo-reject`, {
-        method: "POST",
-        body: JSON.stringify({ adminId, adminName })
-    });
+export const undoReject = async (requestId: string): Promise<void> => {
+    await api(`/admin/requests/${requestId}/undo-reject`, { method: "POST" });
 };

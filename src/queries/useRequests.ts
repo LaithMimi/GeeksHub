@@ -2,17 +2,26 @@
  * ============================================================================
  * REQUEST QUERY HOOKS
  * ============================================================================
- * 
+ *
  * TanStack Query hooks for file request operations (create, list, withdraw,
  * admin approval/rejection). Includes queries and mutations with toast + undo.
- * 
+ *
  * ============================================================================
- * BACKEND MIGRATION GUIDE
+ * BACKEND ALIGNMENT NOTES
  * ============================================================================
- * 
- * ✅ MOSTLY NO CHANGES NEEDED when backend is implemented!
- * 
- * The only change: Remove userId parameters when backend uses JWT auth.
+ *
+ * - All user identity is derived server-side from the HTTP-Only JWT cookie.
+ *   No userId, adminId, or adminName is passed in any request payload.
+ *
+ * - useMyRequests: no userId param — query key is simply ['my-requests'].
+ *
+ * - useWithdrawRequest: mutationFn only sends requestId.
+ *   Cache invalidation uses the stable ['my-requests'] key.
+ *
+ * - useApproveRequest / useRejectRequest / useBulkApprove / useBulkReject:
+ *   admin identity is stripped from all service call arguments.
+ *   The backend reads adminId and adminName from the JWT claims for audit logs.
+ *
  * ============================================================================
  */
 
@@ -29,11 +38,10 @@ import {
     withdrawRequest,
     getRequestStats,
     undoApprove,
-    undoReject
+    undoReject,
 } from "@/services/requestService";
 import { toast } from "sonner";
 import type { RejectReason, FileStatus } from "@/types/domain";
-import { useAuth } from "@/context/AuthContext";
 
 // ============================================================================
 // USER HOOKS
@@ -41,41 +49,49 @@ import { useAuth } from "@/context/AuthContext";
 
 /**
  * Fetches the current user's file requests.
+ * No userId param — backend resolves identity from the JWT cookie.
  */
-export const useMyRequests = (userId: string) => useQuery({
-    queryKey: ['my-requests', userId],
-    queryFn: () => listMyRequests(userId),
-    enabled: !!userId
-});
+export const useMyRequests = () =>
+    useQuery({
+        queryKey: ["my-requests"],
+        queryFn: listMyRequests,
+    });
 
 /**
  * Mutation to create a new file request.
+ * userId is NOT included in the payload — backend extracts it from the JWT.
  */
 export const useCreateRequest = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: createFileRequest,
-        onSuccess: (_data, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['my-requests', variables.userId] });
-            toast.success("Request submitted successfully");
+        onSuccess: () => {
+            // Stable key — no userId segment needed anymore
+            queryClient.invalidateQueries({ queryKey: ["my-requests"] });
+            toast.success("File submitted successfully");
         },
         onError: () => {
-            toast.error("Failed to submit request");
-        }
+            toast.error("Failed to submit file. Try again.");
+        },
     });
 };
 
 /**
  * Mutation to withdraw a pending file request.
+ * userId is NOT sent — backend validates ownership via JWT.
  */
 export const useWithdrawRequest = () => {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: ({ requestId, userId }: { requestId: string, userId: string }) => withdrawRequest(requestId, userId),
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['my-requests', variables.userId] });
+        mutationFn: ({ requestId }: { requestId: string }) =>
+            withdrawRequest(requestId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["my-requests"] });
             toast.success("Request withdrawn");
-        }
+        },
+        onError: () => {
+            toast.error("Failed to withdraw request. Try again.");
+        },
     });
 };
 
@@ -86,134 +102,173 @@ export const useWithdrawRequest = () => {
 /**
  * Fetches all file requests with optional status filter (admin only).
  */
-export const useAllRequests = (filters?: { status?: FileStatus }) => useQuery({
-    queryKey: ['admin-requests', filters],
-    queryFn: () => listAllRequests(filters)
-});
+export const useAllRequests = (filters?: { status?: FileStatus }) =>
+    useQuery({
+        queryKey: ["admin-requests", filters],
+        queryFn: () => listAllRequests(filters),
+    });
 
 /**
- * Fetches pending file requests (admin only).
+ * Fetches only pending file requests (admin only).
  */
-export const usePendingRequests = () => useQuery({
-    queryKey: ['admin-requests', { status: 'pending' }],
-    queryFn: listPendingRequests
-});
+export const usePendingRequests = () =>
+    useQuery({
+        queryKey: ["admin-requests", { status: "pending" }],
+        queryFn: listPendingRequests,
+    });
 
 /**
- * Fetches request stats for admin dashboard.
+ * Fetches aggregate request stats for the admin dashboard.
+ * Refreshes automatically every 30 seconds.
  */
-export const useRequestStats = () => useQuery({
-    queryKey: ['admin-request-stats'],
-    queryFn: getRequestStats,
-    refetchInterval: 30000 // Refresh every 30s
-});
+export const useRequestStats = () =>
+    useQuery({
+        queryKey: ["admin-request-stats"],
+        queryFn: getRequestStats,
+        refetchInterval: 30_000,
+    });
 
 /**
  * Mutation to approve a file request with undo support.
+ * Admin identity comes from the JWT — not passed as arguments.
  */
 export const useApproveRequest = () => {
     const queryClient = useQueryClient();
-    const { user } = useAuth();
+
+    const invalidateAdmin = () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    };
+
     return useMutation({
         mutationFn: ({ requestId }: { requestId: string }) =>
-            approveRequest(requestId, user!.id, user!.displayName ?? user!.email),
+            approveRequest(requestId),
         onSuccess: (result, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+            invalidateAdmin();
 
             if (result) {
                 toast.success(`Approved "${result.title}"`, {
                     action: {
                         label: "Undo",
                         onClick: async () => {
-                            await undoApprove(variables.requestId, user!.id, user!.displayName ?? user!.email);
-                            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
-                            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
+                            await undoApprove(variables.requestId);
+                            invalidateAdmin();
                             toast.info("Approval undone");
-                        }
-                    }
+                        },
+                    },
                 });
             }
         },
         onError: () => {
             toast.error("Failed to approve request");
-        }
+        },
     });
 };
 
 /**
  * Mutation to reject a file request with undo support.
+ * Admin identity comes from the JWT — not passed as arguments.
  */
 export const useRejectRequest = () => {
     const queryClient = useQueryClient();
-    const { user } = useAuth();
+
+    const invalidateAdmin = () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    };
+
     return useMutation({
-        mutationFn: ({ requestId, reason, note }: { requestId: string; reason: RejectReason; note?: string }) =>
-            rejectRequest(requestId, user!.id, reason, user!.displayName ?? user!.email, note),
+        mutationFn: ({
+            requestId,
+            reason,
+            note,
+        }: {
+            requestId: string;
+            reason: RejectReason;
+            note?: string;
+        }) => rejectRequest(requestId, reason, note),
         onSuccess: (result, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
+            invalidateAdmin();
 
             if (result) {
                 toast.success(`Rejected "${result.title}"`, {
                     action: {
                         label: "Undo",
                         onClick: async () => {
-                            await undoReject(variables.requestId, user!.id, user!.displayName ?? user!.email);
-                            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
-                            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
+                            await undoReject(variables.requestId);
+                            invalidateAdmin();
                             toast.info("Rejection undone");
-                        }
-                    }
+                        },
+                    },
                 });
             }
         },
         onError: () => {
             toast.error("Failed to reject request");
-        }
+        },
     });
 };
 
 /**
  * Mutation to bulk approve requests.
+ * Admin identity comes from the JWT — not passed as arguments.
  */
 export const useBulkApprove = () => {
     const queryClient = useQueryClient();
-    const { user } = useAuth();
+
+    const invalidateAdmin = () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    };
+
     return useMutation({
-        mutationFn: (requestIds: string[]) =>
-            bulkApprove(requestIds, user!.id, user!.displayName ?? user!.email),
+        mutationFn: (requestIds: string[]) => bulkApprove(requestIds),
         onSuccess: (result) => {
-            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
-            toast.success(`Approved ${result.approved} request(s)${result.skipped > 0 ? ` (${result.skipped} skipped)` : ''}`);
+            invalidateAdmin();
+            toast.success(
+                `Approved ${result.approved} request(s)` +
+                (result.skipped > 0 ? ` (${result.skipped} skipped)` : "")
+            );
         },
         onError: () => {
             toast.error("Failed to bulk approve");
-        }
+        },
     });
 };
 
 /**
  * Mutation to bulk reject requests.
+ * Admin identity comes from the JWT — not passed as arguments.
  */
 export const useBulkReject = () => {
     const queryClient = useQueryClient();
-    const { user } = useAuth();
+
+    const invalidateAdmin = () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    };
+
     return useMutation({
-        mutationFn: ({ requestIds, reason }: { requestIds: string[]; reason: RejectReason }) =>
-            bulkReject(requestIds, user!.id, reason, user!.displayName ?? user!.email),
+        mutationFn: ({
+            requestIds,
+            reason,
+        }: {
+            requestIds: string[];
+            reason: RejectReason;
+        }) => bulkReject(requestIds, reason),
         onSuccess: (result) => {
-            queryClient.invalidateQueries({ queryKey: ['admin-requests'] });
-            queryClient.invalidateQueries({ queryKey: ['admin-request-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['audit-logs'] });
-            toast.success(`Rejected ${result.rejected} request(s)${result.skipped > 0 ? ` (${result.skipped} skipped)` : ''}`);
+            invalidateAdmin();
+            toast.success(
+                `Rejected ${result.rejected} request(s)` +
+                (result.skipped > 0 ? ` (${result.skipped} skipped)` : "")
+            );
         },
         onError: () => {
             toast.error("Failed to bulk reject");
-        }
+        },
     });
 };
