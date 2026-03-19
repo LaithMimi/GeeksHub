@@ -1,5 +1,5 @@
 import re
-from typing import Optional, Self
+from typing import List, Optional, Self
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
 from sqlmodel import Relationship, SQLModel, Field
@@ -157,3 +157,9 @@ class UserSignIn(BaseModel):
 
 class ForgotPassword(BaseModel):
     email: str 
+
+class AdminApprovePayload(BaseModel):
+    approve: bool
+
+class BulkActionPayload(BaseModel):
+    request_ids: List[UUID]
