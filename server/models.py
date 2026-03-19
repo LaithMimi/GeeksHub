@@ -95,8 +95,9 @@ class FileRequest(SQLModel, table=True):
     material_year: int # e.g., 2020 for "Midterm 2020"
     file_url: str # Temporary GCS path - URL to the uploaded file awaiting approval
     lecturer_id: UUID = Field(foreign_key="lecturers.id") # Lecturer associated with the material
-    status: str = "PENDING" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
+    status: str = "pending" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
     notes: str | None = None # Optional field for moderators to provide feedback on the request
+    admin_notes: str | None = None # Private notes only visible to admins
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of request submission
     lecturer: Lecturer| None = Relationship()
 
@@ -109,6 +110,17 @@ class FileRequestCreate(BaseModel):
     type_id: UUID
     title: str
     lecturer_id: UUID
+
+class FileRequestEnriched(BaseModel):
+    id: UUID
+    title: str
+    status: str
+    academic_year: int
+    material_year: int
+    course_name: str
+    lecturer_name: str
+    material_id: UUID | None = None
+    points_awarded: int
 
 class PointsTransaction(SQLModel, table=True):
     __tablename__ = "points_transactions"
@@ -159,9 +171,6 @@ class UserSignIn(BaseModel):
 
 class ForgotPassword(BaseModel):
     email: str 
-
-class AdminApprovePayload(BaseModel):
-    approve: bool
 
 class BulkActionPayload(BaseModel):
     request_ids: List[UUID]
