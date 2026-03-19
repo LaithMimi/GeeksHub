@@ -95,7 +95,7 @@ class FileRequest(SQLModel, table=True):
     material_year: int # e.g., 2020 for "Midterm 2020"
     file_url: str # Temporary GCS path - URL to the uploaded file awaiting approval
     lecturer_id: UUID = Field(foreign_key="lecturers.id") # Lecturer associated with the material
-    status: str = "pending" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
+    status: str = "PENDING" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
     notes: str | None = None # Optional field for moderators to provide feedback on the request
     admin_note: str | None = None # Private notes only visible to admins
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of request submission
