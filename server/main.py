@@ -1,23 +1,24 @@
 import datetime
 import os
-from pathlib import Path
-import uuid
-from fastapi import FastAPI, Depends, Form, HTTPException, UploadFile, File, Response
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 import jwt
 import requests
 import shutil
-from sqlmodel import Session, select
+import uuid
+from uuid import UUID
+from google.cloud import storage
+from pathlib import Path
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from models import FileRequest, Major, User, Course, UserSignUp, UserSignIn, ForgotPassword, MaterialType
+from models import FileRequest, Major, User, Course, Lecturer, UserSignUp, UserSignIn, ForgotPassword, MaterialType
+from fastapi import FastAPI, HTTPException, UploadFile,Response, File, Depends, Form
+from sqlmodel import Session, select
+from contextlib import asynccontextmanager
 from utils.auth_utils import get_verified_user, get_admin_user
 from utils.upload_utils import validate_uploaded_file
 from database import get_session, init_db
-from uuid import UUID
-from google.cloud import storage
+
 
 # Resolve GCP key path relative to this file so it works from any CWD
 _server_dir = Path(__file__).parent
@@ -87,6 +88,31 @@ app.add_middleware(
     allow_methods=["*"],  # Allows GET, POST, OPTIONS, etc.
     allow_headers=["*"],  # Allows the Authorization header for JWTs
 )
+
+@app.get("/api/v1/years")
+def get_years():
+    """Returns static academic years for the frontend dropdowns/MyPath."""
+    return [
+        {"id": "1", "label": "Freshman (Year 1)"},
+        {"id": "2", "label": "Sophomore (Year 2)"},
+        {"id": "3", "label": "Junior (Year 3)"},
+        {"id": "4", "label": "Senior (Year 4)"}
+    ]
+
+@app.get("/api/v1/semesters")
+def get_semesters():
+    """Returns static semesters for the frontend dropdowns/MyPath."""
+    return [
+        {"id": "fall", "label": "Fall Semester"},
+        {"id": "spring", "label": "Spring Semester"},
+        {"id": "summer", "label": "Summer Semester"}
+    ]
+
+@app.get("/api/v1/lecturers")
+def get_lecturers(session: Session = Depends(get_session)):
+    """Fetches all lecturers from the database."""
+    lecturers = session.exec(select(Lecturer)).all()
+    return lecturers
 
 # --- PUBLIC ROUTES ---
 
@@ -269,6 +295,14 @@ def search_courses(
 
     results = session.exec(statement).all()
     return results
+
+@app.get("/api/v1/courses/{course_id}")
+def get_single_course(course_id: UUID, session: Session = Depends(get_session)):
+    """Fetches a single course by its ID."""
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return course
 
 # --- FILE STORAGE ROUTES ---
 
