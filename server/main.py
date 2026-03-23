@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from models import FileRequest, Major, Material, User, Course, Lecturer, UserSignUp, UserSignIn,FileRequestEnriched, BulkActionPayload, ForgotPassword, MaterialType, PointsTransaction
+from models import FileRequest, Major, Material, User, Course, Lecturer, UserSignUp, UserSignIn,FileRequestEnriched,AdminRejectPayload, BulkRejectPayload, BulkActionPayload, ForgotPassword, MaterialType, PointsTransaction
 from fastapi import FastAPI, HTTPException, UploadFile,Response, Query, File, Depends, Form
 from sqlmodel import Session, select
 from contextlib import asynccontextmanager
@@ -538,29 +538,34 @@ def approve_file(
 @app.post("/api/v1/admin/requests/{request_id}/reject")
 def reject_request(
     request_id: UUID,
+    payload: AdminRejectPayload, 
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
-    """Dedicated route to reject a file and delete it from local storage."""
     request = session.get(FileRequest, request_id)
     if not request:
         raise HTTPException(status_code=404, detail="Request not found.")
 
-    # 1. Delete the file from Google Cloud Storage
+    # MOVE TO TRASH INSTEAD OF DELETING
+    filename = request.file_url.split('/')[-1]
+    trash_path = f"trash_bin/{filename}"
+    
     try:
         bucket = storage_client.bucket(bucket_name)
         temp_blob = bucket.blob(request.file_url)
-        temp_blob.delete()  # Instantly removes it from the cloud!
+        bucket.rename_blob(temp_blob, trash_path)
+        
+        # Update the database so it knows the new location!
+        request.file_url = trash_path 
     except Exception as e:
-        # We catch the error just in case the file was already deleted manually 
-        # so the database can still update successfully.
-        print(f"GCS Delete failed or file not found: {e}")
+        print(f"GCS Move to trash failed: {e}")
 
-    # 2. Update the status in the database
-    request.status = "rejected"
-    
+    request.status = "rejected" 
+    if payload and payload.note:
+        request.admin_note = payload.note
+        
     session.commit()
-    return {"message": "Request rejected and file deleted from Cloud storage."}
+    return {"message": "Request rejected and moved to trash for 3 days."}
 
 @app.delete("/api/v1/me/requests/{request_id}")
 def withdraw_request(
@@ -643,11 +648,10 @@ def bulk_approve_requests(
 
 @app.post("/api/v1/admin/requests/bulk-reject")
 def bulk_reject_requests(
-    payload: BulkActionPayload,
+    payload: BulkRejectPayload,
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
-    """Rejects multiple files at once and deletes them from Google Cloud Storage."""
     rejected_count = 0
     bucket = storage_client.bucket(bucket_name)
     
@@ -656,21 +660,24 @@ def bulk_reject_requests(
         if not request or request.status != "pending":
             continue
             
-        # 1. Delete from Google Cloud Storage
+        filename = request.file_url.split('/')[-1]
+        trash_path = f"trash_bin/{filename}"
+        
         try:
             temp_blob = bucket.blob(request.file_url)
-            temp_blob.delete()
+            bucket.rename_blob(temp_blob, trash_path)
+            request.file_url = trash_path
         except Exception as e:
-            print(f"GCS Delete failed for {req_id}: {e}")
-            # We don't skip here! Even if GCS fails (e.g. file already gone),
-            # we still want to mark it as rejected in the database.
+            print(f"GCS Move failed for {req_id}: {e}")
             
-        # 2. Update status in database
         request.status = "rejected"
+        if payload.reason:
+            request.admin_note = payload.reason
+            
         rejected_count += 1
         
     session.commit()
-    return {"message": f"Successfully rejected and deleted {rejected_count} files."}
+    return {"message": f"Successfully rejected and trashed {rejected_count} files."}
 
 @app.post("/api/v1/admin/requests/{request_id}/undo-approve")
 def undo_approve(
@@ -716,19 +723,30 @@ def undo_reject(
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
-    """Reverses a rejection and sets the status back to PENDING."""
     request = session.get(FileRequest, request_id)
-    if not request:
-        raise HTTPException(status_code=404, detail="Request not found.")
-        
-    if request.status != "rejected":
-        raise HTTPException(status_code=400, detail="Only rejected requests can be undone.")
+    if not request or request.status != "rejected":
+        raise HTTPException(status_code=404, detail="Rejected request not found.")
 
-    # Just flip the status back!
+    # RESCUE FROM TRASH
+    filename = request.file_url.split('/')[-1]
+    pending_path = f"pending_uploads/{filename}"
+    
+    try:
+        bucket = storage_client.bucket(bucket_name)
+        trash_blob = bucket.blob(request.file_url)
+        bucket.rename_blob(trash_blob, pending_path)
+        
+        # Update the database back to the pending location
+        request.file_url = pending_path 
+    except Exception as e:
+        print(f"GCS Rescue failed: {e}")
+
+    # Flip the status and clear the rejection note
     request.status = "pending"
+    request.admin_note = None 
     session.commit()
     
-    return {"message": "Rejection undone. File is back in the pending queue."}
+    return {"message": "Rejection undone. File rescued from trash and back in pending queue."}
 
 @app.get("/api/v1/admin/requests/stats")
 def get_request_stats(

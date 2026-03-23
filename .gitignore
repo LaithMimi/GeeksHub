@@ -28,4 +28,9 @@ server/gcp_key.json
 venv/
 .env
 
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
 gcp_key.json

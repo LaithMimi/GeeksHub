@@ -5,7 +5,8 @@ from datetime import datetime, timezone
 from sqlmodel import Relationship, SQLModel, Field, UniqueConstraint
 from pydantic import BaseModel, field_validator, model_validator
 
-# User Identity
+# --- Database Models ---
+
 class User(SQLModel, table=True):
     """
     Represents a user in the system.
@@ -20,7 +21,6 @@ class User(SQLModel, table=True):
     major_id: Optional[UUID] = Field(default=None, foreign_key="majors.id") # [FRONTEND UPDATE]: Foreign key linking users to their selected major
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of user creation
 
-# Academic Catalog
 class Major(SQLModel, table=True):
     """
     Represents an academic major offered by the institution.
@@ -52,7 +52,6 @@ class Lecturer(SQLModel, table=True):
     name: str = Field(index=True) # Full name of the lecturer (e.g., "Dr. Jane Smith")
     email: str | None = Field(default=None, unique=True, index=True) # Optional email for the lecturer
 
-# Reference Data
 class MaterialType(SQLModel, table=True):
     """
     Defines different types of study materials (e.g., 'slides', 'exam', 'notes').
@@ -95,11 +94,28 @@ class FileRequest(SQLModel, table=True):
     material_year: int # e.g., 2020 for "Midterm 2020"
     file_url: str # Temporary GCS path - URL to the uploaded file awaiting approval
     lecturer_id: UUID = Field(foreign_key="lecturers.id") # Lecturer associated with the material
-    status: str = "PENDING" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
+    status: str = "pending" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
     notes: str | None = None # Optional field for moderators to provide feedback on the request
     admin_note: str | None = None # Private notes only visible to admins
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of request submission
     lecturer: Lecturer| None = Relationship()
+
+class PointsTransaction(SQLModel, table=True):
+    __tablename__ = "points_transactions"
+    
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    amount: int # e.g., +10
+    action: str # e.g., "upload_approval"
+    reason: str # e.g., "File Approved: Midterm 2018"
+    request_id: UUID | None = Field(default=None, foreign_key="file_requests.id") # To prevent double-awarding XP
+    source_id: str | None = Field(default=None, unique=True, index=True) # Unique string for non-request events (e.g., 'daily_login:2026-03-19')
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    # This prevents double-awarding XP for the exact same file request!
+    __table_args__ = (
+        UniqueConstraint("request_id", "action", name="uq_request_action"),
+    )
 
 # Used for the Upload/Request endpoint
 class FileRequestCreate(BaseModel):
@@ -123,23 +139,6 @@ class FileRequestEnriched(BaseModel):
     points_awarded: int
     created_at: datetime
     admin_note: str | None = None
-
-class PointsTransaction(SQLModel, table=True):
-    __tablename__ = "points_transactions"
-    
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_id: UUID = Field(foreign_key="users.id", index=True)
-    amount: int # e.g., +10
-    action: str # e.g., "upload_approval"
-    reason: str # e.g., "File Approved: Midterm 2018"
-    request_id: UUID | None = Field(default=None, foreign_key="file_requests.id") # To prevent double-awarding XP
-    source_id: str | None = Field(default=None, unique=True, index=True) # Unique string for non-request events (e.g., 'daily_login:2026-03-19')
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-    # This prevents double-awarding XP for the exact same file request!
-    __table_args__ = (
-        UniqueConstraint("request_id", "action", name="uq_request_action"),
-    )
 
 class UserSignUp(BaseModel):
     """
@@ -180,5 +179,14 @@ class UserSignIn(BaseModel):
 class ForgotPassword(BaseModel):
     email: str 
 
+# --- ADMIN PAYLOADS ---
+
 class BulkActionPayload(BaseModel):
     request_ids: List[UUID]
+
+class AdminRejectPayload(BaseModel):
+    note: str | None = None
+
+class BulkRejectPayload(BaseModel):
+    request_ids: List[UUID]
+    reason: str | None = None
