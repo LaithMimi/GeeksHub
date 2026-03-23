@@ -11,9 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from auth0.authentication import GetToken
 from auth0.management import Auth0
-from models import FileRequest, Major, Material, User, Course, Lecturer, UserSignUp, UserSignIn,FileRequestEnriched,AdminRejectPayload, BulkRejectPayload, BulkActionPayload, ForgotPassword, MaterialType, PointsTransaction
+from models import FileRequest, LeaderboardEntry, Major, Material, MyReputationResponse, User, Course, Lecturer, UserSignUp, UserSignIn,FileRequestEnriched,AdminRejectPayload, BulkRejectPayload, BulkActionPayload, ForgotPassword, MaterialType, PointsTransaction, SessionStartResponse, RecentFileResponse, UserRecentFile, UserPlatformSession, UserCourseActivity
 from fastapi import FastAPI, HTTPException, UploadFile,Response, Query, File, Depends, Form
-from sqlmodel import Session, select
+from sqlmodel import Session, func, select
 from contextlib import asynccontextmanager
 from utils.auth_utils import get_verified_user, get_admin_user
 from utils.upload_utils import validate_uploaded_file
@@ -531,6 +531,11 @@ def approve_file(
     )
     session.add(reward)
 
+    uploader = session.get(User, request.user_id)
+    if uploader:
+        uploader.total_points += XP_UPLOAD_APPROVAL
+        session.add(uploader)
+
     request.status = "approved"
     session.commit()
     return {"message": "File approved!"}
@@ -638,8 +643,14 @@ def bulk_approve_requests(
             request_id=request.id
         )
         session.add(reward)
+
+        # 4. UPDATE THE USER'S TOTAL POINTS (We have to do this manually since we are bypassing the single-approval route)
+        uploader = session.get(User, request.user_id)
+        if uploader:
+            uploader.total_points += XP_UPLOAD_APPROVAL
+            session.add(uploader)
         
-        # 4. UPDATE STATUS
+        # 5. UPDATE STATUS
         request.status = "approved"
         approved_count += 1
         
@@ -698,6 +709,12 @@ def undo_approve(
         select(PointsTransaction).where(PointsTransaction.request_id == request.id)
     ).first()
     if xp_transaction:
+        # Subtract the XP before deleting the transaction receipt
+        uploader = session.get(User, xp_transaction.user_id)
+        if uploader:
+            uploader.total_points -= xp_transaction.amount
+            session.add(uploader)
+            
         session.delete(xp_transaction)
 
     # 2. Find and delete the published Material from the catalog
@@ -763,4 +780,126 @@ def get_request_stats(
         "pending": pending_count,
         "approvedToday": 0, 
         "rejectedToday": 0
+    }
+
+# --- REPUTATION & GAMIFICATION ROUTES ---
+
+@app.get("/api/v1/me/reputation", response_model=MyReputationResponse)
+def get_my_reputation(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    """Returns the current student's XP, badge status, and transaction history."""
+    
+    # 1. Fetch all their points history, newest first
+    statement = select(PointsTransaction).where(PointsTransaction.user_id == current_user.id).order_by(PointsTransaction.created_at.desc())
+    transactions = session.exec(statement).all()
+    
+    # 2. Calculate their total XP
+    total_points = current_user.total_points  # We keep a running total in the User table for efficiency
+    
+    # 3. Calculate their Badge Tier
+    if total_points > 1000:
+        badge = "Gold"
+    elif total_points > 500:
+        badge = "Silver"
+    else:
+        badge = "Bronze"
+        
+    return {
+        "userId": current_user.id,
+        "totalPoints": total_points,
+        "badge": badge,
+        "transactions": transactions
+    }
+
+@app.get("/api/v1/reputation/leaderboard", response_model=List[LeaderboardEntry])
+def get_leaderboard(
+    session: Session = Depends(get_session)
+):
+    """Returns the top 10 users with the highest XP on the platform."""
+    
+    # grab the top 10 users sorted by their cached points total in the User table (more efficient than summing transactions on the fly)
+    statement = select(User).order_by(User.total_points.desc()).limit(10)
+    
+    top_users = session.exec(statement).all()
+    
+    leaderboard = []
+    for user in top_users:
+        # Calculate badge for the leaderboard display
+        if user.total_points > 1000:
+            badge = "Gold"
+        elif user.total_points > 500:
+            badge = "Silver"
+        else:
+            badge = "Bronze"
+            
+        leaderboard.append(
+            LeaderboardEntry(
+                userId=user.id,
+                name=user.name,
+                totalPoints=user.total_points,
+                badge=badge
+            )
+        )
+        
+    return leaderboard
+
+@app.post("/api/v1/me/session/start", response_model=SessionStartResponse)
+def start_platform_session(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    """Starts a new study session to track active time on the platform."""
+    new_session = UserPlatformSession(user_id=current_user.id)
+    session.add(new_session)
+    session.commit()
+    session.refresh(new_session)
+    return {"sessionId": new_session.id}
+
+@app.get("/api/v1/me/recent-files", response_model=List[RecentFileResponse])
+def get_recent_files(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    """Returns the user's 10 most recently viewed files."""
+    # We join with the Material table so we can send back the actual file title!
+    statement = (
+        select(UserRecentFile, Material)
+        .join(Material, UserRecentFile.file_id == Material.id)
+        .where(UserRecentFile.user_id == current_user.id)
+        .order_by(UserRecentFile.viewed_at.desc())
+        .limit(10)
+    )
+    results = session.exec(statement).all()
+    
+    return [
+        RecentFileResponse(
+            file_id=recent.file_id, 
+            title=material.title, 
+            course_id=material.course_id, 
+            viewed_at=recent.viewed_at
+        ) 
+        for recent, material in results
+    ]
+
+@app.get("/api/v1/me/activity/summary")
+def get_activity_summary(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    """Aggregates user stats for the dashboard overview."""
+    # Calculate total study time across all sessions
+    time_statement = select(func.sum(UserPlatformSession.active_seconds)).where(UserPlatformSession.user_id == current_user.id)
+    total_seconds = session.exec(time_statement).first() or 0
+    
+    # Count how many files they've completed
+    files_statement = select(func.sum(UserCourseActivity.files_completed)).where(UserCourseActivity.user_id == current_user.id)
+    completed_files = session.exec(files_statement).first() or 0
+
+    return {
+        "totalPoints": current_user.total_points,
+        "totalStudyMinutes": total_seconds // 60,
+        "filesCompleted": completed_files,
+        "coursesEngaged": len(session.exec(select(UserCourseActivity).where(UserCourseActivity.user_id == current_user.id)).all())
     }

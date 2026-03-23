@@ -18,7 +18,8 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, unique=True) # User's email, must be unique
     name: str # User's full name
     role: str = Field(default="STUDENT") # Default role is student
-    major_id: Optional[UUID] = Field(default=None, foreign_key="majors.id") # [FRONTEND UPDATE]: Foreign key linking users to their selected major
+    major_id: Optional[UUID] = Field(default=None, foreign_key="majors.id") # Foreign key linking users to their selected major
+    total_points: int = Field(default=0) # Total reputation points accumulated by the user
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of user creation
 
 class Major(SQLModel, table=True):
@@ -179,6 +180,27 @@ class UserSignIn(BaseModel):
 class ForgotPassword(BaseModel):
     email: str 
 
+# --- REPUTATION SYSTEM PAYLOADS ---
+
+class TransactionResponse(BaseModel):
+    id: UUID
+    amount: int
+    action: str
+    reason: str
+    created_at: datetime
+
+class MyReputationResponse(BaseModel):
+    userId: UUID
+    totalPoints: int
+    badge: str
+    transactions: List[TransactionResponse]
+
+class LeaderboardEntry(BaseModel):
+    userId: UUID
+    name: str
+    totalPoints: int
+    badge: str
+
 # --- ADMIN PAYLOADS ---
 
 class BulkActionPayload(BaseModel):
@@ -190,3 +212,37 @@ class AdminRejectPayload(BaseModel):
 class BulkRejectPayload(BaseModel):
     request_ids: List[UUID]
     reason: str | None = None
+
+# --- TRACKING & GAMIFICATION TABLES ---
+
+class UserRecentFile(SQLModel, table=True):
+    __tablename__ = "user_recent_files"
+    # Using a composite primary key so a user only has ONE recent entry per file
+    user_id: UUID = Field(foreign_key="users.id", primary_key=True)
+    file_id: UUID = Field(foreign_key="materials.id", primary_key=True) 
+    viewed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserPlatformSession(SQLModel, table=True):
+    __tablename__ = "user_platform_sessions"
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    active_seconds: int = Field(default=0)
+    intervals_awarded: int = Field(default=0)
+
+class UserCourseActivity(SQLModel, table=True):
+    __tablename__ = "user_course_activities"
+    user_id: UUID = Field(foreign_key="users.id", primary_key=True)
+    course_id: UUID = Field(foreign_key="courses.id", primary_key=True)
+    status: str = Field(default="not_started") # not_started, exploring, engaged, completed
+    files_completed: int = Field(default=0)
+    total_files: int = Field(default=0)
+
+class SessionStartResponse(BaseModel):
+    sessionId: UUID
+
+class RecentFileResponse(BaseModel):
+    file_id: UUID
+    title: str
+    course_id: UUID
+    viewed_at: datetime
