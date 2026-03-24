@@ -15,7 +15,8 @@ export const createFileRequest = async (payload: {
     lecturerId: string;
     type_id: string;   // UUID — renamed from `type` to match backend Form field
     title: string;
-    year: number;      // required on backend — academic calendar year e.g. 2024
+    academic_year: number;  // program year level: 1, 2, 3, or 4
+    material_year: number;  // calendar year of the material, e.g. 2024
     notes?: string;
     file: File;
 }): Promise<FileRequest> => {
@@ -23,7 +24,8 @@ export const createFileRequest = async (payload: {
     formData.append("title", payload.title);
     formData.append("lecturer_id", payload.lecturerId);
     formData.append("type_id", payload.type_id);
-    formData.append("year", payload.year.toString());
+    formData.append("academic_year", payload.academic_year.toString());
+    formData.append("material_year", payload.material_year.toString());
     formData.append("file", payload.file);
     if (payload.notes) {
         formData.append("notes", payload.notes);

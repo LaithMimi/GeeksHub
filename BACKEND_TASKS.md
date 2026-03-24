@@ -3,7 +3,7 @@
 > **For:** Backend Engineer
 > **Frontend Stack:** React + TypeScript + TanStack Query
 > **Backend Stack:** FastAPI + SQLModel + Neon PostgreSQL + Auth0 + Google Cloud Storage
-> **Last Updated:** March 19, 2026
+> **Last Updated:** March 24, 2026
 
 ---
 
@@ -136,9 +136,9 @@ def list_lecturers(course_id: Optional[UUID] = None, session: Session = Depends(
 
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
-| `GET` | `/api/v1/me/recent-files` | `listRecentFiles()` | 🔴 |
-| `POST` | `/api/v1/me/recent-files/{file_id}` | `addRecentFile(file)` | 🔴 |
-| `DELETE` | `/api/v1/me/recent-files` | `clearRecentFiles()` | 🔴 |
+| `GET` | `/api/v1/me/recent-files` | `listRecentFiles()` | ✅ |
+| `POST` | `/api/v1/me/recent-files/{file_id}` | `addRecentFile(file)` | ✅ |
+| `DELETE` | `/api/v1/me/recent-files` | `clearRecentFiles()` | ✅ |
 
 ### Implementation Notes
 Requires a new `user_recent_files` table:
@@ -162,11 +162,11 @@ user_recent_files(user_id UUID FK, file_id UUID FK, viewed_at TIMESTAMP, PRIMARY
 | `GET` | `/api/v1/admin/requests?status=` | `listAllRequests(filters)` | 🔴 |
 | `GET` | `/api/v1/admin/requests/stats` | `getRequestStats()` | 🔴 |
 | `POST` | `/api/v1/admin/requests/{id}/approve` | `approveRequest(id, ...)` | 🔴 |
-| `POST` | `/api/v1/admin/requests/{id}/reject` | `rejectRequest(id, ...)` | 🔴 |
+| `POST` | `/api/v1/admin/requests/{id}/reject` | `rejectRequest(id, ...)` | ✅ |
 | `POST` | `/api/v1/admin/requests/bulk-approve` | `bulkApprove(ids, ...)` | 🔴 |
-| `POST` | `/api/v1/admin/requests/bulk-reject` | `bulkReject(ids, ...)` | 🔴 |
+| `POST` | `/api/v1/admin/requests/bulk-reject` | `bulkReject(ids, ...)` | ✅ |
 | `POST` | `/api/v1/admin/requests/{id}/undo-approve` | `undoApprove(id, ...)` | 🔴 |
-| `POST` | `/api/v1/admin/requests/{id}/undo-reject` | `undoReject(id, ...)` | 🔴 |
+| `POST` | `/api/v1/admin/requests/{id}/undo-reject` | `undoReject(id, ...)` | ✅ |
 
 ### Implementation Notes
 
@@ -192,8 +192,8 @@ user_recent_files(user_id UUID FK, file_id UUID FK, viewed_at TIMESTAMP, PRIMARY
 
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
-| `GET` | `/api/v1/me/reputation` | `getMyReputation(userId)` | 🔴 |
-| `GET` | `/api/v1/reputation/leaderboard` | `listTopContributors()` | 🔴 |
+| `GET` | `/api/v1/me/reputation` | `getMyReputation(userId)` | ✅ |
+| `GET` | `/api/v1/reputation/leaderboard` | `listTopContributors()` | ✅ |
 
 ### Implementation Notes
 Requires new `points_transactions` table:
@@ -216,11 +216,11 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 | `POST` | `/api/v1/me/viewer/session-start` | `startViewerSession({ fileId })` | 🔴 |
 | `POST` | `/api/v1/me/viewer/heartbeat` | `sendViewerHeartbeat(...)` | 🔴 |
 | `POST` | `/api/v1/me/viewer/session-end` | `endViewerSession(sessionId)` | 🔴 |
-| `POST` | `/api/v1/me/session/start` | `startPlatformSession()` | 🔴 |
+| `POST` | `/api/v1/me/session/start` | `startPlatformSession()` | ✅ |
 | `POST` | `/api/v1/me/session/heartbeat` | `sendPlatformHeartbeat(sessionId)` | 🔴 |
 | `POST` | `/api/v1/me/session/end` | `endPlatformSession(sessionId)` | 🔴 |
 | `GET` | `/api/v1/me/learning-path` | `getLearningPath()` | 🔴 |
-| `GET` | `/api/v1/me/activity/summary` | `getActivitySummary()` | 🔴 |
+| `GET` | `/api/v1/me/activity/summary` | `getActivitySummary()` | ✅ |
 | `GET` | `/api/v1/files/:file_id/share` | `getShareUrl(fileId)` | 🔴 |
 
 ### Implementation Notes
@@ -329,8 +329,8 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 16. `DELETE /api/v1/me/requests/{id}` (withdraw)
 
 ### 🔴 P2 — Needs new DB tables
-17. `GET /api/v1/me/reputation` (needs `points_transactions`)
-18. `GET /api/v1/reputation/leaderboard` (needs `points_transactions`)
+17. `GET /api/v1/me/reputation` ✅
+18. `GET /api/v1/reputation/leaderboard` ✅
 19. `GET /api/v1/admin/audit-logs` (needs `audit_logs`)
 20. Recent files CRUD (needs `user_recent_files`)
 

@@ -19,6 +19,12 @@ A university course materials platform where students **share, browse, and study
 - **QueryClient Retry Config (March 19):** Configured `QueryClient` in `main.tsx` to not retry queries on 4xx errors (like 404 Not Found), preventing console spam for unimplemented backend endpoints.
 - **Request File Modal Rework (March 19):** Updated `RequestFileModal.tsx` to use the same cascading filter pattern as the Course Library (Major → Year → Semester → Course). Years and semesters are now derived dynamically from the `useCourses` data instead of hardcoded lists. Added max-height scrolling to all dropdowns. Add support for "Homework" material type.
 - **Consolidated Backend Tasks:** Merged `BACKEND_TASKS.md` and `backend.md` into a single prioritized task document aligned with the current frontend service calls.
+- **Phase 2 Backend Update (March 24):** Major backend update brought multiple endpoints live:
+  - **Dashboard Widgets Live:** `/me/recent-files`, `/me/activity/summary`, `/me/session/start` now return real data. Dashboard 404 errors resolved.
+  - **Gamification Live:** `/me/reputation` and `/reputation/leaderboard` endpoints fully implemented with Ledger + Cache pattern (denormalized `total_points` on User table for fast leaderboard queries).
+  - **Admin Reject/Undo Payloads:** `AdminRejectPayload` and `BulkRejectPayload` now live. Frontend already sends matching `{ reason, note }` shapes.
+  - **Upload Form Year Fix:** Backend now requires **two separate year fields**: `academic_year` (1–4 program level) and `material_year` (e.g. 2024 calendar year). Updated `requestService.ts` and `RequestFileModal.tsx` to send both via `multipart/form-data`. Program Year selector is now **required** (was optional).
+  - **Soft Deletion Architecture:** Rejected files move to GCS `trash_bin/` folder instead of instant deletion. Undo-reject rescues files. Auto-cleanup via GCS lifecycle rule after 3 days.
 
 ---
 
@@ -185,7 +191,7 @@ Centralized HTTP client used by all service files.
 5. **`requestPasswordReset` is mock-only**: Uses `delay()` and returns static success.
 
 ### Low / Polish
-6. **`listTopContributors` calls `/reputation/leaderboard`** — backend endpoint doesn't exist yet.
+6. ~~**`listTopContributors` calls `/reputation/leaderboard`**~~: ✅ RESOLVED — endpoint now live (Phase 2).
 7. ~~**Adobe PDF Embed API key hardcoded**~~: FileViewer now uses `react-pdf` instead.
 8. ~~**Mock data remnants**~~: ✅ RESOLVED — `mock-db.ts` deleted, all services and components fully migrated.
 
@@ -251,7 +257,7 @@ The frontend expects the backend at `http://localhost:8000/api/v1` (configurable
 
 **All mock data has been removed.** `src/mock/mock-db.ts` and the `src/mock/` directory are deleted.
 
-> ⚠️ **Note on 404 Errors in Console:** The frontend makes calls to endpoints like `/me/recent-files`, `/me/reputation`, `/me/requests`, and `/lecturers`, which return `404 Not Found` because the backend hasn't implemented them yet. This is expected behavior until the backend catches up. Retries on 4xx errors have been disabled to reduce console spam.
+> ⚠️ **Note on 404 Errors in Console:** Some endpoints like `/me/requests`, `/lecturers`, `/files`, and viewer session endpoints still return `404 Not Found`. Dashboard widgets (`/me/recent-files`, `/me/activity/summary`, `/me/reputation`, `/reputation/leaderboard`) are now live as of Phase 2 (March 24). Retries on 4xx errors have been disabled to reduce console spam.
 
 Query hooks (`queries/`) need **no changes** — they call services which return Promises.
 

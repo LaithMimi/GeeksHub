@@ -131,14 +131,14 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
 
     const defaultForm = {
         major: "",
-        program_year: "",   // 1–4, filters course list only — never sent to backend
+        program_year: "",   // 1–4, required — sent as `academic_year` to backend
         semester: "",   // optional filter
         course: "",
         lecturer: "",
         type_id: "",
         title: "",
         description: "",
-        material_year: "",   // 2016–current, sent as `year: int`
+        material_year: "",   // 2016–current, sent as `material_year` to backend
         file: null as File | null,
     };
 
@@ -150,7 +150,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
     const { data: types, isLoading: loadingTypes } = useTypes();
     const { data: allMajorCourses, isLoading: loadingCourses } = useCourses({
         majorId: form.major,
-        yearId: form.program_year ? parseInt(form.program_year) : undefined,
+        yearId: form.program_year || undefined,
     });
     const { data: lecturers, isLoading: loadingLecturers } = useLecturers({ courseId: form.course });
     const { mutate: submitRequest, isPending: isSubmitting } = useCreateRequest();
@@ -202,7 +202,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
     // ── Validation per step ───────────────────────────────────────────────────
 
     const canProceed = () => {
-        if (step === 1) return !!form.major;
+        if (step === 1) return !!form.major && !!form.program_year;
         if (step === 2) return !!form.course;
         if (step === 3) return !!form.lecturer && !!form.type_id && !!form.title && !!form.material_year;
         if (step === 4) return !!form.file;
@@ -218,7 +218,8 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                 lecturerId: form.lecturer,
                 type_id: form.type_id,
                 title: form.title,
-                year: parseInt(form.material_year),
+                academic_year: parseInt(form.program_year),
+                material_year: parseInt(form.material_year),
                 notes: form.description || undefined,
                 file: form.file!,
             },
@@ -254,8 +255,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-white/60 text-[12px]">
-                                    Program Year
-                                    <span className="text-white/25 ms-1.5 font-normal">(optional — filters courses)</span>
+                                    Program Year <span className="text-red-400">*</span>
                                 </Label>
                                 <div className="grid grid-cols-4 gap-2">
                                     {PROGRAM_YEARS.map((y) => (
