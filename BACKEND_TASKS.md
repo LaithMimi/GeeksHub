@@ -114,7 +114,7 @@ def list_lecturers(course_id: Optional[UUID] = None, session: Session = Depends(
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
 | `GET` | `/api/v1/files?course_id=&type_id=&lecturer_id=&search=` | `listFiles(filters)` | 🔴 |
-| `GET` | `/api/v1/files/{file_id}` | `getFile(fileId)` | 🔴 |
+| `GET` | `/api/v1/files/{file_id}` | `getFile(fileId)` | ✅ |
 | `GET` | `/api/v1/files/{file_id}/download` | (used by PDF viewer) | ✅ |
 
 ### Implementation Notes
@@ -157,7 +157,7 @@ user_recent_files(user_id UUID FK, file_id UUID FK, viewed_at TIMESTAMP, PRIMARY
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
 | `POST` | `/api/v1/courses/{course_id}/upload` | `createFileRequest(payload)` | ✅ |
-| `GET` | `/api/v1/me/requests` | `listMyRequests(userId)` | 🔴 |
+| `GET` | `/api/v1/me/requests` | `listMyRequests(userId)` | ✅ |
 | `DELETE` | `/api/v1/me/requests/{request_id}` | `withdrawRequest(id)` | 🔴 |
 | `GET` | `/api/v1/admin/requests?status=` | `listAllRequests(filters)` | 🔴 |
 | `GET` | `/api/v1/admin/requests/stats` | `getRequestStats()` | 🔴 |
@@ -314,8 +314,6 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 1. `GET /api/v1/lecturers` (DB query)
 2. `GET /api/v1/courses/{course_id}` (single course lookup)
 3. `GET /api/v1/files` (list approved files with filters)
-4. `GET /api/v1/files/{file_id}` (single file + downloadUrl)
-5. `GET /api/v1/me/requests` (user's own submissions)
 6. `GET /api/v1/admin/requests` (admin moderation queue)
 
 ### 🔴 P1 — Admin dashboard is broken without these

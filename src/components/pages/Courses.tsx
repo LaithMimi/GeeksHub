@@ -118,7 +118,6 @@ export default function Courses() {
                     onOpenChange={setIsRequestOpen}
                     initialData={{
                         major: selections.major,
-                        year: selections.year,
                         course: selections.course,
                         lecturer: selections.lecturer,
                         type: selections.type || types?.find(t => t.display_name === "Notes")?.id
@@ -215,8 +214,8 @@ export default function Courses() {
                                     </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="liquid-glass-heavy border-white/[0.1]">
-                                    {field.data?.map(item => (
-                                        <SelectItem key={item.id} value={item.id} className="text-white/70 hover:text-white focus:bg-white/[0.08] focus:text-white">
+                                    {field.data?.map((item, index) => (
+                                        <SelectItem key={item.id || `select-${index}`} value={item.id || `select-${index}`} className="text-white/70 hover:text-white focus:bg-white/[0.08] focus:text-white">
                                             {item.label}
                                         </SelectItem>
                                     ))}

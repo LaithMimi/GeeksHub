@@ -77,11 +77,14 @@ const Breadcrumbs = () => {
     const location = useLocation();
     const pathnames = location.pathname.split("/").filter((x) => x);
 
-    const potentialCourseId = pathnames[0] === "courses" ? pathnames[1] : undefined;
-    const potentialFileId = pathnames[2] === "files" ? pathnames[3] : undefined;
+    const matchCourse = pathnames[0] === "courses" ? pathnames[1] : undefined;
+    const potentialCourseId = matchCourse === "undefined" ? "" : (matchCourse || "");
 
-    const { data: course } = useCourse(potentialCourseId || "");
-    const { data: file } = useFile(potentialFileId || "");
+    const matchFile = pathnames[2] === "files" ? pathnames[3] : undefined;
+    const potentialFileId = matchFile === "undefined" ? "" : (matchFile || "");
+
+    const { data: course } = useCourse(potentialCourseId);
+    const { data: file } = useFile(potentialFileId);
 
     const formatLabel = (value: string, index: number) => {
         if (index === 1 && potentialCourseId === value && course) return course.code || course.name;

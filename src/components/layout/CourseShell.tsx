@@ -15,7 +15,8 @@ export default function CourseShell() {
     const location = useLocation();
 
     // Fetch course details
-    const { data: course, isLoading } = useCourse(courseId || "");
+    const safeCourseId = (courseId && courseId !== "undefined") ? courseId : "";
+    const { data: course, isLoading } = useCourse(safeCourseId);
 
     const isActive = (path: string) => {
         return location.pathname.includes(`/${path}`);

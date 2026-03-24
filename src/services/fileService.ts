@@ -39,7 +39,15 @@ export const getFile = async (fileId: string): Promise<File | null> => {
  * @backend GET /api/v1/reputation/leaderboard
  */
 export const listTopContributors = async (): Promise<Contributor[]> => {
-    return await api<Contributor[]>("/reputation/leaderboard");
+    const rawData = await api<any[]>("/reputation/leaderboard");
+    return rawData.map(item => ({
+        id: item.userId || item.id,
+        name: item.name,
+        avatar: item.name ? item.name.substring(0, 2).toUpperCase() : "?",
+        points: item.totalPoints || item.points || 0,
+        badge: item.badge,
+        major: item.major || "Unknown"
+    }));
 }
 
 /**

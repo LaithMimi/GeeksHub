@@ -17,8 +17,17 @@ import 'react-pdf/dist/Page/TextLayer.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-function isPdf(title: string): boolean {
-    return title.toLowerCase().endsWith('.pdf');
+function isPdf(title: string, downloadUrl?: string): boolean {
+    if (title.toLowerCase().endsWith('.pdf')) return true;
+    if (downloadUrl) {
+        try {
+            const url = new URL(downloadUrl);
+            return url.pathname.toLowerCase().endsWith('.pdf');
+        } catch {
+            return downloadUrl.toLowerCase().includes('.pdf');
+        }
+    }
+    return true; // We only allow PDF uploads via the backend
 }
 
 // ---------------------------------------------------------------------------
@@ -198,7 +207,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
     }
 
     // ── Non-PDF ───────────────────────────────────────────────────────────────
-    if (!isPdf(file.title)) {
+    if (!isPdf(file.title, file.downloadUrl)) {
         return (
             <div className="h-full flex flex-col items-center justify-center p-8 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">

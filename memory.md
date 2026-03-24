@@ -25,7 +25,8 @@ A university course materials platform where students **share, browse, and study
   - **Admin Reject/Undo Payloads:** `AdminRejectPayload` and `BulkRejectPayload` now live. Frontend already sends matching `{ reason, note }` shapes.
   - **Upload Form Year Fix:** Backend now requires **two separate year fields**: `academic_year` (1–4 program level) and `material_year` (e.g. 2024 calendar year). Updated `requestService.ts` and `RequestFileModal.tsx` to send both via `multipart/form-data`. Program Year selector is now **required** (was optional).
   - **Soft Deletion Architecture:** Rejected files move to GCS `trash_bin/` folder instead of instant deletion. Undo-reject rescues files. Auto-cleanup via GCS lifecycle rule after 3 days.
-
+  - **422 / 500 API Bug Squashes:** Fixed frontend router passing `"undefined"` strings to Tanstack Query hooks causing 422s. Also fixed missing `created_at` and `course_id` missing from the `FileRequestEnriched` model causing 500s and broken links in the Uploads UI.
+  - **Missing React Keys Fix:** Fixed React warnings mapping the backend's `LeaderboardEntry.userId` to the frontend's expected `Contributor.id`.
 ---
 
 ## 2. Tech Stack
