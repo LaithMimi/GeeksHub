@@ -134,6 +134,7 @@ class FileRequestEnriched(BaseModel):
     status: str
     academic_year: int
     material_year: int
+    course_id: UUID
     course_name: str
     lecturer_name: str
     material_id: UUID | None = None
@@ -242,7 +243,45 @@ class SessionStartResponse(BaseModel):
     sessionId: UUID
 
 class RecentFileResponse(BaseModel):
-    file_id: UUID
+    id: UUID
     title: str
-    course_id: UUID
-    viewed_at: datetime
+    courseId: UUID
+    viewedAt: datetime
+
+class FileViewingSession(SQLModel, table=True):
+    __tablename__ = "file_viewing_sessions"
+    
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    file_id: UUID = Field(foreign_key="materials.id")
+    course_id: UUID = Field(foreign_key="courses.id")
+    
+    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    active_seconds: int = Field(default=0)
+    required_active_seconds: int = Field(default=300) # Our computed target time
+    completion_score: float = Field(default=0.0)
+    is_complete: bool = Field(default=False)
+
+class ViewerSessionStartPayload(BaseModel):
+    file_id: UUID
+    totalPages: int = 10 # Default fallback if frontend doesn't send it
+
+class NotePayload(BaseModel):
+    content: str
+
+class UserNote(SQLModel, table=True):
+    __tablename__ = "user_notes"
+    # Composite primary key: A user only has ONE note document per file
+    user_id: UUID = Field(foreign_key="users.id", primary_key=True)
+    file_id: UUID = Field(foreign_key="materials.id", primary_key=True)
+    content: str
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ViewerSessionEndPayload(BaseModel):
+    session_id: UUID
+
+class ViewerHeartbeatPayload(BaseModel):
+    session_id: UUID
+    visited_pages: List[int] = [] # List of page numbers the user has visited in this interval
+    total_pages: int = 1
+    active_seconds_to_add: int = 10 # Assume the heartbeat fires every 10 seconds
