@@ -44,7 +44,7 @@ async def upload_to_gcs(file: UploadFile, destination_blob_name: str):
 
 # --- Endpoints ---
 
-@router.get("/api/v1/files", response_model=List[Material])
+@router.get("/api/v1/files")
 def list_files(
     course_id: Optional[UUID] = Query(None),
     type_id: Optional[UUID] = Query(None),
@@ -72,7 +72,16 @@ def list_files(
 
     # Execute and return the list
     materials = session.exec(statement).all()
-    return materials
+
+    frontend_friendly_list = []
+    for mat in materials:
+        mat_dict = mat.model_dump()
+        mat_dict["courseId"] = mat.course_id     
+        mat_dict["typeId"] = mat.type_id         
+        mat_dict["lecturerId"] = mat.lecturer_id 
+        frontend_friendly_list.append(mat_dict)
+        
+    return frontend_friendly_list
 
 @router.get("/api/v1/files/{file_id}")
 def get_single_file(
@@ -105,6 +114,10 @@ def get_single_file(
     # We merge the database object with the newly generated secure URL
     response_data = material.model_dump()
     response_data["downloadUrl"] = download_url
+
+    response_data["courseId"] = material.course_id
+    response_data["typeId"] = material.type_id
+    response_data["lecturerId"] = material.lecturer_id
 
     return response_data
 
