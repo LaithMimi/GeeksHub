@@ -1,0 +1,213 @@
+import os
+import random
+import string
+import datetime
+from uuid import UUID
+from typing import List, Optional
+from fastapi import APIRouter, HTTPException, Depends, Query, Form, UploadFile, File
+from sqlmodel import Session, select
+from google.cloud import storage
+from database import get_session
+from models import Material, FileRequest, Course, Lecturer, User, PointsTransaction
+from schemas import FileRequestEnriched
+from utils.auth_utils import get_verified_user
+from utils.upload_utils import validate_uploaded_file
+
+router = APIRouter(tags=["Files & Requests"])
+
+storage_client = storage.Client()
+bucket_name = os.getenv("BUCKET_NAME")
+
+async def upload_to_gcs(file: UploadFile, destination_blob_name: str):
+    """
+    Uploads a file to the Google Cloud Storage bucket.
+    """
+    try:
+        # 1. Connect to your specific bucket
+        bucket = storage_client.bucket(bucket_name)
+        
+        # 2. Create a "blob" (Google's term for a file) at the destination path
+        blob = bucket.blob(destination_blob_name)
+        
+        # 3. Ensure we are reading from the very beginning of the file stream
+        file.file.seek(0)
+        
+        # 4. Upload directly from the memory buffer to Google Cloud!
+        blob.upload_from_file(file.file, content_type=file.content_type)
+        
+        # Return the exact path inside the bucket so we can store it in Neon DB
+        return destination_blob_name
+        
+    except Exception as e:
+        print(f"FATAL GCS ERROR: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload file to cloud storage.")
+
+# --- Endpoints ---
+
+@router.get("/api/v1/files", response_model=List[Material])
+def list_files(
+    course_id: Optional[UUID] = Query(None),
+    type_id: Optional[UUID] = Query(None),
+    lecturer_id: Optional[UUID] = Query(None),
+    search: Optional[str] = Query(None),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    """
+    Returns a list of approved materials.
+    Leaves the downloadUrl blank so the frontend fetches it only when clicked.
+    """
+    # Note: We query the Material table, which represents approved files.
+    statement = select(Material)
+
+    # Apply all the filters
+    if course_id:
+        statement = statement.where(Material.course_id == course_id)
+    if type_id:
+        statement = statement.where(Material.type_id == type_id)
+    if lecturer_id:
+        statement = statement.where(Material.lecturer_id == lecturer_id)
+    if search:
+        statement = statement.where(Material.title.ilike(f"%{search}%"))
+
+    # Execute and return the list
+    materials = session.exec(statement).all()
+    return materials
+
+@router.get("/api/v1/files/{file_id}")
+def get_single_file(
+    file_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    """
+    Returns a single file's metadata AND generates a secure 15-minute 
+    Google Cloud Storage download link for the PDF viewer.
+    """
+    material = session.get(Material, file_id)
+    if not material:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Generate a Signed URL for the frontend PDF viewer
+    try:
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(material.file_url) # Our real GCS path saved during approval
+        
+        download_url = blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(minutes=15),
+            method="GET",
+        )
+    except Exception as e:
+        print(f"GCS Error: {e}")
+        download_url = None # Fallback if GCS isn't wired up locally yet
+
+    # We merge the database object with the newly generated secure URL
+    response_data = material.model_dump()
+    response_data["downloadUrl"] = download_url
+
+    return response_data
+
+@router.get("/api/v1/me/requests", response_model=List[FileRequestEnriched])
+def get_my_requests(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    """Enriched student queue"""
+    # Join the tables to grab the real names instead of just UUIDs
+    statement = select(FileRequest, Course, Lecturer).join(Course).join(Lecturer).where(FileRequest.user_id == current_user.id)
+    results = session.exec(statement).all()
+    
+    enriched_list = []
+    for request, course, lecturer in results:
+        # Check if this was approved (if so, the Material ID matches the Request ID)
+        mat_id = request.id if request.status == "approved" else None
+        # Calculate real XP from the database
+        xp_transaction = session.exec(
+            select(PointsTransaction).where(PointsTransaction.request_id == request.id)
+        ).first()
+        pts = xp_transaction.amount if xp_transaction else 0
+        
+        enriched_list.append(
+            FileRequestEnriched(
+                id=request.id, title=request.title, status=request.status,
+                academic_year=request.academic_year, material_year=request.material_year,
+                course_id=request.course_id, course_name=course.name, lecturer_name=lecturer.name,
+                material_id=mat_id, points_awarded=pts, created_at=request.created_at,
+                admin_note=request.admin_note
+            )
+        )
+    return enriched_list
+
+@router.post("/api/v1/courses/{course_id}/upload")
+async def upload_course_file(
+    course_id: UUID,
+    # Using Form(...) because we are receiving multipart/form-data, not JSON!
+    title: str = Form(...),
+    academic_year: int = Form(...),
+    material_year: int = Form(...),
+    type_id: UUID = Form(...), 
+    lecturer_id: UUID = Form(...),
+    notes: str = Form(None),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_verified_user),
+    session: Session = Depends(get_session)
+):
+    # 1. THE SECURITY BOUNCER
+    # This will throw a 400/413 error if it's a virus, too big, or fake extension
+    safe_ext = await validate_uploaded_file(file)
+
+    # 2. FILENAME KEEP ORIGINAL NAME (with a tiny random string to prevent overwrites)
+    base_name = os.path.splitext(file.filename)[0].replace(" ", "_")
+    random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+    file_name = f"{base_name}_{random_suffix}{safe_ext}"
+    
+    # 3. CLOUD ISOLATION (The "Pending" Folder)
+    # We save it in a specific 'pending' folder so it doesn't mix with approved files
+    storage_path = f"pending_uploads/{file_name}"
+    
+    # Reset the file pointer after our magic bytes check in validate_uploaded_file
+    await file.seek(0) 
+    gcs_uri = await upload_to_gcs(file, storage_path)
+
+    # 4. DATABASE INSERTION
+    new_request = FileRequest(
+        user_id=current_user.id,
+        course_id=course_id,
+        lecturer_id=lecturer_id,
+        type_id=type_id,
+        academic_year=academic_year,
+        material_year=material_year,
+        title=title,
+        notes=notes,
+        status="pending",
+        file_url=gcs_uri # We store where the file lives in the cloud
+    )
+    
+    session.add(new_request)
+    session.commit()
+    session.refresh(new_request)
+
+    return new_request
+
+@router.delete("/api/v1/me/requests/{request_id}")
+def withdraw_request(
+    request_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
+    """Allows a student to delete their own pending request."""
+    request = session.get(FileRequest, request_id)
+    if not request or request.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Request not found.")
+    
+    try:
+        bucket = storage_client.bucket(bucket_name)
+        bucket.blob(request.file_url).delete()
+    except Exception as e:
+        print(f"GCS Delete failed: {e}")
+
+    session.delete(request)
+    session.commit()
+    return {"message": "Request withdrawn successfully."}
+
