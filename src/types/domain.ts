@@ -205,6 +205,7 @@ export interface FileRequest {
     points?: number; // Legacy: Points awarded if approved
     pointsAwarded?: number; // Actual points awarded (distinct from proposed)
     fileId?: string; // ID of the created file (populated when request is approved)
+    file_url?: string; // Temporary GCS path for admin preview
 }
 
 // ============================================================================

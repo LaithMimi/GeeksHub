@@ -44,8 +44,8 @@ export const getNotes = async (fileId: string): Promise<string> => {
  * @backend POST /api/v1/me/notes
  */
 export const saveNotes = async (fileId: string, content: string): Promise<void> => {
-    await api("/me/notes", {
+    await api(`/me/notes?fileId=${fileId}`, {
         method: "POST",
-        body: JSON.stringify({ fileId, content }),
+        body: JSON.stringify({ content }),
     });
 };

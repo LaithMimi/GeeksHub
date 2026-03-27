@@ -13,7 +13,6 @@
  * ============================================================================
  */
 
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { RouterProvider } from 'react-router-dom'
@@ -41,7 +40,6 @@ const queryClient = new QueryClient({
 })
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
     <ErrorBoundary>
       <AuthProvider>
         <ThemeProvider>
@@ -51,6 +49,5 @@ createRoot(document.getElementById('root')!).render(
           </QueryClientProvider>
         </ThemeProvider>
       </AuthProvider>
-    </ErrorBoundary>
-  </StrictMode>,
+    </ErrorBoundary>,
 )

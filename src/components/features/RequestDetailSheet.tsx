@@ -11,6 +11,14 @@
 import * as React from "react";
 import { format } from "date-fns";
 import { FileText, Calendar, User, BookOpen, Tag, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/Page/AnnotationLayer.css";
+import "react-pdf/dist/Page/TextLayer.css";
+
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url
+).toString();
 import {
     Sheet,
     SheetContent,
@@ -143,14 +151,32 @@ export function RequestDetailSheet({
                             </>
                         )}
 
-                        {/* File Preview Placeholder */}
+                        {/* File Preview */}
                         <div className="space-y-2">
                             <h4 className="text-sm font-medium">File Preview</h4>
-                            <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-muted-foreground">
-                                <FileText className="h-12 w-12 mb-2" />
-                                <p className="text-sm">Preview not available</p>
-                                <p className="text-xs">File preview will be implemented with backend</p>
-                            </div>
+                            {request.file_url ? (
+                                <div className="border-2 rounded-lg bg-black/20 flex flex-col items-center justify-center overflow-auto max-h-[400px] p-4">
+                                    <Document
+                                        file={`https://storage.googleapis.com/geekshub-files-azrieli/${request.file_url}`}
+                                        loading={<p className="text-sm text-muted-foreground py-4">Loading preview...</p>}
+                                        error={<p className="text-sm text-red-400 py-4">Failed to load preview. The file might not be publicly accessible.</p>}
+                                    >
+                                        <Page
+                                            pageNumber={1}
+                                            width={400}
+                                            renderTextLayer={false}
+                                            renderAnnotationLayer={false}
+                                            loading={<p className="text-sm text-muted-foreground py-4">Rendering...</p>}
+                                            className="shadow-xl"
+                                        />
+                                    </Document>
+                                </div>
+                            ) : (
+                                <div className="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-muted-foreground">
+                                    <FileText className="h-12 w-12 mb-2" />
+                                    <p className="text-sm">No preview available</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Duplicate Warning (Collapsible) */}
