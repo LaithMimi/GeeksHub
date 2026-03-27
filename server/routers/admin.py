@@ -1,4 +1,5 @@
 import os
+import datetime
 from uuid import UUID
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
@@ -309,3 +310,31 @@ def get_request_stats(
         "approvedToday": 0, 
         "rejectedToday": 0
     }
+
+@router.get("/api/v1/admin/requests/{request_id}/url")
+def get_admin_request_preview_url(
+    request_id: UUID,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_admin_user) # Security: Admins only!
+):
+    """Generates a secure, 1-hour signed URL for admins to preview pending files."""
+    request = session.get(FileRequest, request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found.")
+
+    try:
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(request.file_url) 
+        
+        # Generate the self-destructing link
+        download_url = blob.generate_signed_url(
+            version="v4",
+            expiration=datetime.timedelta(hours=1),
+            method="GET",
+        )
+        
+        return {"url": download_url}
+        
+    except Exception as e:
+        print(f"GCS Admin Preview Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate secure preview link.")
