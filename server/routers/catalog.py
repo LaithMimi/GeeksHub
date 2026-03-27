@@ -38,7 +38,7 @@ def get_lecturers(
 
 @router.get("/api/v1/majors", response_model=List[Major])
 def list_majors(
-    session: Session = Depends(get_session) 
+    session: Session = Depends(get_session)
 ):
     return session.exec(select(Major)).all()
 

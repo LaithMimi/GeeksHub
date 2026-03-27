@@ -80,7 +80,7 @@ def list_files(
         mat_dict["typeId"] = mat.type_id         
         mat_dict["lecturerId"] = mat.lecturer_id 
         frontend_friendly_list.append(mat_dict)
-        
+
     return frontend_friendly_list
 
 @router.get("/api/v1/files/{file_id}")
@@ -114,7 +114,6 @@ def get_single_file(
     # We merge the database object with the newly generated secure URL
     response_data = material.model_dump()
     response_data["downloadUrl"] = download_url
-
     response_data["courseId"] = material.course_id
     response_data["typeId"] = material.type_id
     response_data["lecturerId"] = material.lecturer_id
@@ -155,7 +154,7 @@ def get_my_requests(
 @router.post("/api/v1/courses/{course_id}/upload")
 async def upload_course_file(
     course_id: UUID,
-    # Using Form(...) because we are receiving multipart/form-data, not JSON!
+    # Using Form(...) because we are receiving multipart/form-data (binary files), not JSON!
     title: str = Form(...),
     academic_year: int = Form(...),
     material_year: int = Form(...),

@@ -24,9 +24,7 @@ def get_auth0_admin():
         )
         token_data = get_token.client_credentials(f'https://{domain}/api/v2/')
         
-        # 2. Initialize using the NEW keyword names from your help output
-        # tenant_domain: the 'domain' from your .env
-        # token: the access_token string
+        # 2. Initialize 
         return Auth0(
             tenant_domain=domain, 
             token=token_data['access_token']
@@ -93,7 +91,6 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
 @router.post("/api/v1/signin")
 def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(get_session)):
     clean_email = payload.email.lower().strip()
-    # Use payload.email and payload.password instead of email/password
     user = session.exec(select(User).where(User.email == clean_email)).first()
     if not user:
         raise HTTPException(status_code=404, detail="No account found. Please sign up.")
@@ -102,8 +99,8 @@ def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(
     try:
         get_token = GetToken(domain, os.getenv("AUTH0_M2M_ID"), client_secret=os.getenv("AUTH0_M2M_SECRET"))
         auth0_response = get_token.login(
-            username=clean_email,    # Updated
-            password=payload.password, # Updated
+            username=clean_email,
+            password=payload.password,
             scope="openid profile email",
             audience=os.getenv("AUTH0_AUDIENCE"),
             realm="Username-Password-Authentication"
@@ -120,6 +117,14 @@ def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(
             
         access_token = auth0_response.get("access_token")
 
+        # Calculate how long the cookie should live
+        if payload.remember_me:
+            # 30 days * 24 hours * 60 minutes * 60 seconds
+            cookie_lifespan = 30 * 24 * 60 * 60 
+        else:
+            # Just 24 hours
+            cookie_lifespan = 86400
+
         # SET THE HTTP-ONLY COOKIE
         response.set_cookie(
             key = "auth_token",
@@ -127,7 +132,7 @@ def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(
             httponly=True,  # Prevents JS from reading the token
             secure=False,    # Only send cookie over HTTPS
             samesite="lax", # CSRF protection
-            max_age=86400 # 24 hours
+            max_age=cookie_lifespan # 24 hours
         )
         return {"user": user}
     
