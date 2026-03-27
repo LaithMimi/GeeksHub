@@ -24,8 +24,8 @@ function AdminSidebarFooter() {
     const { user } = useAuth();
 
     // Derive initials from user.name — avatarInitials doesn't exist on the User model
-    const initials = user?.name
-        ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    const initials = user?.displayName
+        ? user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
         : "A";
 
     return (
@@ -36,8 +36,7 @@ function AdminSidebarFooter() {
                         {initials}
                     </div>
                     <div className="flex-1 truncate text-sm text-start">
-                        {/* user.name is the correct field — displayName doesn't exist on the User model */}
-                        <p className="font-medium truncate">{user?.name ?? "Admin"}</p>
+                        <p className="font-medium truncate">{user?.displayName ?? "Admin"}</p>
                         <p className="text-xs text-muted-foreground truncate">{user?.role ?? "ADMIN"}</p>
                     </div>
                 </div>
@@ -105,14 +104,13 @@ function AdminSidebar() {
                             </SidebarMenuItem>
                             <SidebarMenuItem>
                                 <SidebarMenuButton
-                                    asChild
-                                    tooltip="Audit Log"
-                                    isActive={isActive("/admin/audit")}
+                                    tooltip="Audit Log (Coming Soon)"
+                                    disabled
+                                    className="opacity-50 cursor-not-allowed"
                                 >
-                                    <Link to="/admin/audit">
-                                        <FileSearch className="h-4 w-4" />
-                                        <span>Audit Log</span>
-                                    </Link>
+                                    <FileSearch className="h-4 w-4" />
+                                    <span>Audit Log</span>
+                                    <Badge variant="outline" className="text-[10px] ml-auto">Soon</Badge>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
                         </SidebarMenu>

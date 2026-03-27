@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ClipboardList, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
+import { ClipboardList, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +19,7 @@ export default function AdminHome() {
             </div>
 
             {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-1 max-w-md">
                 {/* Pending */}
                 <Card className="glass-card bg-transparent border-white/[0.06] text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -36,46 +36,6 @@ export default function AdminHome() {
                         )}
                         <p className="text-xs text-white/60">
                             Awaiting review
-                        </p>
-                    </CardContent>
-                </Card>
-
-                {/* Approved Today */}
-                <Card className="glass-card bg-transparent border-white/[0.06] text-white">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Approved Today</CardTitle>
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-8 w-16" />
-                        ) : error ? (
-                            <span className="text-destructive">Error</span>
-                        ) : (
-                            <div className="text-2xl font-bold text-green-600">{stats?.approvedToday ?? 0}</div>
-                        )}
-                        <p className="text-xs text-white/60">
-                            Files added to catalog
-                        </p>
-                    </CardContent>
-                </Card>
-
-                {/* Rejected Today */}
-                <Card className="glass-card bg-transparent border-white/[0.06] text-white">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Rejected Today</CardTitle>
-                        <XCircle className="h-4 w-4 text-red-500" />
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-8 w-16" />
-                        ) : error ? (
-                            <span className="text-destructive">Error</span>
-                        ) : (
-                            <div className="text-2xl font-bold text-red-600">{stats?.rejectedToday ?? 0}</div>
-                        )}
-                        <p className="text-xs text-white/60">
-                            Requests declined
                         </p>
                     </CardContent>
                 </Card>
@@ -98,12 +58,6 @@ export default function AdminHome() {
                                 </span>
                             ) : null}
                             <ArrowRight className="h-4 w-4 ml-1" />
-                        </Link>
-                    </Button>
-                    <Button asChild variant="outline" size="lg" className="gap-2">
-                        <Link to="/admin/audit">
-                            View Audit Log
-                            <ArrowRight className="h-4 w-4" />
                         </Link>
                     </Button>
                 </CardContent>
