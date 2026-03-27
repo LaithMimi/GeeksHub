@@ -6,6 +6,39 @@ export type AuthError = {
 // Simulated API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const formatAuthError = (errStr: string, defaultMsg: string): string => {
+    if (typeof errStr !== "string") return defaultMsg;
+    if (errStr.includes("Wrong email or password")) return "Invalid email or password.";
+    if (errStr.includes("Too Many Requests") || errStr.includes("429")) return "Too many failed attempts. Please try again later.";
+    
+    try {
+        const first = errStr.indexOf('{');
+        const last = errStr.lastIndexOf('}');
+        if (first !== -1 && last !== -1 && last > first) {
+            const errData = JSON.parse(errStr.substring(first, last + 1));
+            
+            if (errData.error_description) {
+                let msg = errData.error_description;
+                if (msg.includes("Wrong email or password")) return "Invalid email or password.";
+                return msg;
+            }
+            if (errData.message) {
+                let msg = errData.message;
+                if (msg.includes("PasswordStrengthError")) {
+                    return "Password is too weak. It must be at least 8 characters and include a number, an uppercase letter, and a lowercase letter.";
+                }
+                return msg;
+            }
+        }
+    } catch {
+        // ignore JSON parse errors
+    }
+    
+    // If the backend prefixes with Registration failed, we could optionally leave it, 
+    // but the raw string is fine as a fallback if it wasn't a JSON exception.
+    return errStr || defaultMsg;
+};
+
 const API_URL = "http://localhost:8000/api/v1";
 
 export const authService = {
@@ -30,7 +63,7 @@ export const authService = {
                 } else if (typeof errorData.detail === 'object') {
                     errorMessage = errorData.detail.msg || JSON.stringify(errorData.detail);
                 } else {
-                    errorMessage = String(errorData.detail);
+                    errorMessage = formatAuthError(String(errorData.detail), "Login failed");
                 }
             }
             throw { message: errorMessage };
@@ -68,7 +101,7 @@ export const authService = {
                 } else if (typeof errorData.detail === 'object') {
                     errorMessage = errorData.detail.msg || JSON.stringify(errorData.detail);
                 } else {
-                    errorMessage = String(errorData.detail);
+                    errorMessage = formatAuthError(String(errorData.detail), "Signup failed");
                 }
             }
             throw { message: errorMessage };
