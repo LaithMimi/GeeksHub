@@ -40,6 +40,7 @@ class UserSignUp(BaseModel):
 class UserSignIn(BaseModel):
     email: str
     password: str   
+    remember_me: bool = False
 
 class ForgotPassword(BaseModel):
     email: str 

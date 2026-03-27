@@ -117,6 +117,14 @@ def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(
             
         access_token = auth0_response.get("access_token")
 
+        # Calculate how long the cookie should live
+        if payload.remember_me:
+            # 30 days * 24 hours * 60 minutes * 60 seconds
+            cookie_lifespan = 30 * 24 * 60 * 60 
+        else:
+            # Just 24 hours
+            cookie_lifespan = 86400
+
         # SET THE HTTP-ONLY COOKIE
         response.set_cookie(
             key = "auth_token",
@@ -124,7 +132,7 @@ def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(
             httponly=True,  # Prevents JS from reading the token
             secure=False,    # Only send cookie over HTTPS
             samesite="lax", # CSRF protection
-            max_age=86400 # 24 hours
+            max_age=cookie_lifespan # 24 hours
         )
         return {"user": user}
     
