@@ -67,7 +67,24 @@ export default {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+			purple: {
+				400: 'hsl(265 85% 65%)',
+				500: 'hsl(265 100% 65%)',
+				600: 'hsl(265 85% 55%)',
+			},
+			emerald: {
+				400: 'hsl(160 85% 55%)',
+				500: 'hsl(160 85% 45%)',
+			},
+			amber: {
+				400: 'hsl(45 100% 60%)',
+				500: 'hsl(45 90% 50%)',
+			},
+			red: {
+				400: 'hsl(345 90% 65%)',
+				500: 'hsl(345 90% 60%)',
+			}
   		}
   	}
   },

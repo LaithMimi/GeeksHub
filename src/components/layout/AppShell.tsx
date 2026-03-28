@@ -408,11 +408,6 @@ export default function AppShell() {
             >
                 Skip to main content
             </a>
-            {/* Animated mesh background */}
-            <div className="mesh-background">
-                <div className="mesh-orb mesh-orb-1" />
-                <div className="mesh-orb mesh-orb-2" />
-            </div>
 
             {/* Sidebar - hidden on mobile */}
             <div className="hidden lg:block relative z-20">

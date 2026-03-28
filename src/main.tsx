@@ -23,6 +23,7 @@ import { ThemeProvider } from "@/hooks/useTheme"
 import { AuthProvider } from "@/context/AuthContext"
 import ErrorBoundary from "@/components/ErrorBoundary"
 import { ApiError } from "@/lib/apiClient"
+import { MouseGlow } from "@/components/layout/MouseGlow"
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -44,6 +45,8 @@ createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <ThemeProvider>
           <QueryClientProvider client={queryClient}>
+            <div className="mesh-background" />
+            <MouseGlow />
             <RouterProvider router={router} />
             <Toaster />
           </QueryClientProvider>
