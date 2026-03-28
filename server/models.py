@@ -16,8 +16,8 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, unique=True) # User's email, must be unique
     name: str # User's full name
     role: str = Field(default="STUDENT") # Default role is student
-    major_id: Optional[UUID] = Field(default=None, foreign_key="majors.id") # Foreign key linking users to their selected major
-    total_points: int = Field(default=0) # Total reputation points accumulated by the user
+    major_id: Optional[UUID] = Field(default=None, foreign_key="majors.id, index=True") # Foreign key linking users to their selected major
+    total_points: int = Field(default=0, index=True) # Total reputation points accumulated by the user
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of user creation
 
 class Major(SQLModel, table=True):
@@ -37,7 +37,7 @@ class Course(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     code: str = Field(index=True, unique=True) # Course code (e.g., "CS101")
     name: str # Full name of the course (e.g., "Introduction to Programming")
-    major_id: UUID = Field(foreign_key="majors.id") # Foreign key linking to the major this course belongs to
+    major_id: UUID = Field(foreign_key="majors.id, index=True") # Foreign key linking to the major this course belongs to
     year_id: int # Academic year the course is typically offered (e.g., 1 for freshman year)
     semester: int # Semester the course is typically offered (e.g., 1 for Fall, 2 for Spring)
 
@@ -47,7 +47,7 @@ class Lecturer(SQLModel, table=True):
     """
     __tablename__ = "lecturers"
 
-    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(index=True) # Full name of the lecturer (e.g., "Dr. Jane Smith")
     email: str | None = Field(default=None, unique=True, index=True) # Optional email for the lecturer
 
@@ -67,9 +67,9 @@ class Material(SQLModel, table=True):
     title: str
     academic_year: int #e.g., 1, 2, 3, or 4
     material_year: int # The year the material is relevant to (e.g., 2020 for "Midterm 2020")
-    course_id: UUID = Field(foreign_key="courses.id")
-    lecturer_id: UUID = Field(foreign_key="lecturers.id")
-    type_id: UUID = Field(foreign_key="material_types.id")
+    course_id: UUID = Field(foreign_key="courses.id, index=True")
+    lecturer_id: UUID = Field(foreign_key="lecturers.id, index=True")
+    type_id: UUID = Field(foreign_key="material_types.id, index=True")
     uploader_id: UUID = Field(foreign_key="users.id") # Keep track of who gets the credit!
     notes: str | None = None
     
@@ -85,7 +85,7 @@ class FileRequest(SQLModel, table=True):
     """
     __tablename__ = "file_requests"
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_id: UUID = Field(foreign_key="users.id") # User who submitted the request
+    user_id: UUID = Field(foreign_key="users.id", index=True) # User who submitted the request
     course_id: UUID = Field(foreign_key="courses.id") # Course the requested file is for
     type_id: UUID = Field(foreign_key="material_types.id") # Type of material being requested
     title: str # Proposed title for the file
@@ -93,7 +93,7 @@ class FileRequest(SQLModel, table=True):
     material_year: int # e.g., 2020 for "Midterm 2020"
     file_url: str # Temporary GCS path - URL to the uploaded file awaiting approval
     lecturer_id: UUID = Field(foreign_key="lecturers.id") # Lecturer associated with the material
-    status: str = "pending" # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
+    status: str = Field(default="pending", index=True) # Current status of the request (e.g., PENDING, APPROVED, REJECTED)
     notes: str | None = None # Optional field for moderators to provide feedback on the request
     admin_note: str | None = None # Private notes only visible to admins
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of request submission
@@ -107,7 +107,7 @@ class PointsTransaction(SQLModel, table=True):
     amount: int # e.g., +10
     action: str # e.g., "upload_approval"
     reason: str # e.g., "File Approved: Midterm 2018"
-    request_id: UUID | None = Field(default=None, foreign_key="file_requests.id") # To prevent double-awarding XP
+    request_id: UUID | None = Field(default=None, foreign_key="file_requests.id", index=True) # To prevent double-awarding XP
     source_id: str | None = Field(default=None, unique=True, index=True) # Unique string for non-request events (e.g., 'daily_login:2026-03-19')
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
