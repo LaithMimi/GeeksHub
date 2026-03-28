@@ -209,7 +209,7 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 
 ## 9. Gamification API & Sessions
 
-> **Frontend source:** `src/services/gamificationService.ts`, `src/services/learningPathService.ts`
+> **Frontend source:** `src/services/gamificationService.ts`
 
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
@@ -219,7 +219,6 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 | `POST` | `/api/v1/me/session/start` | `startPlatformSession()` | ✅ |
 | `POST` | `/api/v1/me/session/heartbeat` | `sendPlatformHeartbeat(sessionId)` | 🔴 |
 | `POST` | `/api/v1/me/session/end` | `endPlatformSession(sessionId)` | 🔴 |
-| `GET` | `/api/v1/me/learning-path` | `getLearningPath()` | 🔴 |
 | `GET` | `/api/v1/me/activity/summary` | `getActivitySummary()` | ✅ |
 | `GET` | `/api/v1/files/:file_id/share` | `getShareUrl(fileId)` | 🔴 |
 
@@ -230,7 +229,6 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 - **Platform Sessions**:
   - `POST /session/start` tracks cumulative active time.
   - `POST /session/heartbeat` awards +2 points every 25 mins (1500 seconds) of active time and sets `break_reminder: true`.
-- **Learning Path**: Groups the user's major courses by year and semester, enriching them with their `user_course_activity` status (not_started, exploring, engaged, completed).
 - **Idempotency**: All point transactions (`file_complete`, `study_interval`, `course_complete`) must rely on `points_transactions.source_id` uniqueness. 
 - **Course Status Logic**: `not_started` (0%), `exploring` (<50%), `engaged` (>=50%), `completed` (100%).
 
@@ -294,6 +292,19 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 | `GET` | `/api/v1/me/pinned-courses` | Get pinned courses | 🟡 |
 | `POST` | `/api/v1/me/pinned-courses/{courseId}` | Pin course | 🟡 |
 | `DELETE` | `/api/v1/me/pinned-courses/{courseId}` | Unpin course | 🟡 |
+
+### Implementation Notes
+- **Tasks Payload:** When bridging the `/api/v1/me/tasks` POST endpoint, the frontend sends the following schema:
+```json
+{
+  "title": "string",
+  "date": "YYYY-MM-DD",
+  "priority": "normal" | "high" | "urgent",
+  "startHour": 14,
+  "duration": 1.5
+}
+```
+- **UUID Catalog Mapping:** Note that the frontend handles raw UUID exposure natively using cached TanStack catalog queries (`useMajors`, `useCourses`). You do not need to stitch `major_name` or `course_name` strings into base returned entities like `RecentFiles` or `User` fields if doing so adds unwanted backend JOIN complexity. The frontend resolves UUIDs dynamically.
 
 ---
 

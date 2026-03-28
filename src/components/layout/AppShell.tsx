@@ -33,7 +33,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import {
     Home, History, Settings, BookOpen, Upload,
-    Map, Bell, Search, GraduationCap, Sparkles,
+    Bell, Search, GraduationCap, Sparkles,
     PanelLeftClose, PanelLeftOpen, Shield, Menu,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -69,7 +69,6 @@ const navItems = [
     { label: "Courses", icon: BookOpen, href: "/courses" },
     { label: "Recent", icon: History, href: "/recent" },
     { label: "Uploads", icon: Upload, href: "/uploads" },
-    { label: "My Path", icon: Map, href: "/path" },
 ];
 
 // ── Dynamic Breadcrumbs ───────────────────────────────────────────────────────

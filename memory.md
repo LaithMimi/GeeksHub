@@ -10,7 +10,10 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.1 Highlights of Recent Updates (March 2026)
+## 1.1 Highlights of Recent Updates (Late March 2026)
+- **Cyber-Neon UI Overhaul:** Rebranded the entire application to a high-contrast Deep Teal and Cyan global aesthetic, deprecating local hardcoded properties and archaic light-mode hacks. 
+- **UUID Exposure Fixes:** Refactored `Dashboard.tsx` and `Recent.tsx` to stop exposing raw Postgres UUIDs to the end user. Implemented a "resolve-on-render" pattern utilizing existing highly-cached TanStack catalog queries (`useMajors`, `useCourses`) to dynamically map UUIDs to human-readable names.
+- **Accessibility & Modal Polish:** Repaired massive breakage on the Dashboard "New Task" modal, stripping legacy `liquid-glass-heavy` hacks destroying Tailwind transform matrices. Achieved full a11y compliance and React render loop optimizations on the modal.
 - **Auth Hardening:** Switched to `HttpOnly` cookie-based JWTs. `credentials: 'include'` now applied to all API calls. Added 403 blocks for unverified emails on sign-in.
 - **Backend APIs Connected:** Real integration with live Neon Postgres endpoints for `/majors`, `/courses`, and `/types`.
 - **Course Library Rework:** Reverted the UI to cascading dropdowns (Major → Year → Semester → Course). The user's major is now auto-fetched from their profile via `useAuth().user.majorId`.

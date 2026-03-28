@@ -16,7 +16,6 @@ import {
     BookOpen,
     History,
     Upload,
-    Map as MapIcon,
     Settings,
     LogOut,
     Shield,
@@ -68,10 +67,6 @@ export function CommandPalette() {
                     <CommandItem onSelect={() => runCommand(() => navigate("/uploads"))}>
                         <Upload className="mr-2 h-4 w-4" />
                         Uploads
-                    </CommandItem>
-                    <CommandItem onSelect={() => runCommand(() => navigate("/path"))}>
-                        <MapIcon className="mr-2 h-4 w-4" />
-                        My Path
                     </CommandItem>
                     <CommandItem onSelect={() => runCommand(() => navigate("/settings"))}>
                         <Settings className="mr-2 h-4 w-4" />

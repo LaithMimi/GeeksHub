@@ -140,8 +140,8 @@ export interface Course {
  */
 export interface CourseActivity {
     courseId: string;
-    courseName?: string; // Denormalized for display in MyPath
-    courseCode?: string; // Denormalized for display in MyPath
+    courseName?: string;
+    courseCode?: string;
     status: CourseStatus;
     filesCompleted: number;
     totalFiles: number;
@@ -276,27 +276,6 @@ export interface PlatformHeartbeatResponse {
     pointsAwarded: number;
     breakReminder: boolean;
     nextIntervalIn: number;
-}
-
-/**
- * Aggregated learning path grouped by years and semesters.
- */
-export interface LearningPath {
-    major: { id: string; name: string };
-    years: {
-        yearId: number;
-        label: string;
-        semesters: {
-            semester: number;
-            label: string;
-            courses: (Course & {
-                hasFiles: boolean;
-                status: CourseStatus;
-                filesCompleted: number;
-                totalFiles: number;
-            })[];
-        }[];
-    }[];
 }
 
 /**

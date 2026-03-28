@@ -13,7 +13,6 @@ import AuthPage from "@/pages/Auth/AuthPage";
 import ResetPasswordPage from "@/pages/Auth/ResetPasswordPage";
 import RouteError from "@/components/errors/RouteError";
 import ProtectedRoute from "@/components/routing/ProtectedRoute";
-import MyPath from "@/components/pages/MyPath";
 import NotFound from "@/components/pages/NotFound";
 
 // Course Pages
@@ -61,10 +60,6 @@ export const router = createBrowserRouter([
                     {
                         path: "settings",
                         element: <Settings />
-                    },
-                    {
-                        path: "path",
-                        element: <MyPath />
                     },
                     {
                         path: "courses",
