@@ -45,25 +45,25 @@
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-bounce: cubic-bezier(0.2, 0.8, 0.2, 1); /* Quieter: Replaced bounce with standard */
 
-  /* Cyber Glass Tokens — Dark (Deep space, high crisp, stark contrast) */
-  --glass-bg: rgba(6, 4, 15, 0.4);
-  --glass-bg-hover: rgba(10, 6, 25, 0.6);
-  --glass-bg-active: rgba(15, 10, 35, 0.8);
-  --glass-border: rgba(139, 92, 246, 0.15); /* Faint neon purple edge */
-  --glass-border-strong: rgba(139, 92, 246, 0.4);
-  --glass-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px inset rgba(139, 92, 246, 0.05);
-  --glass-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px inset rgba(139, 92, 246, 0.1);
+  /* Cyber Glass Tokens — Deep Teal */
+  --glass-bg: rgba(2, 11, 18, 0.4);
+  --glass-bg-hover: rgba(6, 20, 28, 0.6);
+  --glass-bg-active: rgba(10, 31, 41, 0.8);
+  --glass-border: rgba(76, 201, 216, 0.2); /* Faint cyan edge */
+  --glass-border-strong: rgba(76, 201, 216, 0.4);
+  --glass-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px inset rgba(76, 201, 216, 0.05);
+  --glass-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px inset rgba(76, 201, 216, 0.1);
   --glass-blur: 16px;
   --glass-blur-heavy: 32px;
-  --glass-heavy-bg: rgba(4, 2, 10, 0.8);
-  --glass-subtle-bg: rgba(139, 92, 246, 0.02);
-  --glass-subtle-border: rgba(139, 92, 246, 0.08);
+  --glass-heavy-bg: rgba(2, 11, 18, 0.8);
+  --glass-subtle-bg: rgba(76, 201, 216, 0.02);
+  --glass-subtle-border: rgba(76, 201, 216, 0.08);
   --glass-inset-highlight: transparent;
-  --glass-inset-highlight-hover: rgba(139, 92, 246, 0.05);
+  --glass-inset-highlight-hover: rgba(76, 201, 216, 0.05);
 
   /* Neon Glow Tokens (Sharp, saturated) */
-  --glow-purple: 0 0 16px rgba(139, 92, 246, 0.4), 0 0 32px rgba(139, 92, 246, 0.2);
-  --glow-purple-soft: 0 0 24px rgba(139, 92, 246, 0.15);
+  --glow-purple: 0 0 16px rgba(76, 201, 216, 0.4), 0 0 32px rgba(76, 201, 216, 0.2); /* Repurposed to cyan */
+  --glow-purple-soft: 0 0 24px rgba(76, 201, 216, 0.15);
   --glow-green: 0 0 16px rgba(16, 185, 129, 0.4), 0 0 32px rgba(16, 185, 129, 0.15);
   --glow-red: 0 0 16px rgba(244, 63, 94, 0.4), 0 0 32px rgba(244, 63, 94, 0.15);
 
@@ -120,76 +120,76 @@ body {
 }
 
 /* ============================================
-   CLEAN CYBER BACKGROUND
+   CLEAN CYBER BACKGROUND (Deep Teal)
    ============================================ */
 .mesh-background {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-color: #05030a;
+  background-color: #020b12; /* Deep teal black */
   /* Extremely subtle pure-CSS cyber grid instead of noisy SVG */
   background-image: 
-    linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(76, 201, 216, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(76, 201, 216, 0.03) 1px, transparent 1px);
   background-size: 30px 30px;
 }
 
 .light .mesh-background {
   background-color: #f8fafc;
   background-image: 
-    linear-gradient(rgba(139, 92, 246, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 92, 246, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(76, 201, 216, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(76, 201, 216, 0.02) 1px, transparent 1px);
   background-size: 30px 30px;
 }
 
 /* ============================================
-   COLOR PALETTE — Vibrant Cyber Neon
+   COLOR PALETTE — Deep Teal / Cyan
    ============================================ */
 @layer base {
   :root {
-    --background: 260 55% 4%; /* Pitch indigo */
+    --background: 206 80% 4%; /* Deep Teal */
     --foreground: 0 0% 98%;
-    --card: 260 40% 6%;
+    --card: 202 65% 7%; /* Slightly lighter teal */
     --card-foreground: 0 0% 98%;
-    --popover: 260 40% 6%;
+    --popover: 202 65% 7%;
     --popover-foreground: 0 0% 98%;
     
-    /* Volt Purple */
-    --primary: 265 100% 65%;
-    --primary-foreground: 0 0% 100%;
+    /* Bright Cyan Accent */
+    --primary: 186 65% 57%;
+    --primary-foreground: 206 80% 4%; /* Inverted text for bright cyan buttons */
     
     /* Steely Dark */
-    --secondary: 260 30% 12%;
+    --secondary: 200 60% 10%;
     --secondary-foreground: 0 0% 95%;
     
-    --muted: 260 25% 12%;
-    --muted-foreground: 260 20% 65%;
+    --muted: 200 60% 10%;
+    --muted-foreground: 200 20% 65%;
     
-    --accent: 265 100% 65%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 186 65% 57%;
+    --accent-foreground: 206 80% 4%;
     
     /* Laser Red */
     --destructive: 345 90% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 260 30% 16%;
-    --input: 260 30% 16%;
-    --ring: 265 100% 65%;
+    --border: 200 40% 16%;
+    --input: 200 40% 16%;
+    --ring: 186 65% 57%;
     --radius: 1rem;
 
-    /* Sidebar (Jet black) */
-    --sidebar-background: 260 60% 2%;
+    /* Sidebar */
+    --sidebar-background: 206 90% 2%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 265 100% 65%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 30% 10%;
+    --sidebar-primary: 186 65% 57%;
+    --sidebar-primary-foreground: 206 80% 4%;
+    --sidebar-accent: 200 60% 10%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 260 30% 16%;
-    --sidebar-ring: 265 100% 65%;
+    --sidebar-border: 200 40% 16%;
+    --sidebar-ring: 186 65% 57%;
 
-    /* Chart Colors (Neon Palette) */
-    --chart-1: 265 100% 65%; /* Purple */
-    --chart-2: 160 85% 55%;  /* Cyan-Mint */
+    /* Chart Colors */
+    --chart-1: 186 65% 57%; /* Cyan */
+    --chart-2: 265 100% 65%; /* Purple */
     --chart-3: 195 100% 60%; /* Azure */
     --chart-4: 45 100% 60%;  /* Volt Gold */
     --chart-5: 330 100% 65%; /* Hot Pink */
