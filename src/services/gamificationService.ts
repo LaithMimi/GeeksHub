@@ -28,8 +28,8 @@ export const sendViewerHeartbeat = async (
     visitedPages: number[],
     activeSeconds: number
 ): Promise<ViewerHeartbeatResponse> => {
-    // api wrapper automatically transforms JSON to camelCase
-    return await api<ViewerHeartbeatResponse>("/me/viewer/heartbeat", {
+    // Transform JS to backend snake_case
+    const response = await api<any>("/me/viewer/heartbeat", {
         method: "POST",
         body: JSON.stringify({
             session_id: sessionId,
@@ -37,6 +37,19 @@ export const sendViewerHeartbeat = async (
             active_seconds: activeSeconds,
         }),
     });
+
+    // Map snake_case to camelCase Domain Type
+    return {
+        sessionId: response.session_id,
+        completionScore: response.completion_score,
+        isComplete: response.is_complete,
+        pointsAwarded: response.points_awarded,
+        courseCompleted: response.course_completed,
+        courseId: response.course_id,
+        motivationalQuote: response.motivational_quote,
+        breakReminder: response.break_reminder,
+        nextIntervalIn: response.next_interval_in,
+    };
 };
 
 export const endViewerSession = async (sessionId: string): Promise<void> => {
@@ -52,14 +65,25 @@ export const startPlatformSession = async (): Promise<{
     sessionId: string;
     activeSeconds: number;
 }> => {
-    return await api<{ sessionId: string; activeSeconds: number }>("/me/session/start", { method: "POST" });
+    const response = await api<any>("/me/session/start", { method: "POST" });
+    return {
+        sessionId: response.session_id,
+        activeSeconds: response.active_seconds,
+    };
 };
 
 export const sendPlatformHeartbeat = async (sessionId: string): Promise<PlatformHeartbeatResponse> => {
-    return await api<PlatformHeartbeatResponse>("/me/session/heartbeat", {
+    const response = await api<any>("/me/session/heartbeat", {
         method: "POST",
         body: JSON.stringify({ session_id: sessionId }),
     });
+
+    return {
+        activeSeconds: response.active_seconds,
+        pointsAwarded: response.points_awarded,
+        breakReminder: response.break_reminder,
+        nextIntervalIn: response.next_interval_in,
+    };
 };
 
 export const endPlatformSession = async (sessionId: string): Promise<void> => {

@@ -16,11 +16,12 @@ import type { LearningPath, ActivitySummary } from "@/types/domain";
  */
 export const getLearningPath = async (): Promise<LearningPath> => {
     const response = await api<any>("/me/learning-path");
-    // The API client now auto-converts snake_case to camelCase
+    
+    // Map backend snake_case to frontend camelCase
     return {
         major: response.major,
         years: response.years.map((year: any) => ({
-            yearId: year.yearId,
+            yearId: year.year_id,
             label: year.label,
             semesters: year.semesters.map((sem: any) => ({
                 semester: sem.semester,
@@ -33,10 +34,10 @@ export const getLearningPath = async (): Promise<LearningPath> => {
                     semesterId: sem.label, // Fallback
                     term: sem.label,
                     color: "from-violet-500/20 to-fuchsia-500/20", // Default gradient
-                    hasFiles: course.hasFiles,
+                    hasFiles: course.has_files,
                     status: course.status,
-                    filesCompleted: course.filesCompleted,
-                    totalFiles: course.totalFiles,
+                    filesCompleted: course.files_completed,
+                    totalFiles: course.total_files,
                 })),
             })),
         })),
@@ -48,7 +49,25 @@ export const getLearningPath = async (): Promise<LearningPath> => {
  * @backend GET /api/v1/me/activity/summary
  */
 export const getActivitySummary = async (): Promise<ActivitySummary> => {
-    return await api<ActivitySummary>("/me/activity/summary");
+    const response = await api<any>("/me/activity/summary");
+    
+    return {
+        totalPoints: response.total_points,
+        badgeTier: response.badge_tier,
+        recentTransactions: response.recent_transactions.map((t: any) => ({
+            id: t.id,
+            action: t.action,
+            points: t.points,
+            createdAt: t.created_at,
+        })),
+        courseActivity: response.course_activity.map((c: any) => ({
+            courseId: c.course_id,
+            courseName: c.course_name,
+            status: c.status,
+            filesCompleted: c.files_completed,
+            totalFiles: c.total_files,
+        })),
+    };
 };
 
 /**
@@ -56,5 +75,6 @@ export const getActivitySummary = async (): Promise<ActivitySummary> => {
  * @backend GET /api/v1/files/:file_id/share
  */
 export const getShareUrl = async (fileId: string): Promise<{ shareUrl: string }> => {
-    return await api<{ shareUrl: string }>(`/files/${fileId}/share`);
+    const response = await api<any>(`/files/${fileId}/share`);
+    return { shareUrl: response.share_url };
 };
