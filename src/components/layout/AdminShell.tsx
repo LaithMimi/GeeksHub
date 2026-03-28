@@ -32,7 +32,7 @@ function AdminSidebarFooter() {
         <SidebarFooter>
             <div className="p-2">
                 <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center text-white text-sm font-medium">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
                         {initials}
                     </div>
                     <div className="flex-1 truncate text-sm text-start">
@@ -60,7 +60,7 @@ function AdminSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link to="/admin">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-red-600">
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-rose-600">
                                     <Shield className="h-4 w-4 text-white" />
                                 </div>
                                 <div className="grid flex-1 text-start text-sm leading-tight">
@@ -163,6 +163,9 @@ export default function AdminShell() {
 
     return (
         <SidebarProvider>
+            <a href="#admin-main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:text-sm">
+                Skip to main content
+            </a>
             <AdminSidebar />
             <SidebarInset>
                 <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
@@ -180,7 +183,7 @@ export default function AdminShell() {
                         </Link>
                     </div>
                 </header>
-                <main className="flex-1 overflow-auto">
+                <main id="admin-main-content" className="flex-1 overflow-auto">
                     <div className="container max-w-7xl mx-auto py-6 px-4">
                         <Outlet />
                     </div>

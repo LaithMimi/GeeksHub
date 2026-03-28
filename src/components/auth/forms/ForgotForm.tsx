@@ -33,7 +33,7 @@ export default function ForgotForm({ onBack }: ForgotFormProps) {
     if (success) {
         return (
             <div className="flex flex-col items-center justify-center space-y-4 py-8 text-center animate-in fade-in zoom-in-95 duration-300">
-                <div className="rounded-full bg-green-100 p-3 text-green-600 dark:bg-green-900/20">
+                <div className="rounded-full bg-emerald-500/15 p-3 text-emerald-400">
                     <CheckCircle2 className="h-8 w-8" />
                 </div>
                 <div className="space-y-2">

@@ -127,9 +127,9 @@ export default function ModerationQueue() {
             cell: ({ row }) => {
                 const status = row.getValue("status") as FileStatus;
                 const variants = {
-                    pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-                    approved: "bg-green-50 text-green-700 border-green-200",
-                    rejected: "bg-red-50 text-red-700 border-red-200",
+                    pending: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+                    approved: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+                    rejected: "bg-red-500/15 text-red-400 border-red-500/30",
                 };
                 return (
                     <Badge variant="outline" className={variants[status]}>

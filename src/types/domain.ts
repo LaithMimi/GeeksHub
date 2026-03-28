@@ -190,6 +190,7 @@ export interface FileRequest {
     userId: string; // FK to users table
     uploaderName?: string; // Denormalized for admin display
     courseId: string;
+    courseName?: string; // Denormalized course name from backend
     lecturerId: string; // ID or custom name
     lecturerName: string; // Denormalized for display
     type: MaterialType;
@@ -202,10 +203,12 @@ export interface FileRequest {
     reviewedById?: string; // Admin user ID
     rejectionReason?: RejectReason;
     rejectionNote?: string; // Free-text note for rejection
+    adminNote?: string; // Admin note (e.g., rejection explanation)
     points?: number; // Legacy: Points awarded if approved
     pointsAwarded?: number; // Actual points awarded (distinct from proposed)
     fileId?: string; // ID of the created file (populated when request is approved)
-    file_url?: string; // Temporary GCS path for admin preview
+    materialId?: string; // ID of the approved Material row
+    fileUrl?: string; // Temporary GCS path for admin preview
 }
 
 // ============================================================================

@@ -24,7 +24,7 @@ export default function AdminHome() {
                 <Card className="glass-card bg-transparent border-white/[0.06] text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-                        <ClipboardList className="h-4 w-4 text-white/60" />
+                        <ClipboardList className="h-4 w-4 text-amber-400" />
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (

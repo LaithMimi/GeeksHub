@@ -27,7 +27,7 @@ export default function UserUploads() {
         switch (normalizeStatus(status)) {
             case "approved": return <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />;
             case "rejected": return <XCircle className="h-3.5 w-3.5 text-red-400" />;
-            default: return <Clock className="h-3.5 w-3.5 text-yellow-400" />;
+            default: return <Clock className="h-3.5 w-3.5 text-amber-400" />;
         }
     };
 
@@ -35,7 +35,7 @@ export default function UserUploads() {
         switch (normalizeStatus(status)) {
             case "approved": return "bg-emerald-500/15 text-emerald-400 border-emerald-500/20";
             case "rejected": return "bg-red-500/15 text-red-400 border-red-500/20";
-            default: return "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
+            default: return "bg-amber-500/15 text-amber-400 border-amber-500/20";
         }
     };
 
@@ -83,15 +83,15 @@ export default function UserUploads() {
             const q = searchQuery.toLowerCase();
             return (
                 r.title.toLowerCase().includes(q) ||
-                (r.course_name ?? r.course_id ?? "").toLowerCase().includes(q) ||
-                (r.lecturer_name ?? "").toLowerCase().includes(q)
+                (r.courseName ?? r.courseId ?? "").toLowerCase().includes(q) ||
+                (r.lecturerName ?? "").toLowerCase().includes(q)
             );
         })
         : userRequests;
 
     // Backend field name is points_awarded (snake_case) — standardized in the backend audit
     const totalPoints = userRequests.reduce(
-        (acc, curr) => acc + (curr.points_awarded ?? 0),
+        (acc, curr) => acc + (curr.pointsAwarded ?? 0),
         0
     );
 
@@ -118,7 +118,8 @@ export default function UserUploads() {
                     </div>
                     <button
                         onClick={() => setIsRequestOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-white text-[13px] font-display font-semibold glow-purple-soft hover:opacity-90 transition-opacity"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[13px] font-display font-semibold transition-all"
+                        aria-label="Submit a new file"
                     >
                         <Plus className="h-4 w-4" />
                         Submit New File
@@ -141,14 +142,14 @@ export default function UserUploads() {
 
                 {/* Status breakdown — normalizeStatus guards against uppercase from backend */}
                 {[
-                    { label: "Approved", status: "approved", icon: CheckCircle },
-                    { label: "Pending Review", status: "pending", icon: Clock },
-                    { label: "Rejected", status: "rejected", icon: XCircle },
-                ].map(({ label, status, icon: Icon }) => (
+                    { label: "Approved", status: "approved", icon: CheckCircle, iconColor: "text-emerald-400" },
+                    { label: "Pending Review", status: "pending", icon: Clock, iconColor: "text-amber-400" },
+                    { label: "Rejected", status: "rejected", icon: XCircle, iconColor: "text-red-400" },
+                ].map(({ label, status, icon: Icon, iconColor }) => (
                     <div key={label} className="liquid-glass rounded-2xl p-5">
                         <div className="flex items-center justify-between mb-3">
                             <span className="text-[12px] text-white/45 font-medium">{label}</span>
-                            <Icon className="h-4 w-4 text-white/25" />
+                            <Icon className={`h-4 w-4 ${iconColor}`} />
                         </div>
                         <div className="text-[28px] font-display font-bold text-white">
                             {userRequests.filter((r) => normalizeStatus(r.status) === status).length}
@@ -204,32 +205,32 @@ export default function UserUploads() {
                                                     <span className="capitalize">{status}</span>
                                                 </span>
                                                 {/* Points badge — only shown when approved and points exist */}
-                                                {status === "approved" && file.points_awarded ? (
+                                                {status === "approved" && file.pointsAwarded ? (
                                                     <span className="inline-flex items-center gap-1 text-[11px] text-purple-400 px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/20">
                                                         <Zap className="h-3 w-3" />
-                                                        +{file.points_awarded} pts
+                                                        +{file.pointsAwarded} pts
                                                     </span>
                                                 ) : null}
                                             </div>
 
                                             {/* Subtitle: course name (falls back to ID if backend hasn't enriched yet) + timestamp */}
                                             <p className="text-[12px] text-white/35">
-                                                {file.course_name
-                                                    ? file.course_name
-                                                    : file.course_id
+                                                {file.courseName
+                                                    ? file.courseName
+                                                    : file.courseId
                                                 }
                                                 {" • "}
                                                 {formatDistanceToNow(
-                                                    new Date(file.created_at ?? new Date()),
+                                                    new Date(file.createdAt ?? new Date()),
                                                     { addSuffix: true }
                                                 )}
                                             </p>
 
                                             {/* Rejection reason — backend field is admin_note */}
-                                            {status === "rejected" && file.admin_note && (
+                                            {status === "rejected" && file.adminNote && (
                                                 <div className="flex items-center gap-2 text-[12px] text-red-400 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/15 w-fit mt-1">
                                                     <AlertCircle className="h-3 w-3 shrink-0" />
-                                                    <span>{file.admin_note}</span>
+                                                    <span>{file.adminNote}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -266,11 +267,11 @@ export default function UserUploads() {
                                                     Delete
                                                 </button>
                                             )
-                                        ) : status === "approved" && file.material_id ? (
-                                            // material_id is the UUID of the approved Material row
+                                        ) : status === "approved" && file.materialId ? (
+                                            // materialId is the UUID of the approved Material row
                                             // backend must return this on the enriched FileRequest response
                                             <Link
-                                                to={`/courses/${file.course_id}/files/${file.material_id}`}
+                                                to={`/courses/${file.courseId}/files/${file.materialId}`}
                                                 className="text-[12px] px-3 py-1.5 rounded-lg border border-white/[0.1] text-white/50 hover:text-white/80 hover:bg-white/[0.04] transition-colors"
                                             >
                                                 View

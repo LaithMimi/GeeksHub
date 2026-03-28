@@ -108,7 +108,8 @@ export default function Courses() {
                 </div>
                 <button
                     onClick={() => setIsRequestOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-white text-[13px] font-display font-semibold glow-purple-soft hover:opacity-90 transition-opacity"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[13px] font-display font-semibold hover:opacity-90 transition-all"
+                    aria-label="Request a new file upload"
                 >
                     <Plus className="h-4 w-4" />
                     Request File Add
@@ -173,7 +174,7 @@ export default function Courses() {
                                             togglePin(course.id);
                                         }}
                                         className="p-1 rounded-md text-amber-400 hover:text-amber-300 hover:bg-amber-400/10 transition-colors shrink-0 ml-2"
-                                        title="Unpin course"
+                                        aria-label={`Unpin course ${course.code}`}
                                     >
                                         <Star className="h-3.5 w-3.5 fill-current" />
                                     </button>

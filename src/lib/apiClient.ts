@@ -10,6 +10,7 @@
  *   - Token injection from localStorage (until HTTP-only cookies are ready)
  *   - Typed error handling via ApiError class
  *   - credentials: "include" for cookie-based auth (future)
+ *   - Automatic snake_case → camelCase key conversion on responses
  *
  * @backend When HTTP-only cookies are implemented, remove the
  *          Authorization header logic — the browser will send cookies
@@ -18,6 +19,35 @@
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+
+// ── snake_case → camelCase transformer ──────────────────────────────────────
+
+/**
+ * Convert a single snake_case string to camelCase.
+ * Leaves strings that are already camelCase or PascalCase unchanged.
+ */
+function toCamelCase(str: string): string {
+    return str.replace(/_([a-z0-9])/g, (_, char) => char.toUpperCase());
+}
+
+/**
+ * Recursively converts all object keys from snake_case to camelCase.
+ * Handles nested objects, arrays, and preserves primitives.
+ */
+function snakeToCamel<T>(data: unknown): T {
+    if (data === null || data === undefined) return data as T;
+    if (Array.isArray(data)) return data.map((item) => snakeToCamel(item)) as T;
+    if (typeof data === "object" && !(data instanceof Date)) {
+        const result: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+            result[toCamelCase(key)] = snakeToCamel(value);
+        }
+        return result as T;
+    }
+    return data as T;
+}
+
+// ── API Error ───────────────────────────────────────────────────────────────
 
 /**
  * Typed API error with status code, message, and raw response data.
@@ -34,8 +64,10 @@ export class ApiError extends Error {
     }
 }
 
+// ── Fetch wrapper ───────────────────────────────────────────────────────────
+
 /**
- * Generic fetch wrapper.
+ * Generic fetch wrapper with automatic snake_case → camelCase conversion.
  *
  * @example
  * ```ts
@@ -83,5 +115,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
         return undefined as unknown as T;
     }
 
-    return res.json() as Promise<T>;
+    const json = await res.json();
+    return snakeToCamel<T>(json);
 }
+

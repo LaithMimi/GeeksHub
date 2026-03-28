@@ -76,7 +76,7 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
                 <button
                     type="button"
                     onClick={onForgotPassword}
-                    className="text-[#333] hover:underline bg-transparent border-none cursor-pointer"
+                    className="text-muted-foreground hover:text-foreground hover:underline bg-transparent border-none cursor-pointer transition-colors"
                 >
                     Forgot your password?
                 </button>

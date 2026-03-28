@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
     ChevronLeft, BookOpen, 
@@ -29,22 +29,17 @@ function xpPercent(earned: number, total: number) {
 /** Animated XP bar */
 function XpBar({ earned, total }: { earned: number; total: number }) {
     const pct = xpPercent(earned, total);
-    const barRef = useRef<HTMLDivElement>(null);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        const el = barRef.current;
-        if (!el) return;
-        el.style.width = "0%";
-        requestAnimationFrame(() => {
-            setTimeout(() => { el.style.width = `${pct}%`; }, 80);
-        });
-    }, [pct]);
+        const raf = requestAnimationFrame(() => setMounted(true));
+        return () => cancelAnimationFrame(raf);
+    }, []);
 
     return (
         <div className="w-full h-2.5 rounded-full bg-white/8 overflow-hidden">
             <div
-                ref={barRef}
-                style={{ transition: "width 1.2s cubic-bezier(0.4,0,0.2,1)" }}
+                style={{ width: mounted ? `${pct}%` : '0%', transition: 'width 1.2s cubic-bezier(0.4,0,0.2,1)' }}
                 className={`h-full rounded-full ${pct === 100
                     ? "bg-gradient-to-r from-emerald-400 to-teal-400"
                     : "bg-gradient-to-r from-violet-500 to-fuchsia-400"
@@ -89,7 +84,7 @@ function RoadmapNode({
             <Link
                 to={`/courses/${course.id}/materials`}
                 className={`
-                    relative group w-[300px] rounded-2xl border transition-all duration-300 cursor-pointer block
+                    relative group w-full max-w-[300px] rounded-2xl border transition-all duration-300 cursor-pointer block
                     ${alignClass}
                     ${statusCfg.ring} ${statusCfg.bg} ${statusCfg.opacity}
                     ${isLocked ? "cursor-not-allowed pointer-events-none" : "hover:scale-[1.02] hover:brightness-110"}
@@ -99,7 +94,7 @@ function RoadmapNode({
             >
                 {/* Pulse ring for current */}
                 {isCurrent && (
-                    <span className="absolute -inset-1 rounded-2xl ring-2 ring-violet-400/30 animate-ping pointer-events-none" style={{ animationDuration: "2.4s" }} />
+                    <span className="absolute -inset-1 rounded-2xl ring-2 ring-violet-400/30 animate-pulse pointer-events-none" style={{ animationDuration: "2.4s" }} />
                 )}
 
                 <div className="p-4 flex items-center gap-3.5">

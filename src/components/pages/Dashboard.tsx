@@ -19,8 +19,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useRecentFiles } from "@/queries/useFiles";
-import { useReputation } from "@/queries/useReputation";
 import { useMyRequests } from "@/queries/useRequests";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
 import { useTasks, type Task } from "@/hooks/useTasks";
@@ -98,8 +98,20 @@ function LearningPlan({ tasks, onAddTask }: {
 
     // Auto-update every 60 seconds so the "now" line moves
     useEffect(() => {
-        const timer = setInterval(() => setNow(new Date()), 60_000);
-        return () => clearInterval(timer);
+        let timer = setInterval(() => setNow(new Date()), 60_000);
+        const handleVisibility = () => {
+            if (document.hidden) {
+                clearInterval(timer);
+            } else {
+                setNow(new Date());
+                timer = setInterval(() => setNow(new Date()), 60_000);
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => {
+            clearInterval(timer);
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
     }, []);
 
     const currentWeekStart = startOfWeek(
@@ -216,21 +228,23 @@ function LearningPlan({ tasks, onAddTask }: {
                     <div className="flex items-center gap-1">
                         <button
                             onClick={() => setWeekOffset(p => p - 1)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                            className="w-11 h-11 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                            aria-label="Previous week"
                         >
-                            <ChevronLeft className="h-3.5 w-3.5" />
+                            <ChevronLeft className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
                         </button>
                         <button
                             onClick={() => setWeekOffset(0)}
-                            className="text-[12px] text-white/40 hover:text-white/70 px-2 py-1 rounded-md hover:bg-white/[0.06] transition-all"
+                            className="text-[12px] text-white/40 hover:text-white/70 px-4 py-2 sm:px-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-md hover:bg-white/[0.06] transition-all"
                         >
                             Today
                         </button>
                         <button
                             onClick={() => setWeekOffset(p => p + 1)}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                            className="w-11 h-11 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                            aria-label="Next week"
                         >
-                            <ChevronRight className="h-3.5 w-3.5" />
+                            <ChevronRight className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
                         </button>
                     </div>
                     {/* View Toggle */}
@@ -260,7 +274,7 @@ function LearningPlan({ tasks, onAddTask }: {
                     <div className="grid gap-0" style={{ gridTemplateColumns: `60px repeat(${hours.length}, 1fr)` }}>
                         <div /> {/* Spacer for day label column */}
                         {hours.map(h => (
-                            <div key={h} className="text-[9px] text-white/30 text-center pb-3 font-medium">
+                            <div key={h} className="text-[11px] text-white/30 text-center pb-3 font-medium">
                                 {h === 0 ? "12:00 am" : h < 12 ? `${h}:00 am` : h === 12 ? "12:00 pm" : `${h - 12}:00 pm`}
                             </div>
                         ))}
@@ -434,15 +448,17 @@ function MiniCalendar({ taskDates, selectedDate, onSelectDate }: {
                 <div className="flex items-center gap-1">
                     <button
                         onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                        className="w-11 h-11 lg:w-7 lg:h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                        aria-label="Previous month"
                     >
-                        <ChevronLeft className="h-3.5 w-3.5" />
+                        <ChevronLeft className="h-5 w-5 lg:h-3.5 lg:w-3.5" />
                     </button>
                     <button
                         onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}
-                        className="w-7 h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                        className="w-11 h-11 lg:w-7 lg:h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                        aria-label="Next month"
                     >
-                        <ChevronRight className="h-3.5 w-3.5" />
+                        <ChevronRight className="h-5 w-5 lg:h-3.5 lg:w-3.5" />
                     </button>
                 </div>
             </div>
@@ -505,108 +521,106 @@ function AddTaskModal({ onClose, onAdd }: {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-            <form
-                onSubmit={handleSubmit}
-                onClick={e => e.stopPropagation()}
-                className="relative w-full max-w-md liquid-glass-heavy rounded-2xl p-6 space-y-5 border border-white/[0.1] shadow-2xl"
-            >
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[18px] font-display font-bold text-white">New Task</h3>
-                    <button type="button" onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
-                        <X className="h-4 w-4" />
+        <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="w-full max-w-md liquid-glass-heavy rounded-2xl p-6 border border-white/[0.1] shadow-2xl text-white sm:max-w-md hide-dialog-close">
+                <DialogHeader className="flex flex-row items-center justify-between">
+                    <DialogTitle className="text-[18px] font-display font-bold text-white">New Task</DialogTitle>
+                    <DialogDescription className="sr-only">Add a new task to your schedule</DialogDescription>
+                    <button type="button" onClick={onClose} className="w-11 h-11 lg:w-8 lg:h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all" aria-label="Close add task modal">
+                        <X className="h-5 w-5 lg:h-4 lg:w-4" aria-hidden="true" />
                     </button>
-                </div>
+                </DialogHeader>
 
-                {/* Title */}
-                <div className="space-y-2">
-                    <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Task Title</label>
-                    <input
-                        autoFocus
-                        value={title}
-                        onChange={e => setTitle(e.target.value)}
-                        placeholder="e.g. Submit homework chapter 5"
-                        className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors"
-                    />
-                </div>
-
-                {/* Date */}
-                <div className="space-y-2">
-                    <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Due Date</label>
-                    <input
-                        type="date"
-                        value={date}
-                        onChange={e => setDate(e.target.value)}
-                        className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark]"
-                    />
-                </div>
-
-                {/* Time row */}
-                <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleSubmit} className="space-y-5 mt-2">
+                    {/* Title */}
                     <div className="space-y-2">
-                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Start Time</label>
-                        <select
-                            value={startHour}
-                            onChange={e => setStartHour(Number(e.target.value))}
-                            className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark] bg-transparent"
-                        >
-                            {Array.from({ length: 18 }, (_, i) => i + 6).map(h => (
-                                <option key={h} value={h} className="bg-gray-900 text-white">
-                                    {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
-                                </option>
-                            ))}
-                        </select>
+                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Task Title</label>
+                        <input
+                            autoFocus
+                            value={title}
+                            onChange={e => setTitle(e.target.value)}
+                            placeholder="e.g. Submit homework chapter 5"
+                            className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors"
+                        />
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Duration</label>
-                        <select
-                            value={duration}
-                            onChange={e => setDuration(Number(e.target.value))}
-                            className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark] bg-transparent"
-                        >
-                            {[0.5, 1, 1.5, 2, 2.5, 3, 4].map(d => (
-                                <option key={d} value={d} className="bg-gray-900 text-white">
-                                    {d === 0.5 ? "30 min" : d === 1 ? "1 hour" : `${d} hours`}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
 
-                {/* Priority */}
-                <div className="space-y-2">
-                    <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Priority</label>
-                    <div className="flex gap-2">
-                        {(["normal", "high", "urgent"] as const).map(p => (
-                            <button
-                                key={p}
-                                type="button"
-                                onClick={() => setPriority(p)}
-                                className={`flex-1 h-10 rounded-xl text-[13px] font-medium capitalize transition-all border ${priority === p
-                                    ? p === "urgent"
-                                        ? "bg-red-500/20 text-red-400 border-red-500/30"
-                                        : p === "high"
-                                            ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                                            : "bg-purple-500/20 text-purple-400 border-purple-500/30"
-                                    : "border-white/[0.08] text-white/40 hover:bg-white/[0.04]"
-                                    }`}
+                    {/* Date */}
+                    <div className="space-y-2">
+                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Due Date</label>
+                        <input
+                            type="date"
+                            value={date}
+                            onChange={e => setDate(e.target.value)}
+                            className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark]"
+                        />
+                    </div>
+
+                    {/* Time row */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Start Time</label>
+                            <select
+                                value={startHour}
+                                onChange={e => setStartHour(Number(e.target.value))}
+                                className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark] bg-transparent"
                             >
-                                {p}
-                            </button>
-                        ))}
+                                {Array.from({ length: 18 }, (_, i) => i + 6).map(h => (
+                                    <option key={h} value={h} className="bg-black text-white [.light_&]:bg-white [.light_&]:text-black">
+                                        {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Duration</label>
+                            <select
+                                value={duration}
+                                onChange={e => setDuration(Number(e.target.value))}
+                                className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark] bg-transparent"
+                            >
+                                {[0.5, 1, 1.5, 2, 2.5, 3, 4].map(d => (
+                                    <option key={d} value={d} className="bg-black text-white [.light_&]:bg-white [.light_&]:text-black">
+                                        {d === 0.5 ? "30 min" : d === 1 ? "1 hour" : `${d} hours`}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-                </div>
 
-                <button
-                    type="submit"
-                    disabled={!title.trim()}
-                    className="w-full h-11 rounded-xl gradient-bg text-white text-[14px] font-display font-semibold glow-purple-soft hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                    Add Task
-                </button>
-            </form>
-        </div>
+                    {/* Priority */}
+                    <div className="space-y-2">
+                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Priority</label>
+                        <div className="flex gap-2">
+                            {(["normal", "high", "urgent"] as const).map(p => (
+                                <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setPriority(p)}
+                                    className={`flex-1 h-10 rounded-xl text-[13px] font-medium capitalize transition-all border ${priority === p
+                                        ? p === "urgent"
+                                            ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                            : p === "high"
+                                                ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                                                : "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                                        : "border-white/[0.08] text-white/40 hover:bg-white/[0.04]"
+                                        }`}
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={!title.trim()}
+                        className="w-full h-11 rounded-xl gradient-bg text-white text-[14px] font-display font-semibold glow-purple-soft hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                        Add Task
+                    </button>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -644,7 +658,6 @@ export default function Dashboard() {
     const { user } = useAuth();
     const userId = user!.id;
     const { data: recentFiles, isLoading: isLoadingRecent, isError: isErrorRecent } = useRecentFiles();
-    const { data: reputation, isLoading: isLoadingRep } = useReputation(userId);
     const { data: _requests } = useMyRequests(userId);
     const { data: allCourses } = useCourses({}); // Retrieve full course catalog for metadata mapping
     const { data: activitySummary, isLoading: isLoadingSummary } = useActivitySummary();
@@ -708,45 +721,53 @@ export default function Dashboard() {
     }
 
     // Dynamic metrics - using live data where available
-    const uniqueCourseIds = new Set(
-        (recentFiles ?? []).map(f => f.courseId)
-    );
 
     const completedTasks = tasks.filter(t => t.completed).length;
     const totalTasks = tasks.length;
     const taskCompletionValue = totalTasks > 0
         ? `${Math.round((completedTasks / totalTasks) * 100)}%`
-        : "—";
+        : "0%";
 
     const metrics = [
         {
             label: "Study Hours",
-            value: "—", // Backend endpoint needed: GET /api/me/study-hours
+            value: "0h", // Backend endpoint needed: GET /api/me/study-hours
             change: "",
             positive: true,
+            neutral: false,
             hero: true,
-            icon: Clock
+            icon: Clock,
+            iconColor: "text-pink-400"
         },
         {
             label: "Courses Active",
-            value: isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : (activitySummary ? activitySummary.courseActivity.filter(c => c.status === "engaged").length.toString() : "—"),
+            value: isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : (activitySummary ? activitySummary.courseActivity.filter(c => c.status === "engaged").length.toString() : "0"),
             change: "",
             positive: true,
-            icon: BookOpen
+            neutral: false,
+            hero: false,
+            icon: BookOpen,
+            iconColor: "text-blue-400"
         },
         {
             label: "Tasks Done",
             value: taskCompletionValue, // Needs backend COURSE PROGRESS endpoint
-            change: totalTasks > 0 ? `${completedTasks}/${totalTasks}` : "",
-            positive: true,
-            icon: TrendingUp
+            change: totalTasks > 0 ? `${completedTasks}/${totalTasks}` : "0/0",
+            positive: totalTasks > 0 && completedTasks === totalTasks,
+            neutral: totalTasks === 0 || completedTasks < totalTasks,
+            hero: false,
+            icon: TrendingUp,
+            iconColor: "text-purple-400"
         },
         {
             label: "XP Earned",
-            value: isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : (activitySummary ? `${activitySummary.totalPoints}` : "—"),
+            value: isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/[0.06]" /> : (activitySummary ? `${activitySummary.totalPoints}` : "0"),
             change: "",
             positive: true,
-            icon: Zap
+            neutral: false,
+            hero: false,
+            icon: Zap,
+            iconColor: "text-amber-400"
         },
     ];
 
@@ -826,10 +847,11 @@ export default function Dashboard() {
                     >
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
-                                <metric.icon className="h-4 w-4 text-purple-400/60" />
+                                <metric.icon className={`h-4 w-4 ${metric.iconColor}`} />
                                 <span className="text-[12px] text-white/45 font-medium">{metric.label}</span>
                             </div>
-                            <span className={`text-[12px] font-display font-semibold ${metric.positive ? "text-emerald-400" : "text-red-400"
+                            <span className={`text-[12px] font-display font-semibold ${
+                                metric.neutral ? "text-white/40" : metric.positive ? "text-emerald-400" : "text-red-400"
                                 }`}>
                                 {metric.change}
                             </span>
@@ -842,7 +864,7 @@ export default function Dashboard() {
             </div>
 
             {/* ── Main Content — Two Columns ── */}
-            <div className="flex gap-6 min-h-0">
+            <div className="flex flex-col lg:flex-row gap-6 min-h-0">
                 {/* Left Column */}
                 <div className="flex-1 space-y-6 min-w-0">
                     {/* ── Learning Plan Schedule ── */}
@@ -886,7 +908,7 @@ export default function Dashboard() {
                                         className={`glass-card overflow-hidden group cursor-pointer animate-fade-in-up opacity-0 stagger-${i + 1}`}
                                     >
                                         <div className="h-[120px] bg-white/[0.03] flex items-center justify-center border-b border-white/[0.06]">
-                                            <BookOpen className="h-8 w-8 text-white/15 group-hover:text-white/25 transition-colors" />
+                                            <BookOpen className="h-8 w-8 text-blue-400/50 group-hover:text-blue-400 transition-colors" />
                                         </div>
                                         <div className="p-5 space-y-3">
                                             <h3 className="text-[15px] font-display font-semibold text-white leading-tight group-hover:text-purple-300 transition-colors">
@@ -937,7 +959,7 @@ export default function Dashboard() {
                                             <Link key={file.id} to={`/courses/${file.courseId}/files/${file.id}`}>
                                                 <div className="glass-card p-4 flex items-center gap-4 group">
                                                     <div className="w-10 h-10 rounded-xl bg-white/[0.06] flex items-center justify-center shrink-0">
-                                                        <FileText className="h-4.5 w-4.5 text-white/40 group-hover:text-purple-400 transition-colors" />
+                                                        <FileText className="h-4.5 w-4.5 text-amber-400/60 group-hover:text-amber-400 transition-colors" />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-[14px] font-medium text-white truncate group-hover:text-purple-300 transition-colors">
@@ -955,7 +977,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* ── Right Column: Calendar + Tasks + Activity + Reputation ── */}
-                <div className="w-[340px] shrink-0 space-y-5 hidden lg:block">
+                <div className="w-full lg:w-[340px] shrink-0 space-y-5">
                     {/* Mini Calendar */}
                     <MiniCalendar
                         taskDates={taskDates}
@@ -990,10 +1012,10 @@ export default function Dashboard() {
                                 )}
                                 <button
                                     onClick={() => setShowAddTask(true)}
-                                    className="w-7 h-7 rounded-lg flex items-center justify-center text-purple-400 hover:bg-purple-500/15 transition-all"
+                                    className="min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-purple-400 hover:bg-purple-500/15 transition-all"
                                     title="Add task"
                                 >
-                                    <Plus className="h-4 w-4" />
+                                    <Plus className="h-5 w-5" />
                                 </button>
                             </div>
                         </div>
@@ -1052,7 +1074,8 @@ export default function Dashboard() {
                                                 )}
                                                 <button
                                                     onClick={() => deleteTask(task.id)}
-                                                    className="w-6 h-6 rounded-md flex items-center justify-center text-white/0 group-hover:text-white/30 hover:!text-red-400 hover:bg-red-500/10 transition-all"
+                                                    className="min-w-[44px] min-h-[44px] rounded-md flex items-center justify-center text-white/0 group-hover:text-white/30 hover:!text-red-400 hover:bg-red-500/10 transition-all"
+                                                    aria-label={`Delete task: ${task.title}`}
                                                 >
                                                     <Trash2 className="h-3 w-3" />
                                                 </button>
@@ -1090,18 +1113,21 @@ export default function Dashboard() {
                                         </div>
                                     ))
                                 ) : (
-                                    weeklyActivity.map((day) => (
-                                        <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
-                                            <div
-                                                className={`w-full rounded-md transition-all ${day.value > 50
-                                                    ? "bg-purple-500/80 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
-                                                    : "bg-white/[0.08]"
-                                                    }`}
-                                                style={{ height: `${day.value}%` }}
-                                            />
-                                            <span className="text-[11px] text-white/35">{day.day}</span>
-                                        </div>
-                                    ))
+                                    weeklyActivity.map((day) => {
+                                        const isToday = day.day === format(new Date(), 'EEE');
+                                        return (
+                                            <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
+                                                <div
+                                                    className={`w-full rounded-md transition-all ${isToday
+                                                        ? "bg-purple-500/80 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
+                                                        : "bg-white/[0.08]"
+                                                        }`}
+                                                    style={{ height: `${Math.max(day.value, 4)}%` }}
+                                                />
+                                                <span className={`text-[11px] ${isToday ? "text-purple-400 font-semibold" : "text-white/35"}`}>{day.day}</span>
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
                         )}

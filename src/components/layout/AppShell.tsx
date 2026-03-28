@@ -34,8 +34,9 @@ import { useAuth } from "@/context/AuthContext";
 import {
     Home, History, Settings, BookOpen, Upload,
     Map, Bell, Search, GraduationCap, Sparkles,
-    PanelLeftClose, PanelLeftOpen, Shield,
+    PanelLeftClose, PanelLeftOpen, Shield, Menu,
 } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
     Breadcrumb, BreadcrumbItem, BreadcrumbLink,
@@ -142,8 +143,8 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
     const isActive = (path: string) =>
         path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
-    const initials = user?.name
-        ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    const initials = user?.displayName
+        ? user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
         : "?";
 
     const isAdmin = user?.role === "ADMIN";
@@ -182,10 +183,10 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                         {!collapsed && (
                             <button
                                 onClick={onToggle}
-                                className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                                className="w-11 h-11 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all -mr-2"
                                 aria-label="Close sidebar"
                             >
-                                <PanelLeftClose className="h-4 w-4" />
+                                <PanelLeftClose className="h-5 w-5" />
                             </button>
                         )}
                     </div>
@@ -194,10 +195,10 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                     {collapsed && (
                         <button
                             onClick={onToggle}
-                            className="w-8 h-8 mx-auto rounded-lg flex items-center justify-center text-white/20 hover:text-white/60 hover:bg-white/[0.06] transition-all mb-4"
+                            className="w-11 h-11 mx-auto rounded-lg flex items-center justify-center text-white/20 hover:text-white/60 hover:bg-white/[0.06] transition-all mb-4"
                             aria-label="Open sidebar"
                         >
-                            <PanelLeftOpen className="h-4 w-4" />
+                            <PanelLeftOpen className="h-5 w-5" />
                         </button>
                     )}
 
@@ -215,7 +216,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                         flex items-center rounded-xl text-[14px] transition-all group relative
                                         ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
                                         ${active
-                                            ? "text-white bg-white/[0.1] border border-white/[0.1]"
+                                            ? "text-purple-300 bg-purple-500/[0.08] border border-purple-500/[0.12]"
                                             : "text-white/45 hover:text-white/75 hover:bg-white/[0.04]"
                                         }
                                     `}
@@ -223,7 +224,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                     {active && (
                                         <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/10 to-transparent pointer-events-none" />
                                     )}
-                                    <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-white" : ""}`} />
+                                    <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-purple-300" : ""}`} />
                                     {!collapsed && (
                                         <span className={`font-medium ${active ? "font-semibold" : ""}`}>
                                             {item.label}
@@ -252,13 +253,13 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                         flex items-center rounded-xl text-[14px] transition-all group relative mt-1
                                         ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
                                         ${isActive("/admin")
-                                            ? "text-white bg-white/[0.1] border border-white/[0.1]"
+                                            ? "text-rose-300 bg-rose-500/[0.08] border border-rose-500/[0.12]"
                                             : "text-white/45 hover:text-white/75 hover:bg-white/[0.04]"
                                         }
                                     `}
                                 >
-                                    <Shield className="h-[18px] w-[18px] shrink-0 text-red-400" />
-                                    {!collapsed && <span className="font-medium text-red-400">Admin</span>}
+                                    <Shield className={`h-[18px] w-[18px] shrink-0 ${isActive("/admin") ? "text-rose-300" : "text-rose-400/80 group-hover:text-rose-400"}`} />
+                                    {!collapsed && <span className={`font-medium ${isActive("/admin") ? "text-rose-300 font-semibold" : "text-rose-400/80 group-hover:text-rose-400"}`}>Admin</span>}
                                 </Link>
                             );
 
@@ -286,7 +287,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                 </div>
                                 <p className="text-[14px] font-display font-semibold text-white leading-tight">Unlock AI Learning</p>
                                 <p className="text-[11px] text-white/40 leading-relaxed">Personalized paths, unlimited files & AI assistant.</p>
-                                <button className="w-full h-8 rounded-lg gradient-bg text-white text-[12px] font-display font-semibold hover:opacity-90 transition-opacity glow-purple-soft">
+                                <button className="w-full h-8 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[12px] font-display font-semibold transition-all">
                                     Activate Pro
                                 </button>
                             </div>
@@ -317,7 +318,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                     {!collapsed && (
                                         <div className="flex-1 min-w-0 text-left">
                                             {/* user.name is the correct field — displayName doesn't exist */}
-                                            <p className="text-[13px] font-medium text-white truncate">{user?.name ?? "Guest"}</p>
+                                            <p className="text-[13px] font-medium text-white truncate">{user?.displayName ?? "Guest"}</p>
                                             <p className="text-[11px] text-white/35 truncate">{user?.email ?? ""}</p>
                                         </div>
                                     )}
@@ -325,7 +326,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56 mb-2" align={collapsed ? "center" : "start"} side="right">
                                 <DropdownMenuLabel>
-                                    <p className="font-medium">{user?.name ?? "Guest"}</p>
+                                    <p className="font-medium">{user?.displayName ?? "Guest"}</p>
                                     <p className="text-xs text-muted-foreground font-normal">{user?.email}</p>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
@@ -401,42 +402,67 @@ export default function AppShell() {
 
     return (
         <div className="flex h-screen overflow-hidden relative">
+            <a 
+                href="#main-content" 
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:font-semibold focus:outline-none focus:ring-2 focus:ring-white"
+            >
+                Skip to main content
+            </a>
             {/* Animated mesh background */}
             <div className="mesh-background">
                 <div className="mesh-orb mesh-orb-1" />
                 <div className="mesh-orb mesh-orb-2" />
             </div>
 
-            {/* Sidebar */}
-            <GlassSidebar collapsed={collapsed} onToggle={handleToggle} />
+            {/* Sidebar - hidden on mobile */}
+            <div className="hidden lg:block relative z-20">
+                <GlassSidebar collapsed={collapsed} onToggle={handleToggle} />
+            </div>
 
             {/* Main area */}
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden w-full relative z-10">
 
                 {/* Glass header */}
-                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 px-8 liquid-glass border-b border-white/[0.06] border-t-0 border-x-0">
+                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 px-4 lg:px-8 liquid-glass border-b border-white/[0.06] border-t-0 border-x-0">
+                    <div className="lg:hidden">
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <button className="w-11 h-11 flex items-center justify-center rounded-lg text-white/50 hover:bg-white/[0.06] hover:text-white transition-all -ml-2" aria-label="Open mobile menu">
+                                    <Menu className="h-5 w-5" />
+                                </button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="w-[260px] p-0 border-r border-white/[0.06] liquid-glass-heavy text-white">
+                                <SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
+                                <GlassSidebar collapsed={false} onToggle={() => {}} />
+                            </SheetContent>
+                        </Sheet>
+                    </div>
                     <Breadcrumbs />
                     <div className="ms-auto flex items-center gap-2">
                         <button
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all text-[13px]"
+                            className="flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all text-[13px] min-h-[44px] sm:min-h-0"
                             onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+                            aria-label="Search"
                         >
-                            <Search className="h-3.5 w-3.5" />
+                            <Search className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
                             <span className="hidden sm:inline">Search</span>
                             <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-white/30">
                                 {isMac ? "⌘K" : "Ctrl+K"}
                             </kbd>
                         </button>
-                        <button className="relative w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
-                            <Bell className="h-4 w-4" />
+                        <button 
+                            className="relative w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                            aria-label="Notifications"
+                        >
+                            <Bell className="h-5 w-5 sm:h-4 sm:w-4" aria-hidden="true" />
                             {/* Notification badge — wire to GET /api/v1/me/notifications/unread-count when ready */}
                         </button>
                     </div>
                 </header>
 
                 {/* Page content */}
-                <main className="flex-1 overflow-auto">
-                    <div className="max-w-[1400px] mx-auto py-8 px-8">
+                <main id="main-content" className="flex-1 overflow-auto" tabIndex={-1}>
+                    <div className="max-w-[1400px] mx-auto py-6 px-4 lg:py-8 lg:px-8">
                         <Outlet />
                     </div>
                 </main>

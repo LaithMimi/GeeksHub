@@ -521,8 +521,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             <button
                                 type="button"
                                 onClick={handleSubmit}
-                                disabled={!canProceed() || isSubmitting}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-white text-[13px] font-semibold glow-purple-soft hover:opacity-90 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 text-white text-[13px] font-semibold hover:bg-purple-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
                                 {isSubmitting
                                     ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Submitting...</>
@@ -533,8 +532,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             <button
                                 type="button"
                                 onClick={() => setStep((s) => s + 1)}
-                                disabled={!canProceed()}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-white text-[13px] font-semibold glow-purple-soft hover:opacity-90 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 text-white text-[13px] font-semibold hover:bg-purple-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
                                 Next
                                 <ChevronRight className="h-3.5 w-3.5" />

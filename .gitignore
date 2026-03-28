@@ -27,6 +27,13 @@ server/gcp_key.json
 .vercel
 venv/
 .env
+.agents/
+.claude
+.impeccable.md
+.windsurf/
+.kiro/
+
+skills-lock.json
 
 # Python bytecode
 __pycache__/
