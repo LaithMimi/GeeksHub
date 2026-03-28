@@ -3,10 +3,12 @@ import { formatDistanceToNow } from "date-fns";
 import { BookOpen, Clock, FileText, Trash2, Loader2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRecentFiles, useClearRecentFiles } from "@/queries/useFiles";
+import { useCourses } from "@/queries/useCatalog";
 
 export default function Recent() {
     const { data: recentFiles, isLoading } = useRecentFiles();
     const { mutate: clearHistory } = useClearRecentFiles();
+    const { data: courses } = useCourses({});
 
     if (isLoading) {
         return (
@@ -76,7 +78,7 @@ export default function Recent() {
                                 </div>
                                 <p className="text-[12px] text-white/35 flex items-center gap-2">
                                     <BookOpen className="h-3 w-3" />
-                                    <span className="uppercase">{file.courseId}</span>
+                                    <span className="truncate">{courses?.find(c => c.id === file.courseId)?.name ?? file.courseId}</span>
                                 </p>
                             </div>
                             <div className="text-[12px] text-white/30 flex items-center gap-1.5 whitespace-nowrap">

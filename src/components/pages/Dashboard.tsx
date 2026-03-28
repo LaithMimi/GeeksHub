@@ -25,7 +25,7 @@ import { useMyRequests } from "@/queries/useRequests";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
 import { useTasks, type Task } from "@/hooks/useTasks";
 import { useAuth } from "@/context/AuthContext";
-import { useCourses } from "@/queries/useCatalog";
+import { useCourses, useMajors } from "@/queries/useCatalog";
 import { useActivitySummary } from "@/queries/useLearningPath";
 import {
     formatDistanceToNow, format, isToday, isTomorrow, isPast,
@@ -656,10 +656,10 @@ const progressGlows: Record<string, string> = {
 // ────────────────────────────────────────────
 export default function Dashboard() {
     const { user } = useAuth();
-    const userId = user!.id;
     const { data: recentFiles, isLoading: isLoadingRecent, isError: isErrorRecent } = useRecentFiles();
-    const { data: _requests } = useMyRequests(userId);
+    const { data: _requests } = useMyRequests();
     const { data: allCourses } = useCourses({}); // Retrieve full course catalog for metadata mapping
+    const { data: allMajors } = useMajors();
     const { data: activitySummary, isLoading: isLoadingSummary } = useActivitySummary();
     usePinnedCourses();
 
@@ -707,10 +707,11 @@ export default function Dashboard() {
                 ? Math.round((approvedForCourse / totalForCourse) * 100)
                 : 0;
 
+            const majorName = allMajors?.find(m => m.id === course?.majorId)?.name ?? course?.majorId;
             recentCourses.push({
                 id: file.courseId,
-                name: course?.name ?? file.courseId.toUpperCase(),
-                meta: course ? `${course.semesterId} • ${course.majorId}` : "Course",
+                name: course?.name ?? file.courseId,
+                meta: course ? `${course.term || `Semester ${course.semester}`} • ${majorName}` : "Course",
                 color: ["purple", "green", "red"][recentCourses.length % 3],
                 lastAccess: file.viewedAt,
                 progress
@@ -811,7 +812,7 @@ export default function Dashboard() {
                                 {lastFile.title}
                             </h2>
                             <p className="text-[12px] text-white/35 mt-1 flex items-center gap-2">
-                                <span className="uppercase">{lastFileCourse?.name ?? lastFile.courseId}</span>
+                                <span className="truncate max-w-[150px]">{lastFileCourse?.name ?? lastFile.courseId}</span>
                                 <span>•</span>
                                 <Clock className="h-3 w-3" />
                                 <span>{formatDistanceToNow(new Date(lastFile.viewedAt), { addSuffix: true })}</span>
