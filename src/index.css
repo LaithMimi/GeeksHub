@@ -43,13 +43,15 @@
   --motion-standard: 250ms;
   --motion-slow: 350ms;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --ease-bounce: cubic-bezier(0.2, 0.8, 0.2, 1); /* Quieter: Replaced bounce with standard */
+  --ease-bounce: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Quieter: Replaced bounce with standard */
 
   /* Cyber Glass Tokens — Deep Teal */
   --glass-bg: rgba(2, 11, 18, 0.4);
   --glass-bg-hover: rgba(6, 20, 28, 0.6);
   --glass-bg-active: rgba(10, 31, 41, 0.8);
-  --glass-border: rgba(76, 201, 216, 0.2); /* Faint cyan edge */
+  --glass-border: rgba(76, 201, 216, 0.2);
+  /* Faint cyan edge */
   --glass-border-strong: rgba(76, 201, 216, 0.4);
   --glass-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px inset rgba(76, 201, 216, 0.05);
   --glass-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px inset rgba(76, 201, 216, 0.1);
@@ -62,7 +64,8 @@
   --glass-inset-highlight-hover: rgba(76, 201, 216, 0.05);
 
   /* Neon Glow Tokens (Sharp, saturated) */
-  --glow-purple: 0 0 16px rgba(76, 201, 216, 0.4), 0 0 32px rgba(76, 201, 216, 0.2); /* Repurposed to cyan */
+  --glow-purple: 0 0 16px rgba(76, 201, 216, 0.4), 0 0 32px rgba(76, 201, 216, 0.2);
+  /* Repurposed to cyan */
   --glow-purple-soft: 0 0 24px rgba(76, 201, 216, 0.15);
   --glow-green: 0 0 16px rgba(16, 185, 129, 0.4), 0 0 32px rgba(16, 185, 129, 0.15);
   --glow-red: 0 0 16px rgba(244, 63, 94, 0.4), 0 0 32px rgba(244, 63, 94, 0.15);
@@ -126,9 +129,10 @@ body {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-color: #020b12; /* Deep teal black */
+  background-color: #020b12;
+  /* Deep teal black */
   /* Extremely subtle pure-CSS cyber grid instead of noisy SVG */
-  background-image: 
+  background-image:
     linear-gradient(rgba(76, 201, 216, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(76, 201, 216, 0.03) 1px, transparent 1px);
   background-size: 30px 30px;
@@ -136,7 +140,7 @@ body {
 
 .light .mesh-background {
   background-color: #f8fafc;
-  background-image: 
+  background-image:
     linear-gradient(rgba(76, 201, 216, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(76, 201, 216, 0.02) 1px, transparent 1px);
   background-size: 30px 30px;
@@ -147,31 +151,34 @@ body {
    ============================================ */
 @layer base {
   :root {
-    --background: 206 80% 4%; /* Deep Teal */
+    --background: 206 80% 4%;
+    /* Deep Teal */
     --foreground: 0 0% 98%;
-    --card: 202 65% 7%; /* Slightly lighter teal */
+    --card: 202 65% 7%;
+    /* Slightly lighter teal */
     --card-foreground: 0 0% 98%;
     --popover: 202 65% 7%;
     --popover-foreground: 0 0% 98%;
-    
-    /* Bright Cyan Accent */
-    --primary: 186 65% 57%;
-    --primary-foreground: 206 80% 4%; /* Inverted text for bright cyan buttons */
-    
+
+    /* PURPLE Accent */
+    --primary: 262 83% 58%;
+    --primary-foreground: 206 80% 4%;
+    /* Inverted text for bright cyan buttons */
+
     /* Steely Dark */
     --secondary: 200 60% 10%;
     --secondary-foreground: 0 0% 95%;
-    
+
     --muted: 200 60% 10%;
     --muted-foreground: 200 20% 65%;
-    
+
     --accent: 186 65% 57%;
     --accent-foreground: 206 80% 4%;
-    
+
     /* Laser Red */
     --destructive: 345 90% 60%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --border: 200 40% 16%;
     --input: 200 40% 16%;
     --ring: 186 65% 57%;
@@ -188,11 +195,16 @@ body {
     --sidebar-ring: 186 65% 57%;
 
     /* Chart Colors */
-    --chart-1: 186 65% 57%; /* Cyan */
-    --chart-2: 265 100% 65%; /* Purple */
-    --chart-3: 195 100% 60%; /* Azure */
-    --chart-4: 45 100% 60%;  /* Volt Gold */
-    --chart-5: 330 100% 65%; /* Hot Pink */
+    --chart-1: 186 65% 57%;
+    /* Cyan */
+    --chart-2: 265 100% 65%;
+    /* Purple */
+    --chart-3: 195 100% 60%;
+    /* Azure */
+    --chart-4: 45 100% 60%;
+    /* Volt Gold */
+    --chart-5: 330 100% 65%;
+    /* Hot Pink */
   }
 
   .light {
@@ -202,22 +214,22 @@ body {
     --card-foreground: 260 40% 8%;
     --popover: 0 0% 100%;
     --popover-foreground: 260 40% 8%;
-    
+
     --primary: 265 85% 55%;
     --primary-foreground: 0 0% 100%;
-    
+
     --secondary: 240 10% 94%;
     --secondary-foreground: 260 40% 20%;
-    
+
     --muted: 240 10% 94%;
     --muted-foreground: 260 15% 45%;
-    
+
     --accent: 265 85% 55%;
     --accent-foreground: 0 0% 100%;
-    
+
     --destructive: 345 80% 55%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --border: 240 10% 90%;
     --input: 240 10% 90%;
     --ring: 265 85% 55%;
@@ -779,6 +791,7 @@ body {
    ACCESSIBILITY: REDUCED MOTION
    ============================================ */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   ::before,
   ::after {
