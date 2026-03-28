@@ -501,6 +501,12 @@ function MiniCalendar({ taskDates, selectedDate, onSelectDate }: {
 }
 
 // ────────────────────────────────────────────
+// Add Task Modal Constants
+// ────────────────────────────────────────────
+const START_HOURS = Array.from({ length: 18 }, (_, i) => i + 6);
+const DURATIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4];
+
+// ────────────────────────────────────────────
 // Add Task Modal
 // ────────────────────────────────────────────
 function AddTaskModal({ onClose, onAdd }: {
@@ -522,64 +528,65 @@ function AddTaskModal({ onClose, onAdd }: {
 
     return (
         <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="w-full max-w-md liquid-glass-heavy rounded-2xl p-6 border border-white/[0.1] shadow-2xl text-white sm:max-w-md hide-dialog-close">
-                <DialogHeader className="flex flex-row items-center justify-between">
-                    <DialogTitle className="text-[18px] font-display font-bold text-white">New Task</DialogTitle>
+            <DialogContent className="w-full max-w-md bg-background/80 backdrop-blur-xl border-white/[0.08] sm:rounded-[24px] p-8 shadow-[0_0_60px_-15px_rgba(76,201,216,0.15)] text-foreground sm:max-w-md">
+                <DialogHeader className="mb-2">
+                    <DialogTitle className="text-xl font-display font-semibold tracking-tight text-foreground">New Task</DialogTitle>
                     <DialogDescription className="sr-only">Add a new task to your schedule</DialogDescription>
-                    <button type="button" onClick={onClose} className="w-11 h-11 lg:w-8 lg:h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all" aria-label="Close add task modal">
-                        <X className="h-5 w-5 lg:h-4 lg:w-4" aria-hidden="true" />
-                    </button>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-5 mt-2">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Title */}
                     <div className="space-y-2">
-                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Task Title</label>
+                        <label htmlFor="task-title" className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">Task Title</label>
                         <input
+                            id="task-title"
                             autoFocus
                             value={title}
                             onChange={e => setTitle(e.target.value)}
-                            placeholder="e.g. Submit homework chapter 5"
-                            className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white placeholder:text-white/25 outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors"
+                            placeholder="Current objective..."
+                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground placeholder:text-muted-foreground/50 border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                         />
                     </div>
 
                     {/* Date */}
                     <div className="space-y-2">
-                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Due Date</label>
+                        <label htmlFor="task-date" className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">Due Date</label>
                         <input
+                            id="task-date"
                             type="date"
                             value={date}
                             onChange={e => setDate(e.target.value)}
-                            className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark]"
+                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all [color-scheme:dark]"
                         />
                     </div>
 
                     {/* Time row */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Start Time</label>
+                            <label htmlFor="task-start" className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">Start Time</label>
                             <select
+                                id="task-start"
                                 value={startHour}
                                 onChange={e => setStartHour(Number(e.target.value))}
-                                className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark] bg-transparent"
+                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all [color-scheme:dark]"
                             >
-                                {Array.from({ length: 18 }, (_, i) => i + 6).map(h => (
-                                    <option key={h} value={h} className="bg-black text-white [.light_&]:bg-white [.light_&]:text-black">
+                                {START_HOURS.map(h => (
+                                    <option key={h} value={h} className="bg-background text-foreground">
                                         {h === 0 ? "12:00 AM" : h < 12 ? `${h}:00 AM` : h === 12 ? "12:00 PM" : `${h - 12}:00 PM`}
                                     </option>
                                 ))}
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Duration</label>
+                            <label htmlFor="task-duration" className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">Duration</label>
                             <select
+                                id="task-duration"
                                 value={duration}
                                 onChange={e => setDuration(Number(e.target.value))}
-                                className="w-full h-11 rounded-xl liquid-glass-subtle px-4 text-[14px] text-white outline-none focus:border-purple-500/40 border border-white/[0.08] transition-colors [color-scheme:dark] bg-transparent"
+                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all [color-scheme:dark]"
                             >
-                                {[0.5, 1, 1.5, 2, 2.5, 3, 4].map(d => (
-                                    <option key={d} value={d} className="bg-black text-white [.light_&]:bg-white [.light_&]:text-black">
+                                {DURATIONS.map(d => (
+                                    <option key={d} value={d} className="bg-background text-foreground">
                                         {d === 0.5 ? "30 min" : d === 1 ? "1 hour" : `${d} hours`}
                                     </option>
                                 ))}
@@ -588,20 +595,22 @@ function AddTaskModal({ onClose, onAdd }: {
                     </div>
 
                     {/* Priority */}
-                    <div className="space-y-2">
-                        <label className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">Priority</label>
+                    <div className="space-y-2" role="radiogroup" aria-labelledby="priority-label">
+                        <label id="priority-label" className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">Priority</label>
                         <div className="flex gap-2">
                             {(["normal", "high", "urgent"] as const).map(p => (
                                 <button
                                     key={p}
                                     type="button"
+                                    role="radio"
+                                    aria-checked={priority === p}
                                     onClick={() => setPriority(p)}
                                     className={`flex-1 h-10 rounded-xl text-[13px] font-medium capitalize transition-all border ${priority === p
                                         ? p === "urgent"
-                                            ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                            ? "bg-destructive/20 text-destructive border-destructive/30"
                                             : p === "high"
-                                                ? "bg-amber-500/20 text-amber-400 border-amber-500/30"
-                                                : "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                                                ? "bg-amber-500/20 text-amber-500 border-amber-500/30"
+                                                : "bg-primary/20 text-primary border-primary/30"
                                         : "border-white/[0.08] text-white/40 hover:bg-white/[0.04]"
                                         }`}
                                 >
@@ -614,7 +623,7 @@ function AddTaskModal({ onClose, onAdd }: {
                     <button
                         type="submit"
                         disabled={!title.trim()}
-                        className="w-full h-11 rounded-xl gradient-bg text-white text-[14px] font-display font-semibold glow-purple-soft hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="w-full h-11 rounded-xl bg-primary text-primary-foreground text-[14px] font-display font-semibold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         Add Task
                     </button>
