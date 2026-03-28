@@ -162,3 +162,11 @@ export const undoApprove = async (requestId: string): Promise<void> => {
 export const undoReject = async (requestId: string): Promise<void> => {
     await api(`/admin/requests/${requestId}/undo-reject`, { method: "POST" });
 };
+
+/**
+ * Gets a secure temporary download URL for an unapproved file request via admin endpoint.
+ * @backend GET /api/v1/admin/requests/{request_id}/url
+ */
+export const getRequestPreviewUrl = async (requestId: string): Promise<{ url: string }> => {
+    return await api<{ url: string }>(`/admin/requests/${requestId}/url`);
+};

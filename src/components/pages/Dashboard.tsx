@@ -933,7 +933,6 @@ export default function Dashboard() {
                                     ))
                                 ) : (
                                     recentFiles!.slice(0, 4).map((file) => {
-                                        const fileCourse = allCourses?.find(c => c.id === file.courseId);
                                         return (
                                             <Link key={file.id} to={`/courses/${file.courseId}/files/${file.id}`}>
                                                 <div className="glass-card p-4 flex items-center gap-4 group">
@@ -943,12 +942,6 @@ export default function Dashboard() {
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-[14px] font-medium text-white truncate group-hover:text-purple-300 transition-colors">
                                                             {file.title}
-                                                        </p>
-                                                        <p className="text-[11px] text-white/35 flex items-center gap-1.5 mt-0.5">
-                                                            <span className="uppercase">{fileCourse?.name ?? file.courseId.toUpperCase()}</span>
-                                                            <span>•</span>
-                                                            <Clock className="h-3 w-3" />
-                                                            {formatDistanceToNow(new Date(file.viewedAt), { addSuffix: true })}
                                                         </p>
                                                     </div>
                                                 </div>

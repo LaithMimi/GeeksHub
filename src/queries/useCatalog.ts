@@ -89,7 +89,7 @@ export const useSemesters = (majorId?: string) => useQuery({
 export const useCourses = (filters: Parameters<typeof listCourses>[0]) => useQuery({
     queryKey: ['courses', filters],
     queryFn: () => listCourses(filters),
-    enabled: !!filters.majorId
+    enabled: Object.keys(filters).length === 0 || !!filters.majorId
 });
 
 /**

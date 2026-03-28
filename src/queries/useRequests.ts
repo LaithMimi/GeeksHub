@@ -39,6 +39,7 @@ import {
     getRequestStats,
     undoApprove,
     undoReject,
+    getRequestPreviewUrl,
 } from "@/services/requestService";
 import { toast } from "sonner";
 import type { RejectReason, FileStatus } from "@/types/domain";
@@ -98,6 +99,17 @@ export const useWithdrawRequest = () => {
 // ============================================================================
 // ADMIN HOOKS
 // ============================================================================
+
+/**
+ * Fetches the secure preview URL for a pending request.
+ */
+export const useRequestPreviewUrl = (requestId?: string) =>
+    useQuery({
+        queryKey: ["admin-request-preview-url", requestId],
+        queryFn: () => getRequestPreviewUrl(requestId!),
+        enabled: !!requestId,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
 
 /**
  * Fetches all file requests with optional status filter (admin only).

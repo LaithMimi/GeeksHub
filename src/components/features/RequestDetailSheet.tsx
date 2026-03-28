@@ -19,6 +19,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
     import.meta.url
 ).toString();
+import { useRequestPreviewUrl } from "@/queries/useRequests";
 import {
     Sheet,
     SheetContent,
@@ -56,6 +57,8 @@ export function RequestDetailSheet({
     isApproving = false,
     isRejecting = false,
 }: RequestDetailSheetProps) {
+    const { data: previewData, isLoading: isLoadingPreview } = useRequestPreviewUrl(open && request ? request.id : undefined);
+    
     const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
     const [duplicateWarningOpen, setDuplicateWarningOpen] = React.useState(false);
 
@@ -154,19 +157,23 @@ export function RequestDetailSheet({
                         {/* File Preview */}
                         <div className="space-y-2">
                             <h4 className="text-sm font-medium">File Preview</h4>
-                            {request.file_url ? (
+                            {isLoadingPreview ? (
+                                <div className="border-2 rounded-lg p-8 flex flex-col items-center justify-center text-muted-foreground animate-pulse">
+                                    <p className="text-sm">Fetching secure preview link...</p>
+                                </div>
+                            ) : previewData?.url ? (
                                 <div className="border-2 rounded-lg bg-black/20 flex flex-col items-center justify-center overflow-auto max-h-[400px] p-4">
                                     <Document
-                                        file={`https://storage.googleapis.com/geekshub-files-azrieli/${request.file_url}`}
-                                        loading={<p className="text-sm text-muted-foreground py-4">Loading preview...</p>}
-                                        error={<p className="text-sm text-red-400 py-4">Failed to load preview. The file might not be publicly accessible.</p>}
+                                        file={previewData.url}
+                                        loading={<p className="text-sm text-muted-foreground py-4">Loading PDF...</p>}
+                                        error={<p className="text-sm text-red-400 py-4">Failed to load preview. Ensure the file stream is valid.</p>}
                                     >
                                         <Page
                                             pageNumber={1}
                                             width={400}
                                             renderTextLayer={false}
                                             renderAnnotationLayer={false}
-                                            loading={<p className="text-sm text-muted-foreground py-4">Rendering...</p>}
+                                            loading={<p className="text-sm text-muted-foreground py-4">Rendering page...</p>}
                                             className="shadow-xl"
                                         />
                                     </Document>

@@ -16,8 +16,8 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url,
+    'pdfjs-dist/build/pdf.worker.min.mjs', // path to the worker file inside node_modules
+    import.meta.url, // resolved relative to THIS file's URL
 ).toString();
 
 function isPdf(title: string, downloadUrl?: string): boolean {
@@ -179,9 +179,9 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
 
     const goToPrevPage = () => setPageNumber(p => Math.max(1, p - 1));
     const goToNextPage = () => setPageNumber(p => Math.min(numPages ?? 1, p + 1));
-    const zoomIn  = () => setScale(s => Math.min(2.5, +(s + 0.2).toFixed(1)));
+    const zoomIn = () => setScale(s => Math.min(2.5, +(s + 0.2).toFixed(1)));
     const zoomOut = () => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1)));
-    const rotate  = () => setRotation(r => (r + 90) % 360);
+    const rotate = () => setRotation(r => (r + 90) % 360);
 
     // ── Loading ───────────────────────────────────────────────────────────────
     if (isLoading) {
