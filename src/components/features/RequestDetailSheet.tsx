@@ -9,7 +9,7 @@
  */
 
 import * as React from "react";
-import { format } from "date-fns";
+import { formatDate } from "@/lib/formatDate";
 import { FileText, Calendar, User, BookOpen, Tag, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
@@ -65,13 +65,7 @@ export function RequestDetailSheet({
     if (!request) return null;
 
     const isPending = request.status === "pending";
-    const formatDate = (dateStr: string) => {
-        try {
-            return format(new Date(dateStr), "PPp");
-        } catch {
-            return dateStr;
-        }
-    };
+
 
     const handleApprove = () => {
         onApprove(request.id);
@@ -83,9 +77,9 @@ export function RequestDetailSheet({
     };
 
     const statusBadge = {
-        pending: <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">Pending</Badge>,
-        approved: <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Approved</Badge>,
-        rejected: <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rejected</Badge>,
+        pending: <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30">Pending</Badge>,
+        approved: <Badge variant="outline" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">Approved</Badge>,
+        rejected: <Badge variant="outline" className="bg-red-500/15 text-red-400 border-red-500/30">Rejected</Badge>,
     };
 
     return (
@@ -135,7 +129,7 @@ export function RequestDetailSheet({
                                     <Calendar className="h-4 w-4" />
                                     <span>Submitted</span>
                                 </div>
-                                <div className="font-medium">{formatDate(request.createdAt)}</div>
+                                <div className="font-medium">{formatDate(request.createdAt, "PPp")}</div>
                             </div>
                         </div>
 
@@ -190,15 +184,15 @@ export function RequestDetailSheet({
                         {isPending && (
                             <Collapsible open={duplicateWarningOpen} onOpenChange={setDuplicateWarningOpen}>
                                 <CollapsibleTrigger asChild>
-                                    <Button variant="ghost" className="w-full justify-start gap-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50">
+                                    <Button variant="ghost" className="w-full justify-start gap-2 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10">
                                         <AlertTriangle className="h-4 w-4" />
                                         <span className="text-sm">Possible Duplicate Check</span>
                                     </Button>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent className="mt-2">
-                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-sm text-amber-300">
                                         <p className="font-medium mb-1">Similar files detected:</p>
-                                        <p className="text-amber-700">
+                                        <p className="text-amber-400">
                                             This feature will check for duplicates when connected to backend.
                                         </p>
                                     </div>
@@ -208,24 +202,24 @@ export function RequestDetailSheet({
 
                         {/* Rejection details (if rejected) */}
                         {request.status === "rejected" && request.rejectionReason && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-1">
-                                <p className="text-sm font-medium text-red-800">Rejection Reason</p>
-                                <p className="text-sm text-red-700">{request.rejectionReason}</p>
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 space-y-1">
+                                <p className="text-sm font-medium text-red-300">Rejection Reason</p>
+                                <p className="text-sm text-red-400">{request.rejectionReason}</p>
                                 {request.rejectionNote && (
-                                    <p className="text-sm text-red-600 mt-2">{request.rejectionNote}</p>
+                                    <p className="text-sm text-red-400/80 mt-2">{request.rejectionNote}</p>
                                 )}
                             </div>
                         )}
 
                         {/* Approval details (if approved) */}
                         {request.status === "approved" && (
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-1">
-                                <p className="text-sm font-medium text-green-800">Approved</p>
+                            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 space-y-1">
+                                <p className="text-sm font-medium text-emerald-300">Approved</p>
                                 {request.pointsAwarded && (
-                                    <p className="text-sm text-green-700">+{request.pointsAwarded} points awarded</p>
+                                    <p className="text-sm text-emerald-400">+{request.pointsAwarded} points awarded</p>
                                 )}
                                 {request.reviewedAt && (
-                                    <p className="text-sm text-green-600">on {formatDate(request.reviewedAt)}</p>
+                                    <p className="text-sm text-emerald-400/80">on {formatDate(request.reviewedAt, "PPp")}</p>
                                 )}
                             </div>
                         )}

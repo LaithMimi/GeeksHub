@@ -5,7 +5,7 @@
  * Columns: Timestamp, Action, Request Title, Performed By, Details
  */
 
-import { format } from "date-fns";
+import { formatDate } from "@/lib/formatDate";
 import { FileSearch, History } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,13 +35,7 @@ const actionConfig: Record<AuditAction, { label: string; variant: "default" | "s
 export default function AuditLog() {
     const { data: logs, isLoading, error } = useAuditLogs();
 
-    const formatDate = (dateStr: string) => {
-        try {
-            return format(new Date(dateStr), "MMM d, yyyy h:mm:ss a");
-        } catch {
-            return dateStr;
-        }
-    };
+
 
     const formatDetails = (log: AuditLogEntry) => {
         const parts: string[] = [];
@@ -118,7 +112,7 @@ export default function AuditLog() {
                                         return (
                                             <TableRow key={log.id}>
                                                 <TableCell className="text-sm text-white/60">
-                                                    {formatDate(log.timestamp)}
+                                                    {formatDate(log.timestamp, "MMM d, yyyy h:mm:ss a")}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge variant={config.variant}>

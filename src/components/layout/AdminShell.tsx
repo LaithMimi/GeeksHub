@@ -1,194 +1,562 @@
-import { useEffect } from "react";
-import { Home, ClipboardList, FileSearch, Shield, AlertCircle } from "lucide-react";
+/**
+ * ============================================================================
+ * ADMIN SHELL / LAYOUT
+ * ============================================================================
+ *
+ * Mirrors AppShell's Liquid Glass design system with admin-specific navigation.
+ * Provides: glass sidebar, breadcrumbs, top bar, search, notifications,
+ * user profile dropdown, command palette, and mobile hamburger menu.
+ *
+ * Uses a separate localStorage key ("admin_sidebar_collapsed") so the admin
+ * sidebar can have its own collapse state independent of the main app sidebar.
+ * ============================================================================
+ */
+
+import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import {
+    Home, ClipboardList, FileSearch, BookOpen, Users,
+    Bell, Search, GraduationCap,
+    PanelLeftClose, PanelLeftOpen, Menu, Settings, ArrowLeft,
+} from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarGroupLabel,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-    SidebarProvider,
-    SidebarTrigger,
-    SidebarInset,
-} from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+    Breadcrumb, BreadcrumbItem, BreadcrumbLink,
+    BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+    DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { CommandPalette } from "../ui/command-palette";
+import { isMac } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/context/AuthContext";
 
-function AdminSidebarFooter() {
-    const { user } = useAuth();
+// ── Static config ─────────────────────────────────────────────────────────────
 
-    // Derive initials from user.name — avatarInitials doesn't exist on the User model
-    const initials = user?.displayName
-        ? user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
-        : "A";
+const languages = [
+    { code: "en", name: "English", dir: "ltr" },
+    { code: "ar", name: "العربية", dir: "rtl" },
+    { code: "he", name: "עברית", dir: "rtl" },
+];
 
-    return (
-        <SidebarFooter>
-            <div className="p-2">
-                <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-rose-500 to-blue-600 flex items-center justify-center text-white text-sm font-medium">
-                        {initials}
-                    </div>
-                    <div className="flex-1 truncate text-sm text-start">
-                        <p className="font-medium truncate">{user?.displayName ?? "Admin"}</p>
-                        <p className="text-xs text-muted-foreground truncate">{user?.role ?? "ADMIN"}</p>
-                    </div>
-                </div>
-            </div>
-        </SidebarFooter>
-    );
-}
+const adminNavItems = [
+    { label: "Overview", icon: Home, href: "/admin" },
+    { label: "Queue", icon: ClipboardList, href: "/admin/requests" },
+    { label: "Audit Log", icon: FileSearch, href: "/admin/audit" },
+];
 
-function AdminSidebar() {
+const comingSoonItems = [
+    { label: "Catalog", icon: BookOpen },
+    { label: "Users", icon: Users },
+];
+
+const adminLabelMap: Record<string, string> = {
+    admin: "Admin",
+    requests: "Queue",
+    audit: "Audit Log",
+};
+
+// ── Admin Breadcrumbs ─────────────────────────────────────────────────────────
+
+const AdminBreadcrumbs = () => {
     const location = useLocation();
-
-    const isActive = (path: string) => {
-        if (path === "/admin") return location.pathname === "/admin";
-        return location.pathname.startsWith(path);
-    };
+    const pathnames = location.pathname.split("/").filter((x) => x);
 
     return (
-        <Sidebar variant="inset" collapsible="icon">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link to="/admin">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-rose-600">
-                                    <Shield className="h-4 w-4 text-white" />
+        <Breadcrumb>
+            <BreadcrumbList className="gap-1.5 sm:gap-2">
+                <BreadcrumbItem>
+                    <BreadcrumbLink
+                        href="/"
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-all text-xs sm:text-sm font-medium"
+                    >
+                        <Home className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Home</span>
+                    </BreadcrumbLink>
+                </BreadcrumbItem>
+
+                {pathnames.length > 0 && (
+                    <BreadcrumbSeparator className="text-white/20 rtl:rotate-180" />
+                )}
+
+                {pathnames.map((value, index) => {
+                    const to = `/${pathnames.slice(0, index + 1).join("/")}`;
+                    const isLast = index === pathnames.length - 1;
+                    const label =
+                        adminLabelMap[value] ||
+                        value.charAt(0).toUpperCase() + value.slice(1);
+
+                    return (
+                        <div
+                            key={to}
+                            className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in slide-in-from-left-2 duration-300"
+                        >
+                            <BreadcrumbItem>
+                                {isLast ? (
+                                    <BreadcrumbPage className="px-2 py-1 rounded-md text-xs sm:text-sm text-white font-semibold bg-white/10">
+                                        {label}
+                                    </BreadcrumbPage>
+                                ) : (
+                                    <BreadcrumbLink
+                                        href={to}
+                                        className="px-2 py-1 rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-all text-xs sm:text-sm font-medium"
+                                    >
+                                        {label}
+                                    </BreadcrumbLink>
+                                )}
+                            </BreadcrumbItem>
+                            {!isLast && (
+                                <BreadcrumbSeparator className="text-white/20 rtl:rotate-180" />
+                            )}
+                        </div>
+                    );
+                })}
+            </BreadcrumbList>
+        </Breadcrumb>
+    );
+};
+
+// ── Admin Glass Sidebar ───────────────────────────────────────────────────────
+
+function AdminGlassSidebar({
+    collapsed,
+    onToggle,
+}: {
+    collapsed: boolean;
+    onToggle: () => void;
+}) {
+    const location = useLocation();
+    const { user, signOut } = useAuth();
+
+    const isActive = (path: string) =>
+        path === "/admin"
+            ? location.pathname === "/admin"
+            : location.pathname.startsWith(path);
+
+    const initials = user?.displayName
+        ? user.displayName
+              .split(" ")
+              .map((n: string) => n[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2)
+        : "?";
+
+    return (
+        <TooltipProvider delayDuration={0}>
+            <aside
+                className={`
+                    min-h-screen liquid-glass-heavy flex flex-col border-r border-white/[0.06]
+                    relative z-20 transition-[width,background-color] duration-300 ease-in-out
+                    ${collapsed ? "w-[68px]" : "w-[260px]"}
+                `}
+            >
+                <div className="flex flex-col flex-1 px-3 py-6">
+                    {/* Logo + collapse toggle */}
+                    <div
+                        className={`flex items-center mb-8 ${
+                            collapsed ? "justify-center" : "justify-between px-1"
+                        }`}
+                    >
+                        {!collapsed && (
+                            <Link to="/" className="flex items-center gap-3 group">
+                                <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft group-hover:scale-105 transition-transform shrink-0">
+                                    <GraduationCap className="h-4 w-4 text-white" />
                                 </div>
-                                <div className="grid flex-1 text-start text-sm leading-tight">
-                                    <span className="truncate font-semibold">Admin Panel</span>
-                                    <span className="truncate text-xs text-muted-foreground">GeeksHub Moderation</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-display text-[14px] font-bold text-white tracking-[0.15em] uppercase">
+                                        GeeksHub
+                                    </span>
+                                    <Badge
+                                        variant="outline"
+                                        className="text-[9px] px-1.5 py-0 border-rose-500/30 text-rose-400 font-semibold uppercase tracking-wider"
+                                    >
+                                        Admin
+                                    </Badge>
                                 </div>
                             </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarHeader>
+                        )}
 
-            <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel>Moderation</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    tooltip="Dashboard"
-                                    isActive={location.pathname === "/admin"}
+                        {collapsed && (
+                            <Link
+                                to="/"
+                                className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft hover:scale-105 transition-transform relative"
+                            >
+                                <GraduationCap className="h-4 w-4 text-white" />
+                                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border border-[hsl(225,30%,5%)]" />
+                            </Link>
+                        )}
+
+                        {!collapsed && (
+                            <button
+                                onClick={onToggle}
+                                className="w-11 h-11 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors -mr-2"
+                                aria-label="Close sidebar"
+                            >
+                                <PanelLeftClose className="h-5 w-5" />
+                            </button>
+                        )}
+                    </div>
+
+                    {collapsed && (
+                        <button
+                            onClick={onToggle}
+                            className="w-11 h-11 mx-auto rounded-lg flex items-center justify-center text-white/20 hover:text-white/60 hover:bg-white/[0.06] transition-all mb-4"
+                            aria-label="Open sidebar"
+                        >
+                            <PanelLeftOpen className="h-5 w-5" />
+                        </button>
+                    )}
+
+                    {/* Back to App link */}
+                    {(() => {
+                        const backLink = (
+                            <Link
+                                to="/"
+                                className={`
+                                    flex items-center rounded-xl text-[14px] transition-all group relative mb-4
+                                    ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
+                                    text-white/45 hover:text-white/75 hover:bg-white/[0.04]
+                                `}
+                            >
+                                <ArrowLeft className="h-[18px] w-[18px] shrink-0" />
+                                {!collapsed && (
+                                    <span className="font-medium">Back to App</span>
+                                )}
+                            </Link>
+                        );
+                        if (collapsed) {
+                            return (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>{backLink}</TooltipTrigger>
+                                    <TooltipContent side="right" className="text-xs">
+                                        Back to App
+                                    </TooltipContent>
+                                </Tooltip>
+                            );
+                        }
+                        return backLink;
+                    })()}
+
+                    {/* Moderation section label */}
+                    {!collapsed && (
+                        <div className="px-3 mb-2">
+                            <span className="text-[11px] font-display font-semibold text-white/30 uppercase tracking-[0.15em]">
+                                Moderation
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Navigation */}
+                    <nav className="flex-1 space-y-0.5">
+                        {adminNavItems.map((item) => {
+                            const active = isActive(item.href);
+                            const Icon = item.icon;
+
+                            const linkContent = (
+                                <Link
+                                    key={item.href}
+                                    to={item.href}
+                                    className={`
+                                        flex items-center rounded-xl text-[14px] transition-all group relative
+                                        ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
+                                        ${
+                                            active
+                                                ? "text-blue-300 bg-blue-500/[0.08] border border-blue-500/[0.12]"
+                                                : "text-white/45 hover:text-white/75 hover:bg-white/[0.04]"
+                                        }
+                                    `}
                                 >
-                                    <Link to="/admin">
-                                        <Home className="h-4 w-4" />
-                                        <span>Dashboard</span>
+                                    {active && (
+                                        <div className="absolute inset-0 rounded-xl bg-blue-500/10 pointer-events-none" />
+                                    )}
+                                    <Icon
+                                        className={`h-[18px] w-[18px] shrink-0 ${
+                                            active ? "text-blue-300" : ""
+                                        }`}
+                                    />
+                                    {!collapsed && (
+                                        <span
+                                            className={`font-medium ${
+                                                active ? "font-semibold" : ""
+                                            }`}
+                                        >
+                                            {item.label}
+                                        </span>
+                                    )}
+                                </Link>
+                            );
+
+                            if (collapsed) {
+                                return (
+                                    <Tooltip key={item.href}>
+                                        <TooltipTrigger asChild>
+                                            {linkContent}
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="text-xs">
+                                            {item.label}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                );
+                            }
+                            return linkContent;
+                        })}
+
+                        {/* Management section */}
+                        {!collapsed && (
+                            <div className="px-3 mt-6 mb-2">
+                                <span className="text-[11px] font-display font-semibold text-white/30 uppercase tracking-[0.15em]">
+                                    Management
+                                </span>
+                            </div>
+                        )}
+                        {collapsed && <div className="h-4" />}
+
+                        {comingSoonItems.map((item) => {
+                            const Icon = item.icon;
+                            const disabledContent = (
+                                <div
+                                    key={item.label}
+                                    className={`
+                                        flex items-center rounded-xl text-[14px] transition-all opacity-40 cursor-not-allowed
+                                        ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
+                                        text-white/30
+                                    `}
+                                >
+                                    <Icon className="h-[18px] w-[18px] shrink-0" />
+                                    {!collapsed && (
+                                        <span className="font-medium flex-1">
+                                            {item.label}
+                                        </span>
+                                    )}
+                                    {!collapsed && (
+                                        <Badge
+                                            variant="outline"
+                                            className="text-[9px] px-1.5 py-0 border-white/10 text-white/30 font-medium"
+                                        >
+                                            Soon
+                                        </Badge>
+                                    )}
+                                </div>
+                            );
+
+                            if (collapsed) {
+                                return (
+                                    <Tooltip key={item.label}>
+                                        <TooltipTrigger asChild>
+                                            {disabledContent}
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="text-xs">
+                                            {item.label} (Coming Soon)
+                                        </TooltipContent>
+                                    </Tooltip>
+                                );
+                            }
+                            return disabledContent;
+                        })}
+                    </nav>
+
+                    {/* Bottom section — user profile */}
+                    <div className="mt-auto pt-5 space-y-3">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    className={`
+                                        flex items-center hover:bg-white/[0.04] rounded-xl transition-colors outline-none w-full
+                                        ${collapsed ? "justify-center p-1" : "gap-3 px-2 py-2"}
+                                    `}
+                                >
+                                    <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white text-[12px] font-display font-semibold shrink-0">
+                                        {initials}
+                                    </div>
+                                    {!collapsed && (
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <p className="text-[13px] font-medium text-white truncate">
+                                                {user?.displayName ?? "Admin"}
+                                            </p>
+                                            <p className="text-[11px] text-white/35 truncate">
+                                                {user?.email ?? ""}
+                                            </p>
+                                        </div>
+                                    )}
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                className="w-56 mb-2"
+                                align={collapsed ? "center" : "start"}
+                                side="right"
+                            >
+                                <DropdownMenuLabel>
+                                    <p className="font-medium">
+                                        {user?.displayName ?? "Admin"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground font-normal">
+                                        {user?.email}
+                                    </p>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        to="/settings"
+                                        className="cursor-pointer w-full"
+                                    >
+                                        <Settings className="mr-2 h-4 w-4" />
+                                        <span>Settings</span>
                                     </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    tooltip="Moderation Queue"
-                                    isActive={isActive("/admin/requests")}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="text-red-500 focus:text-red-500 cursor-pointer"
+                                    onClick={signOut}
                                 >
-                                    <Link to="/admin/requests">
-                                        <ClipboardList className="h-4 w-4" />
-                                        <span>Queue</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    tooltip="Audit Log (Coming Soon)"
-                                    disabled
-                                    className="opacity-50 cursor-not-allowed"
-                                >
-                                    <FileSearch className="h-4 w-4" />
-                                    <span>Audit Log</span>
-                                    <Badge variant="outline" className="text-[10px] ml-auto">Soon</Badge>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-
-                <SidebarGroup>
-                    <SidebarGroupLabel>Management</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    tooltip="Catalog (Coming Soon)"
-                                    disabled
-                                    className="opacity-50 cursor-not-allowed"
-                                >
-                                    <AlertCircle className="h-4 w-4" />
-                                    <span>Catalog</span>
-                                    <Badge variant="outline" className="text-[10px] ml-auto">Soon</Badge>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    tooltip="Users (Coming Soon)"
-                                    disabled
-                                    className="opacity-50 cursor-not-allowed"
-                                >
-                                    <AlertCircle className="h-4 w-4" />
-                                    <span>Users</span>
-                                    <Badge variant="outline" className="text-[10px] ml-auto">Soon</Badge>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            </SidebarContent>
-
-            <AdminSidebarFooter />
-        </Sidebar>
+                                    Sign out
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
+            </aside>
+        </TooltipProvider>
     );
 }
 
+// ── Admin Shell ───────────────────────────────────────────────────────────────
+
 export default function AdminShell() {
-    // RTL support — reads language preference from localStorage
+    const [collapsed, setCollapsed] = useState<boolean>(() => {
+        return localStorage.getItem("admin_sidebar_collapsed") === "true";
+    });
+
+    const handleToggle = () => {
+        setCollapsed((prev) => {
+            const next = !prev;
+            localStorage.setItem("admin_sidebar_collapsed", String(next));
+            return next;
+        });
+    };
+
+    // Keyboard shortcut: Cmd+B / Ctrl+B toggles sidebar
+    useEffect(() => {
+        const handleKey = (e: KeyboardEvent) => {
+            if (e.key === "b" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleToggle();
+            }
+        };
+        document.addEventListener("keydown", handleKey);
+        return () => document.removeEventListener("keydown", handleKey);
+    }, []);
+
+    // Language / RTL — same logic as AppShell
     useEffect(() => {
         const savedLang = localStorage.getItem("language") || "en";
-        const dir = savedLang === "ar" || savedLang === "he" ? "rtl" : "ltr";
-        document.documentElement.dir = dir;
+        const lang = languages.find((l) => l.code === savedLang);
+        if (lang) {
+            document.documentElement.lang = lang.code;
+            document.documentElement.dir = lang.dir;
+        }
     }, []);
 
     return (
-        <SidebarProvider>
-            <a href="#admin-main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:text-sm">
+        <div className="flex h-screen overflow-hidden relative">
+            <a
+                href="#admin-main-content"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:font-semibold focus:outline-none focus:ring-2 focus:ring-white"
+            >
                 Skip to main content
             </a>
-            <AdminSidebar />
-            <SidebarInset>
-                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
-                    <SidebarTrigger className="-ms-1" />
-                    <Separator orientation="vertical" className="me-2 h-4" />
-                    <div className="flex items-center gap-2">
-                        <Link to="/admin" className="font-semibold text-sm">Admin Panel</Link>
+
+            {/* Sidebar — hidden on mobile */}
+            <div className="hidden lg:block relative z-20">
+                <AdminGlassSidebar
+                    collapsed={collapsed}
+                    onToggle={handleToggle}
+                />
+            </div>
+
+            {/* Main area */}
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden w-full relative z-10">
+                {/* Glass header */}
+                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 px-4 lg:px-8 liquid-glass border-b border-white/[0.06] border-t-0 border-x-0">
+                    <div className="lg:hidden">
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <button
+                                    className="w-11 h-11 flex items-center justify-center rounded-lg text-white/50 hover:bg-white/[0.06] hover:text-white transition-all -ml-2"
+                                    aria-label="Open admin menu"
+                                >
+                                    <Menu className="h-5 w-5" />
+                                </button>
+                            </SheetTrigger>
+                            <SheetContent
+                                side="left"
+                                className="w-[260px] p-0 border-r border-white/[0.06] liquid-glass-heavy text-white"
+                            >
+                                <SheetTitle className="sr-only">
+                                    Admin Navigation
+                                </SheetTitle>
+                                <AdminGlassSidebar
+                                    collapsed={false}
+                                    onToggle={() => {}}
+                                />
+                            </SheetContent>
+                        </Sheet>
                     </div>
+
+                    <AdminBreadcrumbs />
+
                     <div className="ms-auto flex items-center gap-2">
-                        <Link
-                            to="/"
-                            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        <button
+                            className="flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all text-[13px] min-h-[44px] sm:min-h-0"
+                            onClick={() =>
+                                document.dispatchEvent(
+                                    new KeyboardEvent("keydown", {
+                                        key: "k",
+                                        metaKey: true,
+                                    }),
+                                )
+                            }
+                            aria-label="Search"
                         >
-                            ← Back to App
-                        </Link>
+                            <Search
+                                className="h-4 w-4 sm:h-3.5 sm:w-3.5"
+                                aria-hidden="true"
+                            />
+                            <span className="hidden sm:inline">Search</span>
+                            <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-white/30">
+                                {isMac ? "⌘K" : "Ctrl+K"}
+                            </kbd>
+                        </button>
+                        <button
+                            className="relative w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
+                            aria-label="Notifications"
+                        >
+                            <Bell
+                                className="h-5 w-5 sm:h-4 sm:w-4"
+                                aria-hidden="true"
+                            />
+                        </button>
                     </div>
                 </header>
-                <main id="admin-main-content" className="flex-1 overflow-auto">
-                    <div className="container max-w-7xl mx-auto py-6 px-4">
+
+                {/* Page content */}
+                <main
+                    id="admin-main-content"
+                    className="flex-1 overflow-auto"
+                    tabIndex={-1}
+                >
+                    <div className="max-w-[1400px] mx-auto py-6 px-4 lg:py-8 lg:px-8">
                         <Outlet />
                     </div>
                 </main>
-            </SidebarInset>
-        </SidebarProvider>
+            </div>
+
+            <CommandPalette />
+        </div>
     );
 }

@@ -26,8 +26,8 @@ const UserUploads = Loadable(React.lazy(() => import("@/components/pages/UserUpl
 const Recent = Loadable(React.lazy(() => import("@/components/pages/Recent")));
 const Settings = Loadable(React.lazy(() => import("@/components/pages/Settings")));
 const Courses = Loadable(React.lazy(() => import("@/components/pages/Courses")));
-const AuthPage = Loadable(React.lazy(() => import("@/pages/Auth/AuthPage")));
-const ResetPasswordPage = Loadable(React.lazy(() => import("@/pages/Auth/ResetPasswordPage")));
+const AuthPage = Loadable(React.lazy(() => import("@/components/pages/Auth/AuthPage")));
+const ResetPasswordPage = Loadable(React.lazy(() => import("@/components/pages/Auth/ResetPasswordPage")));
 const NotFound = Loadable(React.lazy(() => import("@/components/pages/NotFound")));
 
 // Course Pages

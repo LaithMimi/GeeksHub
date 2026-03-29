@@ -12,7 +12,7 @@
 
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
+import { formatDate } from "@/lib/formatDate";
 import { MoreHorizontal, Eye, CheckCircle2, XCircle, ArrowUpDown } from "lucide-react";
 import { DataTable, createSelectColumn } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -109,14 +109,7 @@ export default function ModerationQueue() {
         approveMutation.mutate({ requestId: request.id });
     };
 
-    // Format date helper
-    const formatDate = (dateStr: string) => {
-        try {
-            return format(new Date(dateStr), "MMM d, yyyy h:mm a");
-        } catch {
-            return dateStr;
-        }
-    };
+
 
     // Table columns
     const columns: ColumnDef<FileRequest>[] = [
