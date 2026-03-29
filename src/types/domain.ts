@@ -269,16 +269,6 @@ export interface ViewerHeartbeatResponse {
 }
 
 /**
- * Platform session state returned by heartbeat.
- */
-export interface PlatformHeartbeatResponse {
-    activeSeconds: number;
-    pointsAwarded: number;
-    breakReminder: boolean;
-    nextIntervalIn: number;
-}
-
-/**
  * User's dashboard activity summary.
  */
 export interface ActivitySummary {

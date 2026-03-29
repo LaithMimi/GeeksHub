@@ -18,20 +18,20 @@ export const getActivitySummary = async (): Promise<ActivitySummary> => {
     const response = await api<any>("/me/activity/summary");
     
     return {
-        totalPoints: response.total_points,
-        badgeTier: response.badge_tier,
-        recentTransactions: response.recent_transactions.map((t: any) => ({
+        totalPoints: response.totalPoints,
+        badgeTier: response.badgeTier,
+        recentTransactions: response.recentTransactions.map((t: any) => ({
             id: t.id,
             action: t.action,
             points: t.points,
-            createdAt: t.created_at,
+            createdAt: t.createdAt,
         })),
-        courseActivity: response.course_activity.map((c: any) => ({
-            courseId: c.course_id,
-            courseName: c.course_name,
+        courseActivity: response.courseActivity.map((c: any) => ({
+            courseId: c.courseId,
+            courseName: c.courseName,
             status: c.status,
-            filesCompleted: c.files_completed,
-            totalFiles: c.total_files,
+            filesCompleted: c.filesCompleted,
+            totalFiles: c.totalFiles,
         })),
     };
 };
@@ -42,5 +42,5 @@ export const getActivitySummary = async (): Promise<ActivitySummary> => {
  */
 export const getShareUrl = async (fileId: string): Promise<{ shareUrl: string }> => {
     const response = await api<any>(`/files/${fileId}/share`);
-    return { shareUrl: response.share_url };
+    return { shareUrl: response.shareUrl };
 };

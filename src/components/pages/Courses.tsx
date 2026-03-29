@@ -95,7 +95,7 @@ export default function Courses() {
         { key: "semester", label: "Semester", data: semesterData, loading: bgMajorCourses && !!selections.major, step: 2, placeholder: "Select Semester" },
         { key: "course", label: "Course", data: courseData, loading: bgMajorCourses && !!selections.major, step: 3, placeholder: "Select Course" },
         { key: "lecturer", label: "Lecturer", data: lecturers?.map(l => ({ id: l.id, label: l.name })), loading: bgLecturers, step: 4, placeholder: "Select Lecturer" },
-        { key: "type", label: "Type", data: types?.map(t => ({ id: t.id, label: t.display_name })), loading: bgTypes, step: -1, placeholder: "Select Type" },
+        { key: "type", label: "Type", data: types?.map(t => ({ id: t.id, label: t.displayName })), loading: bgTypes, step: -1, placeholder: "Select Type" },
     ];
 
     return (
@@ -121,7 +121,7 @@ export default function Courses() {
                         major: selections.major,
                         course: selections.course,
                         lecturer: selections.lecturer,
-                        type: selections.type || types?.find(t => t.display_name === "Notes")?.id
+                        type: selections.type || types?.find(t => t.displayName === "Notes")?.id
                     }}
                 />
             </div>

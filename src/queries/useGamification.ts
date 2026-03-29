@@ -3,11 +3,8 @@ import {
     startViewerSession,
     sendViewerHeartbeat,
     endViewerSession,
-    startPlatformSession,
-    sendPlatformHeartbeat,
-    endPlatformSession,
 } from "@/services/gamificationService";
-import type { ViewerHeartbeatResponse, PlatformHeartbeatResponse } from "@/types/domain";
+import type { ViewerHeartbeatResponse } from "@/types/domain";
 
 /**
  * ============================================================================
@@ -39,30 +36,5 @@ export const useViewerHeartbeat = () => {
 export const useViewerSessionEnd = () => {
     return useMutation({
         mutationFn: (sessionId: string) => endViewerSession(sessionId),
-    });
-};
-
-/**
- * ============================================================================
- * PLATFORM SESSION HOOKS
- * ============================================================================
- */
-
-export const usePlatformSessionStart = () => {
-    return useMutation({
-        mutationFn: () => startPlatformSession(),
-    });
-};
-
-export const usePlatformHeartbeat = () => {
-    return useMutation({
-        mutationFn: (sessionId: string): Promise<PlatformHeartbeatResponse> =>
-            sendPlatformHeartbeat(sessionId),
-    });
-};
-
-export const usePlatformSessionEnd = () => {
-    return useMutation({
-        mutationFn: (sessionId: string) => endPlatformSession(sessionId),
     });
 };

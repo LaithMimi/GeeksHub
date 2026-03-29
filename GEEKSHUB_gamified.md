@@ -65,17 +65,8 @@ Materialized activity state per user per course. Recomputed on every relevant he
 
 ---
 
-### Table: `user_platform_sessions`
-Drives the 25-minute break and +2 points interval system, independent of file viewing.
-
-| Field | Type | Constraints | Notes |
-|---|---|---|---|
-| `id` | UUID | PK | Returned to frontend as sessionId |
-| `user_id` | UUID | FK → users.id, NOT NULL | |
-| `started_at` | Timestamp | NOT NULL | |
-| `last_active_at` | Timestamp | NOT NULL | Updated every platform heartbeat |
-| `active_seconds` | Integer | NOT NULL, DEFAULT 0 | Cumulative active time this session |
-| `intervals_awarded` | Integer | NOT NULL, DEFAULT 0 | Count of +2 intervals awarded — used in idempotency key |
+### ~~Table: `user_platform_sessions`~~
+> **REMOVED** — Platform session tracking (25-minute break/points intervals) has been removed from scope.
 
 ---
 
@@ -203,57 +194,21 @@ completion_score = coverage_score * time_score
 
 ---
 
-### POST `/api/v1/me/session/start`
+### ~~POST `/api/v1/me/session/start`~~
 
-**Purpose:** Called once on app load. Creates a `user_platform_sessions` row to track the 25-minute break/points intervals.
-
-**Logic:**
-1. Extract `user_id` from JWT.
-2. Insert into `user_platform_sessions` with `active_seconds = 0`, `intervals_awarded = 0`.
-3. Return:
-```json
-{ "session_id": "uuid", "active_seconds": 0 }
-```
+> **REMOVED** — Platform session tracking has been removed from scope.
 
 ---
 
-### POST `/api/v1/me/session/heartbeat`
+### ~~POST `/api/v1/me/session/heartbeat`~~
 
-**Purpose:** Called every 30 seconds while the user is active on the platform. Tracks cumulative active time and awards +2 points every 25 minutes.
-
-**Request body:**
-```json
-{ "session_id": "uuid" }
-```
-
-**Logic:**
-1. Fetch platform session. If not found or user mismatch → 404.
-2. Compute seconds since `last_active_at`. Accept as active time only if ≤ 45 seconds (the heartbeat interval is 30s; 45s gives tolerance). If gap > 45s, the user was idle — add 0 seconds.
-3. Add accepted seconds to `active_seconds`. Update `last_active_at = now`.
-4. Check if a new 25-minute interval has been crossed:
-   - `threshold = (intervals_awarded + 1) * 1500` (1500 seconds = 25 minutes)
-   - If `active_seconds >= threshold`:
-     - Award +2 points: insert into `points_transactions` with `source_id = f"interval:{user_id}:{session_id}:{intervals_awarded + 1}"`.
-     - Increment `intervals_awarded`.
-     - Set `points_awarded = 2` and `break_reminder = true` in response.
-5. Compute `next_interval_in = threshold_next - active_seconds` where `threshold_next = (intervals_awarded + 1) * 1500`.
-6. Return:
-```json
-{
-  "active_seconds": 1530,
-  "points_awarded": 2,
-  "break_reminder": true,
-  "next_interval_in": 1470
-}
-```
+> **REMOVED** — Platform session tracking has been removed from scope.
 
 ---
 
-### POST `/api/v1/me/session/end`
+### ~~POST `/api/v1/me/session/end`~~
 
-**Purpose:** Called on tab close or app exit.
-
-**Logic:** Fetch session by ID + user_id. Update `last_active_at = now`. Return 204.
+> **REMOVED** — Platform session tracking has been removed from scope.
 
 ---
 
@@ -346,7 +301,6 @@ All inserts into `points_transactions` must use these exact `action` values and 
 | Action Slug | Points | source_id Format |
 |---|---|---|
 | `file_complete` | +5 | `file_complete:{user_id}:{file_id}` |
-| `study_interval` | +2 | `interval:{user_id}:{session_id}:{interval_index}` |
 | `upload_approved` | +25 | `approved:{file_request_id}` (already implemented) |
 | `course_complete` | +90 | `course_complete:{user_id}:{course_id}` |
 
@@ -413,10 +367,9 @@ Implement in this order to avoid dependency issues:
 3. `POST /me/viewer/session-start`
 4. `POST /me/viewer/heartbeat` (core — most complex)
 5. `POST /me/viewer/session-end`
-6. `POST /me/session/start` + `heartbeat` + `end`
-7. `GET /me/learning-path`
-8. `GET /me/activity/summary`
-9. `GET /files/:id/share`
+6. `GET /me/learning-path`
+7. `GET /me/activity/summary`
+8. `GET /files/:id/share`
 
 Test the heartbeat completion score formula manually against these cases before integrating:
 

@@ -5,22 +5,13 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select, func
 from database import get_session
 from models import User, UserPlatformSession, UserRecentFile, Material, UserCourseActivity
-from schemas import SessionStartResponse, RecentFileResponse
+from schemas import RecentFileResponse
 from utils.auth_utils import get_verified_user
 
 router = APIRouter(tags=["User Activity Dashboard"])
 
-@router.post("/api/v1/me/session/start", response_model=SessionStartResponse)
-def start_platform_session(
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_verified_user)
-):
-    """Starts a new study session to track active time on the platform."""
-    new_session = UserPlatformSession(user_id=current_user.id)
-    session.add(new_session)
-    session.commit()
-    session.refresh(new_session)
-    return {"sessionId": new_session.id}
+
+
 
 @router.get("/api/v1/me/recent-files", response_model=List[RecentFileResponse])
 def get_recent_files(

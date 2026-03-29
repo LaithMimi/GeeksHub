@@ -53,8 +53,6 @@ import { CommandPalette } from "../ui/command-palette";
 import { isMac } from "@/lib/utils";
 import { useCourse } from "@/queries/useCatalog";
 import { useFile } from "@/queries/useFiles";
-import { usePlatformSession } from "@/hooks/usePlatformSession";
-import { toast } from "sonner";
 
 // ── Static config ─────────────────────────────────────────────────────────────
 
@@ -352,8 +350,6 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
 // ── App Shell ─────────────────────────────────────────────────────────────────
 
 export default function AppShell() {
-    const { breakReminder } = usePlatformSession();
-
     // Persist collapse state across sessions
     const [collapsed, setCollapsed] = useState<boolean>(() => {
         return localStorage.getItem("sidebar_collapsed") === "true";
@@ -388,16 +384,6 @@ export default function AppShell() {
             document.documentElement.dir = lang.dir;
         }
     }, []);
-
-    // Break reminder toast
-    useEffect(() => {
-        if (breakReminder) {
-            toast.success("Time for a quick break!", {
-                description: "You've been studying for 25 minutes. +2 Points awarded!",
-                duration: 5000,
-            });
-        }
-    }, [breakReminder]);
 
     return (
         <div className="flex h-screen overflow-hidden relative">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
     Clock,
@@ -12,7 +12,6 @@ import {
     Plus,
     PlayCircle,
     Calendar,
-    X,
     Check,
     Trash2,
     TrendingUp,
@@ -64,9 +63,10 @@ function getBlockColor(title: string, colorMap: Map<string, number>): typeof BLO
 // ────────────────────────────────────────────
 // Learning Plan Component
 // ────────────────────────────────────────────
-function LearningPlan({ tasks, onAddTask }: {
+function LearningPlan({ tasks, onOpenAddModal, onToggleTask }: {
     tasks: Task[];
-    onAddTask: (title: string, date: string, priority: Task["priority"], startHour: number, duration: number) => void;
+    onOpenAddModal: (date: string, startHour: number, duration: number) => void;
+    onToggleTask: (id: string) => void;
 }) {
     const [weekOffset, setWeekOffset] = useState(0);
     const [view, setView] = useState<"week" | "day">("week");
@@ -79,22 +79,6 @@ function LearningPlan({ tasks, onAddTask }: {
         endHour: number;
     } | null>(null);
     const [isDragging, setIsDragging] = useState(false);
-
-    // After drag completes, show inline input
-    const [newBlock, setNewBlock] = useState<{
-        dateStr: string;
-        startHour: number;
-        duration: number;
-    } | null>(null);
-    const [newBlockTitle, setNewBlockTitle] = useState("");
-    const inlineInputRef = useRef<HTMLInputElement>(null);
-
-    // Focus the inline input when a new block appears
-    useEffect(() => {
-        if (newBlock && inlineInputRef.current) {
-            inlineInputRef.current.focus();
-        }
-    }, [newBlock]);
 
     // Auto-update every 60 seconds so the "now" line moves
     useEffect(() => {
@@ -127,14 +111,8 @@ function LearningPlan({ tasks, onAddTask }: {
     const currentMinutes = now.getMinutes();
     const incompleteTasks = tasks.filter(t => !t.completed);
 
-    const baseMinHour = currentHour;
-    const baseMaxHour = currentHour + 8;
-    const minHour = incompleteTasks.length > 0
-        ? Math.min(baseMinHour, ...incompleteTasks.map(t => t.startHour))
-        : baseMinHour;
-    const maxHour = incompleteTasks.length > 0
-        ? Math.max(baseMaxHour, ...incompleteTasks.map(t => t.startHour + t.duration))
-        : baseMaxHour;
+    const minHour = currentHour;
+    const maxHour = currentHour + 8;
 
     const hours = Array.from({ length: maxHour - minHour }, (_, i) => minHour + i);
     const totalSlots = maxHour - minHour;
@@ -163,13 +141,12 @@ function LearningPlan({ tasks, onAddTask }: {
 
     const handleMouseDown = useCallback((e: React.MouseEvent, dateStr: string) => {
         if (e.button !== 0) return; // left click only
-        if (newBlock) return;       // don't start drag while naming
         const row = e.currentTarget as HTMLElement;
         const hour = xToHour(e.clientX, row);
         setDragState({ dateStr, startHour: hour, endHour: hour + 0.5 });
         setIsDragging(true);
         e.preventDefault();
-    }, [xToHour, newBlock]);
+    }, [xToHour]);
 
     const handleMouseMove = useCallback((e: React.MouseEvent, dateStr: string) => {
         if (!isDragging || !dragState || dragState.dateStr !== dateStr) return;
@@ -186,11 +163,10 @@ function LearningPlan({ tasks, onAddTask }: {
         const start = Math.min(dragState.startHour, dragState.endHour);
         const end = Math.max(dragState.startHour, dragState.endHour);
         const duration = Math.max(0.5, end - start);
-        setNewBlock({ dateStr: dragState.dateStr, startHour: start, duration });
-        setNewBlockTitle("");
+        onOpenAddModal(dragState.dateStr, start, duration);
         setDragState(null);
         setIsDragging(false);
-    }, [isDragging, dragState]);
+    }, [isDragging, dragState, onOpenAddModal]);
 
     // Global mouseup to handle release outside the row
     useEffect(() => {
@@ -199,19 +175,6 @@ function LearningPlan({ tasks, onAddTask }: {
         window.addEventListener("mouseup", handler);
         return () => window.removeEventListener("mouseup", handler);
     }, [isDragging, handleMouseUp]);
-
-    const confirmNewBlock = useCallback(() => {
-        if (!newBlock) return;
-        const title = newBlockTitle.trim() || "Untitled";
-        onAddTask(title, newBlock.dateStr, "normal", newBlock.startHour, newBlock.duration);
-        setNewBlock(null);
-        setNewBlockTitle("");
-    }, [newBlock, newBlockTitle, onAddTask]);
-
-    const cancelNewBlock = useCallback(() => {
-        setNewBlock(null);
-        setNewBlockTitle("");
-    }, []);
 
     return (
         <div className="liquid-glass rounded-2xl overflow-hidden">
@@ -296,14 +259,7 @@ function LearningPlan({ tasks, onAddTask }: {
                             ? (Math.abs(dragState!.endHour - dragState!.startHour) / totalSlots) * 100
                             : 0;
 
-                        // Inline input block for this row
-                        const showNewBlock = newBlock?.dateStr === dateStr;
-                        const newBlockLeft = showNewBlock
-                            ? ((newBlock!.startHour - minHour) / totalSlots) * 100
-                            : 0;
-                        const newBlockWidth = showNewBlock
-                            ? (newBlock!.duration / totalSlots) * 100
-                            : 0;
+
 
                         return (
                             <div
@@ -359,30 +315,6 @@ function LearningPlan({ tasks, onAddTask }: {
                                         />
                                     )}
 
-                                    {/* Inline New Block (after drag) */}
-                                    {showNewBlock && (
-                                        <div
-                                            className="absolute top-1.5 bottom-1.5 rounded-lg bg-purple-500/50 border border-purple-400/50 shadow-[0_0_14px_rgba(139,92,246,0.35)] z-30 flex items-center px-2"
-                                            style={{
-                                                left: `${newBlockLeft}%`,
-                                                width: `${newBlockWidth}%`,
-                                            }}
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                        >
-                                            <input
-                                                ref={inlineInputRef}
-                                                value={newBlockTitle}
-                                                onChange={(e) => setNewBlockTitle(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Enter") confirmNewBlock();
-                                                    if (e.key === "Escape") cancelNewBlock();
-                                                }}
-                                                onBlur={confirmNewBlock}
-                                                placeholder="Task name…"
-                                                className="w-full bg-transparent text-[12px] font-display font-semibold text-white placeholder:text-white/40 outline-none"
-                                            />
-                                        </div>
-                                    )}
 
                                     {/* Task Blocks */}
                                     {dayTasks.map(task => {
@@ -393,7 +325,7 @@ function LearningPlan({ tasks, onAddTask }: {
                                         return (
                                             <div
                                                 key={task.id}
-                                                className={`absolute top-1.5 bottom-1.5 rounded-lg ${color.bg} ${color.border} ${color.glow} border flex flex-col justify-center px-3 overflow-hidden cursor-default transition-all hover:brightness-110`}
+                                                className={`absolute top-1.5 bottom-1.5 rounded-lg ${color.bg} ${color.border} ${color.glow} border flex items-center px-2 gap-1.5 overflow-hidden cursor-default transition-all hover:brightness-110 ${task.completed ? 'opacity-50' : ''}`}
                                                 style={{
                                                     left: `${leftPercent}%`,
                                                     width: `${widthPercent}%`,
@@ -401,14 +333,29 @@ function LearningPlan({ tasks, onAddTask }: {
                                                 title={`${task.title} — ${task.startHour}:00 to ${task.startHour + task.duration}:00`}
                                                 onMouseDown={(e) => e.stopPropagation()}
                                             >
-                                                <span className="text-[12px] font-display font-semibold text-white truncate leading-tight">
-                                                    {task.title}
-                                                </span>
-                                                {task.duration >= 1.5 && (
-                                                    <span className="text-[10px] text-white/60 truncate">
-                                                        {task.startHour > 12 ? `${task.startHour - 12}` : task.startHour}–{(task.startHour + task.duration) > 12 ? `${(task.startHour + task.duration) - 12}` : (task.startHour + task.duration)} PM
+                                                <button
+                                                    onClick={() => onToggleTask(task.id)}
+                                                    className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
+                                                        task.completed
+                                                            ? 'bg-white/90 border-white/90'
+                                                            : 'border-white/50 hover:border-white/80 hover:bg-white/10'
+                                                    }`}
+                                                    aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
+                                                >
+                                                    {task.completed && (
+                                                        <Check className="w-2.5 h-2.5 text-black" />
+                                                    )}
+                                                </button>
+                                                <div className="flex flex-col justify-center min-w-0">
+                                                    <span className={`text-[12px] font-display font-semibold text-white truncate leading-tight ${task.completed ? 'line-through' : ''}`}>
+                                                        {task.title}
                                                     </span>
-                                                )}
+                                                    {task.duration >= 1.5 && (
+                                                        <span className="text-[10px] text-white/60 truncate">
+                                                            {task.startHour > 12 ? `${task.startHour - 12}` : task.startHour}–{(task.startHour + task.duration) > 12 ? `${(task.startHour + task.duration) - 12}` : (task.startHour + task.duration)} PM
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -509,15 +456,18 @@ const DURATIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4];
 // ────────────────────────────────────────────
 // Add Task Modal
 // ────────────────────────────────────────────
-function AddTaskModal({ onClose, onAdd }: {
+function AddTaskModal({ onClose, onAdd, initialDate, initialStartHour, initialDuration }: {
     onClose: () => void;
     onAdd: (title: string, date: string, priority: Task["priority"], startHour: number, duration: number) => void;
+    initialDate?: string;
+    initialStartHour?: number;
+    initialDuration?: number;
 }) {
     const [title, setTitle] = useState("");
-    const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+    const [date, setDate] = useState(initialDate ?? format(new Date(), "yyyy-MM-dd"));
     const [priority, setPriority] = useState<Task["priority"]>("normal");
-    const [startHour, setStartHour] = useState(14);
-    const [duration, setDuration] = useState(1);
+    const [startHour, setStartHour] = useState(initialStartHour ?? 14);
+    const [duration, setDuration] = useState(initialDuration ?? 1);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -674,6 +624,7 @@ export default function Dashboard() {
 
     const { tasks, taskDates, addTask, toggleTask, deleteTask } = useTasks();
     const [showAddTask, setShowAddTask] = useState(false);
+    const [addTaskDefaults, setAddTaskDefaults] = useState<{ date?: string; startHour?: number; duration?: number }>({});
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [showCompleted, setShowCompleted] = useState(false);
 
@@ -878,7 +829,10 @@ export default function Dashboard() {
                 {/* Left Column */}
                 <div className="flex-1 space-y-6 min-w-0">
                     {/* ── Learning Plan Schedule ── */}
-                    <LearningPlan tasks={tasks} onAddTask={addTask} />
+                    <LearningPlan tasks={tasks} onToggleTask={toggleTask} onOpenAddModal={(date, startHour, duration) => {
+                        setAddTaskDefaults({ date, startHour, duration });
+                        setShowAddTask(true);
+                    }} />
 
                     {/* ── Recent Courses ── */}
                     <div className="space-y-4">
@@ -1162,8 +1116,11 @@ export default function Dashboard() {
             {/* Add Task Modal */}
             {showAddTask && (
                 <AddTaskModal
-                    onClose={() => setShowAddTask(false)}
+                    onClose={() => { setShowAddTask(false); setAddTaskDefaults({}); }}
                     onAdd={addTask}
+                    initialDate={addTaskDefaults.date}
+                    initialStartHour={addTaskDefaults.startHour}
+                    initialDuration={addTaskDefaults.duration}
                 />
             )}
         </div>

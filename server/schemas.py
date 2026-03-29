@@ -100,8 +100,6 @@ class LeaderboardEntry(BaseModel):
     totalPoints: int
     badge: str
 
-class SessionStartResponse(BaseModel):
-    sessionId: UUID
 
 class RecentFileResponse(BaseModel):
     id: UUID

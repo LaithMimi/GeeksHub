@@ -373,11 +373,11 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                     <Select value={form.type_id} onValueChange={(v) => set("type_id", v)}>
                                         <SelectTrigger className="liquid-glass-subtle h-11">
                                             <SelectValue placeholder="Select...">
-                                                {form.type_id ? selectedType?.display_name ?? form.type_id : undefined}
+                                                {form.type_id ? selectedType?.displayName ?? form.type_id : undefined}
                                             </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent className="max-h-[200px] overflow-y-auto">
-                                            {types?.map((t) => <SelectItem key={t.id} value={t.id}>{t.display_name}</SelectItem>)}
+                                            {types?.map((t) => <SelectItem key={t.id} value={t.id}>{t.displayName}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -434,7 +434,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             <SummaryChip label="Major" value={selectedMajor?.name} />
                             <SummaryChip label="Course" value={selectedCourse?.code} />
                             <SummaryChip label="Lecturer" value={selectedLecturer?.name} />
-                            <SummaryChip label="Type" value={selectedType?.display_name} />
+                            <SummaryChip label="Type" value={selectedType?.displayName} />
                             <SummaryChip label="Year" value={form.material_year} />
                             <SummaryChip label="Title" value={form.title} />
                         </div>
@@ -532,6 +532,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             <button
                                 type="button"
                                 onClick={() => setStep((s) => s + 1)}
+                                disabled={!canProceed()}
                                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 text-white text-[13px] font-semibold hover:bg-purple-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
                                 Next

@@ -29,6 +29,7 @@ The frontend has been **fully migrated** off `mock-db.ts`. Every service functio
 | **Errors** | `HTTPException` with `{ detail: "..." }` |
 | **Pagination** | `?page=1&limit=20` → `{ data: T[], total: number }` |
 | **Timestamps** | ISO 8601 (`2026-03-19T00:00:00Z`) |
+| **Data Format** | Always use `snake_case` for JSON responses and request bodies. The frontend's `apiClient.ts` automatically translates your responses to `camelCase` for React state! |
 
 ---
 
@@ -216,21 +217,16 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 | `POST` | `/api/v1/me/viewer/session-start` | `startViewerSession({ fileId })` | ✅ |
 | `POST` | `/api/v1/me/viewer/heartbeat` | `sendViewerHeartbeat(...)` | ✅ |
 | `POST` | `/api/v1/me/viewer/session-end` | `endViewerSession(sessionId)` | ✅ |
-| `POST` | `/api/v1/me/session/start` | `startPlatformSession()` | ✅ |
-| `POST` | `/api/v1/me/session/heartbeat` | `sendPlatformHeartbeat(sessionId)` | 🔴 |
-| `POST` | `/api/v1/me/session/end` | `endPlatformSession(sessionId)` | 🔴 |
 | `GET` | `/api/v1/me/activity/summary` | `getActivitySummary()` | ✅ |
-| `GET` | `/api/v1/files/:file_id/share` | `getShareUrl(fileId)` | 🔴 |
 
 ### Implementation Notes
 - **Viewer Sessions**:
   - `POST /session-start` computes `required_active_seconds` based on file type (PDF: pages × 45s × 0.60; Slides: pages × 30s × 0.60).
   - `POST /heartbeat` calculates `completion_score` = `(visited_pages / total_pages) * min(active_seconds / required_active_seconds, 1.0)`. If >= 0.85, set `is_complete`, award points, update `user_course_activity`.
-- **Platform Sessions**:
-  - `POST /session/start` tracks cumulative active time.
-  - `POST /session/heartbeat` awards +2 points every 25 mins (1500 seconds) of active time and sets `break_reminder: true`.
-- **Idempotency**: All point transactions (`file_complete`, `study_interval`, `course_complete`) must rely on `points_transactions.source_id` uniqueness. 
+- **Idempotency**: All point transactions (`file_complete`, `course_complete`) must rely on `points_transactions.source_id` uniqueness. 
 - **Course Status Logic**: `not_started` (0%), `exploring` (<50%), `engaged` (>=50%), `completed` (100%).
+
+> **Note:** Platform session tracking (`/me/session/start`, `/me/session/heartbeat`, `/me/session/end`) and the share URL endpoint (`/files/:id/share`) have been **removed** from scope. The frontend no longer calls these endpoints.
 
 ---
 
