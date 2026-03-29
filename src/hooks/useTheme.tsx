@@ -47,7 +47,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         // Update meta theme-color for mobile browsers
         const meta = document.querySelector('meta[name="theme-color"]');
         if (meta) {
-            meta.setAttribute("content", resolved === "light" ? "#f8f6ff" : "#0c0014");
+            meta.setAttribute("content", resolved === "light" ? "#2563eb" : "#1e3370");
         }
     }, [theme]);
 

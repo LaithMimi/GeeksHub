@@ -1,29 +1,44 @@
+import React, { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import AppShell from "@/components/layout/AppShell";
-import AdminShell from "@/components/layout/AdminShell";
-import CourseShell from "@/components/layout/CourseShell";
-import FileShell from "@/components/layout/FileShell";
-import FilePage from "@/components/pages/FilePage";
-import Dashboard from "@/components/pages/Dashboard";
-import UserUploads from "@/components/pages/UserUploads";
-import Recent from "@/components/pages/Recent";
-import Settings from "@/components/pages/Settings";
-import Courses from "@/components/pages/Courses";
-import AuthPage from "@/pages/Auth/AuthPage";
-import ResetPasswordPage from "@/pages/Auth/ResetPasswordPage";
+import { Loader2 } from "lucide-react";
 import RouteError from "@/components/errors/RouteError";
 import ProtectedRoute from "@/components/routing/ProtectedRoute";
-import NotFound from "@/components/pages/NotFound";
+
+const PageLoader = () => (
+    <div className="flex bg-background text-foreground h-full w-full items-center justify-center p-8 min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary/60" />
+    </div>
+);
+
+const Loadable = (Component: React.ElementType) => (props: any) => (
+    <Suspense fallback={<PageLoader />}>
+        <Component {...props} />
+    </Suspense>
+);
+
+const AppShell = Loadable(React.lazy(() => import("@/components/layout/AppShell")));
+const AdminShell = Loadable(React.lazy(() => import("@/components/layout/AdminShell")));
+const CourseShell = Loadable(React.lazy(() => import("@/components/layout/CourseShell")));
+const FileShell = Loadable(React.lazy(() => import("@/components/layout/FileShell")));
+const FilePage = Loadable(React.lazy(() => import("@/components/pages/FilePage")));
+const Dashboard = Loadable(React.lazy(() => import("@/components/pages/Dashboard")));
+const UserUploads = Loadable(React.lazy(() => import("@/components/pages/UserUploads")));
+const Recent = Loadable(React.lazy(() => import("@/components/pages/Recent")));
+const Settings = Loadable(React.lazy(() => import("@/components/pages/Settings")));
+const Courses = Loadable(React.lazy(() => import("@/components/pages/Courses")));
+const AuthPage = Loadable(React.lazy(() => import("@/pages/Auth/AuthPage")));
+const ResetPasswordPage = Loadable(React.lazy(() => import("@/pages/Auth/ResetPasswordPage")));
+const NotFound = Loadable(React.lazy(() => import("@/components/pages/NotFound")));
 
 // Course Pages
-import CourseMaterials from "@/components/pages/CourseMaterials";
-import CourseNotes from "@/components/pages/CourseNotes";
-import CourseExams from "@/components/pages/CourseExams";
+const CourseMaterials = Loadable(React.lazy(() => import("@/components/pages/CourseMaterials")));
+const CourseNotes = Loadable(React.lazy(() => import("@/components/pages/CourseNotes")));
+const CourseExams = Loadable(React.lazy(() => import("@/components/pages/CourseExams")));
 
 // Admin Pages
-import AdminHome from "@/components/pages/admin/AdminHome";
-import ModerationQueue from "@/components/pages/admin/ModerationQueue";
-import AuditLog from "@/components/pages/admin/AuditLog";
+const AdminHome = Loadable(React.lazy(() => import("@/components/pages/admin/AdminHome")));
+const ModerationQueue = Loadable(React.lazy(() => import("@/components/pages/admin/ModerationQueue")));
+const AuditLog = Loadable(React.lazy(() => import("@/components/pages/admin/AuditLog")));
 
 export const router = createBrowserRouter([
     // Public auth routes

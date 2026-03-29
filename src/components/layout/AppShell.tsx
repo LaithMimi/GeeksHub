@@ -151,7 +151,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
             <aside
                 className={`
                     min-h-screen liquid-glass-heavy flex flex-col border-r border-white/[0.06]
-                    relative z-20 transition-all duration-300 ease-in-out
+                    relative z-20 transition-[width,background-color] duration-300 ease-in-out
                     ${collapsed ? "w-[68px]" : "w-[260px]"}
                 `}
             >
@@ -161,7 +161,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                     <div className={`flex items-center mb-8 ${collapsed ? "justify-center" : "justify-between px-1"}`}>
                         {!collapsed && (
                             <Link to="/" className="flex items-center gap-3 group">
-                                <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-purple-soft group-hover:scale-105 transition-transform shrink-0">
+                                <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft group-hover:scale-105 transition-transform shrink-0">
                                     <GraduationCap className="h-4 w-4 text-white" />
                                 </div>
                                 <span className="font-display text-[14px] font-bold text-white tracking-[0.15em] uppercase">
@@ -171,7 +171,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                         )}
 
                         {collapsed && (
-                            <Link to="/" className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-purple-soft hover:scale-105 transition-transform">
+                            <Link to="/" className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft hover:scale-105 transition-transform">
                                 <GraduationCap className="h-4 w-4 text-white" />
                             </Link>
                         )}
@@ -180,7 +180,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                         {!collapsed && (
                             <button
                                 onClick={onToggle}
-                                className="w-11 h-11 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all -mr-2"
+                                className="w-11 h-11 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors -mr-2"
                                 aria-label="Close sidebar"
                             >
                                 <PanelLeftClose className="h-5 w-5" />
@@ -213,15 +213,15 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                         flex items-center rounded-xl text-[14px] transition-all group relative
                                         ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
                                         ${active
-                                            ? "text-purple-300 bg-purple-500/[0.08] border border-purple-500/[0.12]"
+                                            ? "text-blue-300 bg-blue-500/[0.08] border border-blue-500/[0.12]"
                                             : "text-white/45 hover:text-white/75 hover:bg-white/[0.04]"
                                         }
                                     `}
                                 >
                                     {active && (
-                                        <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/10 to-transparent pointer-events-none" />
+                                        <div className="absolute inset-0 rounded-xl bg-blue-500/10 pointer-events-none" />
                                     )}
-                                    <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-purple-300" : ""}`} />
+                                    <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-blue-300" : ""}`} />
                                     {!collapsed && (
                                         <span className={`font-medium ${active ? "font-semibold" : ""}`}>
                                             {item.label}
@@ -279,12 +279,12 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                         {!collapsed && (
                             <div className="liquid-glass-subtle rounded-xl p-4 space-y-3">
                                 <div className="flex items-center gap-2">
-                                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-                                    <span className="text-[11px] font-display font-bold text-purple-400 uppercase tracking-[0.15em]">Pro</span>
+                                    <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+                                    <span className="text-[11px] font-display font-bold text-blue-400 uppercase tracking-[0.15em]">Pro</span>
                                 </div>
                                 <p className="text-[14px] font-display font-semibold text-white leading-tight">Unlock AI Learning</p>
                                 <p className="text-[11px] text-white/40 leading-relaxed">Personalized paths, unlimited files & AI assistant.</p>
-                                <button className="w-full h-8 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[12px] font-display font-semibold transition-all">
+                                <button className="w-full h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-[12px] font-display font-semibold transition-all">
                                     Activate Pro
                                 </button>
                             </div>
@@ -294,7 +294,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                         {collapsed && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <button className="w-10 h-10 mx-auto rounded-xl gradient-bg flex items-center justify-center glow-purple-soft hover:opacity-90 transition-opacity">
+                                    <button className="w-10 h-10 mx-auto rounded-xl gradient-bg flex items-center justify-center glow-blue-soft hover:opacity-90 transition-opacity">
                                         <Sparkles className="h-4 w-4 text-white" />
                                     </button>
                                 </TooltipTrigger>
@@ -389,7 +389,7 @@ export default function AppShell() {
         <div className="flex h-screen overflow-hidden relative">
             <a 
                 href="#main-content" 
-                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:font-semibold focus:outline-none focus:ring-2 focus:ring-white"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:font-semibold focus:outline-none focus:ring-2 focus:ring-white"
             >
                 Skip to main content
             </a>
@@ -431,7 +431,7 @@ export default function AppShell() {
                             </kbd>
                         </button>
                         <button 
-                            className="relative w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                            className="relative w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
                             aria-label="Notifications"
                         >
                             <Bell className="h-5 w-5 sm:h-4 sm:w-4" aria-hidden="true" />

@@ -38,7 +38,7 @@ export default function CourseExams() {
                 </div>
                 <button
                     onClick={() => refetch()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] text-purple-400 hover:bg-purple-500/10 transition-all"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] text-blue-400 hover:bg-blue-500/10 transition-all"
                 >
                     <RefreshCw className="h-3.5 w-3.5" />
                     Retry
@@ -69,11 +69,11 @@ export default function CourseExams() {
                     to={`/courses/${courseId}/files/${file.id}`}
                     className="glass-card p-4 flex items-center gap-4 group hover:bg-white/[0.04] transition-all"
                 >
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0 group-hover:bg-purple-500/20 transition-colors">
-                        <FileText className="h-4.5 w-4.5 text-purple-400" />
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 group-hover:bg-blue-500/20 transition-colors">
+                        <FileText className="h-4.5 w-4.5 text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-medium text-white truncate group-hover:text-purple-300 transition-colors">
+                        <p className="text-[14px] font-medium text-white truncate group-hover:text-blue-300 transition-colors">
                             {file.title}
                         </p>
                         <p className="text-[12px] text-white/35 mt-0.5">

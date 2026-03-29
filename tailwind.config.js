@@ -5,8 +5,8 @@ export default {
 	theme: {
 		extend: {
 			fontFamily: {
-				sans: ['Inter', 'system-ui', 'sans-serif'],
-				display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+				sans: ['Inter', 'Noto Sans Arabic', 'system-ui', 'sans-serif'],
+				display: ['Space Grotesk', 'Noto Sans Arabic', 'system-ui', 'sans-serif'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -68,10 +68,18 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				purple: {
-					400: 'hsl(265 85% 65%)',
-					500: 'hsl(265 100% 65%)',
-					600: 'hsl(265 85% 55%)',
+				blue: {
+					50:  '#eff6ff',
+					100: '#dbeafe',
+					200: '#bfdbfe',
+					300: '#93c5fd',
+					400: '#60a5fa',
+					500: '#2563eb',
+					600: '#1d4ed8',
+					700: '#1e3a8a',
+					800: '#1e3370',
+					900: '#172554',
+					950: '#0f1a3d',
 				},
 				emerald: {
 					400: 'hsl(160 85% 55%)',

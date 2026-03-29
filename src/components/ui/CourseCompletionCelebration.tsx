@@ -39,7 +39,7 @@ export default function CourseCompletionCelebration({
         <div 
             className={`fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-md transition-opacity duration-500 ${show ? "opacity-100" : "opacity-0"}`}
         >
-            <div className={`relative max-w-lg w-full liquid-glass-heavy border border-purple-500/30 rounded-3xl p-8 shadow-2xl shadow-purple-900/50 transform transition-all duration-700 ease-out ${show ? "translate-y-0 scale-100" : "translate-y-8 scale-95"}`}>
+            <div className={`relative max-w-lg w-full liquid-glass-heavy border border-blue-500/40 rounded-3xl p-8 shadow-2xl shadow-blue-900/60 transform transition-all duration-700 ease-out ${show ? "translate-y-0 scale-100" : "translate-y-8 scale-95"}`}>
                 
                 {/* Close Button */}
                 <button
@@ -54,7 +54,7 @@ export default function CourseCompletionCelebration({
 
                 {/* Celebration Icon */}
                 <div className="flex justify-center mb-6">
-                    <div className="h-24 w-24 rounded-full bg-gradient-to-br from-purple-500 to-amber-400 p-1 animate-pulse glow-purple-strong">
+                    <div className="h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-amber-400 p-1 animate-pulse glow-blue-strong">
                         <div className="h-full w-full bg-slate-900 rounded-full flex items-center justify-center">
                             <Trophy className="h-10 w-10 text-amber-400" />
                         </div>
@@ -63,7 +63,7 @@ export default function CourseCompletionCelebration({
 
                 {/* Content */}
                 <div className="text-center space-y-4">
-                    <h2 className="text-3xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-amber-300">
+                    <h2 className="text-3xl font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-amber-300">
                         Course Conquered!
                     </h2>
                     
@@ -81,7 +81,7 @@ export default function CourseCompletionCelebration({
                     {/* Motivational Quote */}
                     {quote && (
                         <div className="mt-8 p-6 rounded-2xl bg-white/5 border border-white/10 relative">
-                            <div className="absolute -top-3 left-6 text-4xl text-purple-500/30 leading-none">"</div>
+                            <div className="absolute -top-3 left-6 text-4xl text-blue-500/40 leading-none">"</div>
                             <p className="text-[15px] italic text-white/70 font-display text-left relative z-10 pl-2">
                                 {quote}
                             </p>
@@ -95,7 +95,7 @@ export default function CourseCompletionCelebration({
                             setShow(false);
                             setTimeout(onClose, 300);
                         }}
-                        className="w-full sm:w-auto px-8 py-6 rounded-2xl gradient-bg text-white font-display font-bold text-[16px] glow-purple-soft hover:-translate-y-1 transition-transform"
+                        className="w-full sm:w-auto px-8 py-6 rounded-2xl gradient-bg text-white font-display font-bold text-[16px] glow-blue-soft hover:-translate-y-1 transition-transform"
                     >
                         Keep Growing
                     </Button>

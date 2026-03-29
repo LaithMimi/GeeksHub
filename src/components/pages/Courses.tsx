@@ -108,7 +108,7 @@ export default function Courses() {
                 </div>
                 <button
                     onClick={() => setIsRequestOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[13px] font-display font-semibold hover:opacity-90 transition-all"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-display font-semibold hover:opacity-90 transition-all"
                     aria-label="Request a new file upload"
                 >
                     <Plus className="h-4 w-4" />
@@ -149,7 +149,7 @@ export default function Courses() {
                                     });
                                 }}
                                 className={`group relative liquid-glass rounded-xl p-4 text-left hover:bg-white/[0.06] transition-all duration-200 border ${selections.course === course.id
-                                    ? "border-purple-500/40 bg-purple-500/[0.08]"
+                                    ? "border-blue-500/40 bg-blue-500/[0.08]"
                                     : "border-white/[0.06] hover:border-white/[0.12]"
                                     }`}
                             >
@@ -183,7 +183,7 @@ export default function Courses() {
                                 {/* Arrow indicator */}
                                 <div className={`absolute right-3 bottom-3 transition-opacity ${selections.course === course.id ? "opacity-100" : "opacity-0 group-hover:opacity-50"
                                     }`}>
-                                    <ChevronRight className="h-3.5 w-3.5 text-purple-400" />
+                                    <ChevronRight className="h-3.5 w-3.5 text-blue-400" />
                                 </div>
                             </button>
                         ))}
@@ -199,7 +199,7 @@ export default function Courses() {
                     return (
                         <div key={field.key} className="space-y-2">
                             <label className="text-[11px] font-display font-semibold text-white/35 uppercase tracking-wider flex items-center gap-2">
-                                {field.label} {field.loading && <Loader2 className="h-3 w-3 animate-spin text-purple-400" />}
+                                {field.label} {field.loading && <Loader2 className="h-3 w-3 animate-spin text-blue-400" />}
                             </label>
                             <Select
                                 value={selections[field.key as keyof typeof selections]}
@@ -232,7 +232,7 @@ export default function Courses() {
                 <div className="animate-fade-in liquid-glass rounded-2xl overflow-hidden min-h-[300px]">
                     <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <FolderOpen className="h-4.5 w-4.5 text-purple-400" />
+                            <FolderOpen className="h-4.5 w-4.5 text-blue-400" />
                             <h3 className="text-[15px] font-display font-semibold text-white">
                                 {courseData?.find(c => c.id === selections.course)?.label || selections.course} / {selections.type || "All"}
                             </h3>
@@ -268,7 +268,7 @@ export default function Courses() {
                             <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-3" />
                             <p className="font-display font-semibold text-white mb-1">Couldn't load materials right now</p>
                             <p className="text-[13px] text-white/40 mb-4">Mind giving it another try?</p>
-                            <Button variant="link" onClick={() => window.location.reload()} className="text-purple-400">
+                            <Button variant="link" onClick={() => window.location.reload()} className="text-blue-400">
                                 Refresh
                             </Button>
                         </div>
@@ -281,7 +281,7 @@ export default function Courses() {
                                             <FileText className="h-4.5 w-4.5 text-blue-400" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-[14px] text-white group-hover:text-purple-300 transition-colors">
+                                            <p className="font-medium text-[14px] text-white group-hover:text-blue-300 transition-colors">
                                                 {file.title}
                                             </p>
                                             <div className="flex items-center gap-2 text-[12px] text-white/35 mt-0.5">
@@ -310,7 +310,7 @@ export default function Courses() {
                         <div className="p-12 text-center text-white/30">
                             <FolderOpen className="h-10 w-10 mx-auto mb-3 opacity-40" />
                             <p className="font-display font-semibold text-white/60 mb-2">We don't have materials for this yet</p>
-                            <button onClick={() => setIsRequestOpen(true)} className="text-purple-400 text-[13px] hover:underline">
+                            <button onClick={() => setIsRequestOpen(true)} className="text-blue-400 text-[13px] hover:underline">
                                 Want to request them?
                             </button>
                         </div>
@@ -321,7 +321,7 @@ export default function Courses() {
                 <div className="flex justify-center pt-6">
                     <div className="w-full max-w-md">
                         <h3 className="text-[16px] font-display font-bold text-white mb-4 flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-purple-400" />
+                            <Sparkles className="h-4 w-4 text-blue-400" />
                             Top Contributors
                         </h3>
                         {isLoadingContributors ? (
@@ -335,7 +335,7 @@ export default function Courses() {
                                         <div className="font-display font-bold text-white/25 w-4 text-center text-[13px]">
                                             {i + 1}
                                         </div>
-                                        <div className="h-8 w-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-[12px] font-display font-bold">
+                                        <div className="h-8 w-8 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-[12px] font-display font-bold">
                                             {c.avatar}
                                         </div>
                                         <div className="flex-1 min-w-0">

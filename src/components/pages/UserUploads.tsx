@@ -58,7 +58,7 @@ export default function UserUploads() {
     if (isLoading) {
         return (
             <div className="h-[50vh] flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
             </div>
         );
     }
@@ -69,7 +69,7 @@ export default function UserUploads() {
                 <div className="glass-card p-8 text-center">
                     <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
                     <p className="text-white/60 mb-3">Failed to load your uploads.</p>
-                    <Button variant="link" onClick={() => window.location.reload()} className="text-purple-400">
+                    <Button variant="link" onClick={() => window.location.reload()} className="text-blue-400">
                         Retry
                     </Button>
                 </div>
@@ -118,7 +118,7 @@ export default function UserUploads() {
                     </div>
                     <button
                         onClick={() => setIsRequestOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[13px] font-display font-semibold transition-all"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-display font-semibold transition-all"
                         aria-label="Submit a new file"
                     >
                         <Plus className="h-4 w-4" />
@@ -131,10 +131,10 @@ export default function UserUploads() {
             {/* Impact Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Total Points */}
-                <div className="liquid-glass rounded-2xl p-5 border-purple-500/20 glow-purple-soft">
+                <div className="liquid-glass rounded-2xl p-5 border-blue-500/20 shadow-lg shadow-blue-500/5">
                     <div className="flex items-center justify-between mb-3">
-                        <span className="text-[12px] text-purple-300 font-medium">Community Score</span>
-                        <Zap className="h-4 w-4 text-purple-400" />
+                        <span className="text-[12px] text-blue-300 font-medium">Community Score</span>
+                        <Zap className="h-4 w-4 text-blue-400" />
                     </div>
                     <div className="text-[28px] font-display font-bold text-white">{totalPoints}</div>
                     <p className="text-[11px] text-white/35 mt-0.5">Total impact points</p>
@@ -166,7 +166,7 @@ export default function UserUploads() {
                         placeholder="Search by title, course, or lecturer..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full h-10 rounded-xl liquid-glass-subtle ps-10 pe-4 text-[14px] text-white placeholder:text-white/30 outline-none focus:border-purple-500/40 transition-colors"
+                        className="w-full h-10 rounded-xl liquid-glass-subtle ps-10 pe-4 text-[14px] text-white placeholder:text-white/30 outline-none focus:border-blue-500/40 transition-colors"
                     />
                 </div>
             </div>
@@ -191,8 +191,8 @@ export default function UserUploads() {
                                 >
                                     {/* Left: icon + info */}
                                     <div className="flex items-start gap-4">
-                                        <div className="mt-0.5 w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
-                                            <FileText className="h-4.5 w-4.5 text-purple-400" />
+                                        <div className="mt-0.5 w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                                            <FileText className="h-4.5 w-4.5 text-blue-400" />
                                         </div>
                                         <div className="space-y-1.5 min-w-0">
                                             {/* Title + status badge + points badge */}
@@ -206,7 +206,7 @@ export default function UserUploads() {
                                                 </span>
                                                 {/* Points badge — only shown when approved and points exist */}
                                                 {status === "approved" && file.pointsAwarded ? (
-                                                    <span className="inline-flex items-center gap-1 text-[11px] text-purple-400 px-2 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/20">
+                                                    <span className="inline-flex items-center gap-1 text-[11px] text-blue-400 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20">
                                                         <Zap className="h-3 w-3" />
                                                         +{file.pointsAwarded} pts
                                                     </span>

@@ -13,7 +13,7 @@ export default function Recent() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
             </div>
         );
     }
@@ -30,7 +30,7 @@ export default function Recent() {
                         Files you view will appear here so you can easily find them again.
                     </p>
                 </div>
-                <Button asChild className="gradient-bg border-0 glow-purple-soft">
+                <Button asChild className="gradient-bg border-0 glow-blue-soft">
                     <Link to="/courses">Browse Courses</Link>
                 </Button>
             </div>
@@ -64,12 +64,12 @@ export default function Recent() {
                             to={`/courses/${file.courseId}/files/${file.id}`}
                             className="flex items-center gap-4 px-6 py-4 hover:bg-white/[0.03] transition-colors group"
                         >
-                            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0 group-hover:bg-purple-500/20 transition-colors">
-                                <FileText className="h-4.5 w-4.5 text-purple-400" />
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0 group-hover:bg-blue-500/20 transition-colors">
+                                <FileText className="h-4.5 w-4.5 text-blue-400" />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-0.5">
-                                    <p className="font-medium text-white truncate text-[14px] group-hover:text-purple-300 transition-colors">
+                                    <p className="font-medium text-white truncate text-[14px] group-hover:text-blue-300 transition-colors">
                                         {file.title}
                                     </p>
                                     <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/[0.06] text-white/40 shrink-0">

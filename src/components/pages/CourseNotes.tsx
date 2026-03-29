@@ -38,7 +38,7 @@ export default function CourseNotes() {
                 </div>
                 <button
                     onClick={() => refetch()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] text-purple-400 hover:bg-purple-500/10 transition-all"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] text-blue-400 hover:bg-blue-500/10 transition-all"
                 >
                     <RefreshCw className="h-3.5 w-3.5" />
                     Retry
@@ -73,7 +73,7 @@ export default function CourseNotes() {
                         <FileText className="h-4.5 w-4.5 text-emerald-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-medium text-white truncate group-hover:text-purple-300 transition-colors">
+                        <p className="text-[14px] font-medium text-white truncate group-hover:text-blue-300 transition-colors">
                             {file.title}
                         </p>
                         <p className="text-[12px] text-white/35 mt-0.5">

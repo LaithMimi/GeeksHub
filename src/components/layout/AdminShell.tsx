@@ -32,7 +32,7 @@ function AdminSidebarFooter() {
         <SidebarFooter>
             <div className="p-2">
                 <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white text-sm font-medium">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-rose-500 to-blue-600 flex items-center justify-center text-white text-sm font-medium">
                         {initials}
                     </div>
                     <div className="flex-1 truncate text-sm text-start">
@@ -163,7 +163,7 @@ export default function AdminShell() {
 
     return (
         <SidebarProvider>
-            <a href="#admin-main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:text-sm">
+            <a href="#admin-main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:text-sm">
                 Skip to main content
             </a>
             <AdminSidebar />

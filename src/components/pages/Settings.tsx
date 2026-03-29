@@ -145,7 +145,7 @@ export default function Settings() {
                                     key={option.value}
                                     onClick={() => setTheme(option.value)}
                                     className={`relative rounded-xl p-3 text-left transition-all duration-200 border-2 ${isActive
-                                        ? "border-purple-500 bg-purple-500/[0.08] shadow-[0_0_20px_rgba(139,92,246,0.15)]"
+                                        ? "border-blue-500 bg-blue-500/[0.08] shadow-[0_0_20px_rgba(37, 99, 235,0.15)]"
                                         : "border-transparent liquid-glass-subtle hover:border-white/[0.12]"
                                         }`}
                                 >
@@ -154,7 +154,7 @@ export default function Settings() {
 
                                     {/* Label */}
                                     <div className="flex items-center gap-2 mt-3">
-                                        <Icon className={`h-4 w-4 ${isActive ? "text-purple-400" : "text-white/40"}`} />
+                                        <Icon className={`h-4 w-4 ${isActive ? "text-blue-400" : "text-white/40"}`} />
                                         <span className={`text-[13px] font-display font-semibold ${isActive ? "text-white" : "text-white/60"}`}>
                                             {option.label}
                                         </span>
@@ -224,7 +224,7 @@ export default function Settings() {
                 </GlassSection>
 
                 {/* 3. Study Defaults */}
-                <GlassSection icon={BookOpen} iconColor="text-purple-400" title="Study Defaults" desc="Pre-fill your search and browse filters.">
+                <GlassSection icon={BookOpen} iconColor="text-blue-400" title="Study Defaults" desc="Pre-fill your search and browse filters.">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <GlassSelect label="Default Major" value={defaultMajor} onValueChange={setDefaultMajor}>
                             {majors.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
@@ -236,7 +236,7 @@ export default function Settings() {
                 </GlassSection>
 
                 {/* 4. AI Preferences */}
-                <GlassSection icon={Brain} iconColor="text-purple-400" title="AI Preferences" desc="Customize how the AI assistant behaves.">
+                <GlassSection icon={Brain} iconColor="text-blue-400" title="AI Preferences" desc="Customize how the AI assistant behaves.">
                     <GlassToggle
                         label="Explain Sources"
                         desc="Always expand source citations in chat."
@@ -281,12 +281,12 @@ export default function Settings() {
 
                 <GlassSection icon={Clock} iconColor="text-white/40" title="Active Requests" desc="A quick glance at your file submission statuses.">
                     <p className="text-[13px] text-white/30">
-                        Visit <Link to="/uploads" className="text-purple-400 hover:text-purple-300 hover:underline transition-colors">Uploads</Link> to see your active requests.
+                        Visit <Link to="/uploads" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">Uploads</Link> to see your active requests.
                     </p>
                 </GlassSection>
 
                 {/* 7. About */}
-                <GlassSection icon={Sparkles} iconColor="text-purple-400" title="About GeeksHub" desc="Version and platform info.">
+                <GlassSection icon={Sparkles} iconColor="text-blue-400" title="About GeeksHub" desc="Version and platform info.">
                     <div className="space-y-3">
                         <div className="flex items-center justify-between text-[13px]">
                             <span className="text-white/50">Version</span>

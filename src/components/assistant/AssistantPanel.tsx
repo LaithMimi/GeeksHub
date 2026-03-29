@@ -88,9 +88,8 @@ function StickyCard({ note, onDelete }: { note: StickyNoteCard; onDelete: (id: s
     const [hovered, setHovered] = useState(false);
     return (
         <div
-            className="group relative p-3 rounded-sm shadow-md cursor-default"
+            className="group relative p-3 rounded-sm shadow-md cursor-default bg-gradient-to-br from-yellow-100 to-yellow-300 dark:from-yellow-200/90 dark:to-yellow-500/90"
             style={{
-                background: "linear-gradient(160deg, #fef9c3 0%, #fde047 100%)",
                 transform: hovered ? "rotate(0deg) scale(1.05)" : `rotate(${note.rotation}deg)`,
                 minHeight: "90px",
                 transition: "transform 0.15s ease, box-shadow 0.15s ease",
@@ -109,8 +108,7 @@ function StickyCard({ note, onDelete }: { note: StickyNoteCard; onDelete: (id: s
             >
                 <X className="h-2.5 w-2.5 text-yellow-900" />
             </button>
-            <p className="mt-3 text-[12px] leading-relaxed break-words font-medium"
-                style={{ color: "#713f12", fontFamily: "var(--font-sans)" }}
+            <p className="mt-3 text-[12px] leading-relaxed break-words font-medium text-yellow-900 font-sans"
             >
                 {note.text}
             </p>
@@ -324,8 +322,8 @@ export default function AssistantPanel({
                     title="Open AI Assistant"
                 >
                     <div className="flex h-8 w-8 items-center justify-center rounded-xl
-                                    bg-gradient-to-br from-purple-500 to-indigo-600
-                                    shadow-lg shadow-purple-500/20">
+                                    bg-blue-600
+                                    shadow-lg shadow-blue-500/20">
                         <Bot className="h-4 w-4 text-white" />
                     </div>
                     <span
@@ -398,7 +396,7 @@ export default function AssistantPanel({
                                     <div key={msg.id} className={`flex gap-3 animate-fade-in ${msg.role === "user" ? "justify-end" : ""}`}>
 
                                         {msg.role === "assistant" && (
-                                            <div className="shrink-0 w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                                            <div className="shrink-0 w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
                                                 <Bot className="h-4 w-4 text-white" />
                                             </div>
                                         )}
@@ -407,14 +405,14 @@ export default function AssistantPanel({
                                             {msg.role === "assistant" && (
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="font-semibold text-[13px] text-white/90">GeeksHub AI</span>
-                                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-purple-500/20 text-purple-300 border-none">
+                                                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-500/20 text-blue-300 border-none">
                                                         <Sparkles className="h-3 w-3 mr-1" />AI
                                                     </Badge>
                                                 </div>
                                             )}
 
                                             <div className={`${msg.role === "user"
-                                                ? "bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl rounded-tr-sm ml-auto shadow-lg shadow-purple-500/20"
+                                                ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm ml-auto shadow-lg shadow-blue-500/20"
                                                 : "bg-white/[0.04] border border-white/[0.02] text-white/90 rounded-2xl rounded-tl-sm"
                                                 } p-4 text-[13px] leading-relaxed backdrop-blur-sm`}
                                             >
@@ -453,7 +451,7 @@ export default function AssistantPanel({
 
                                 {isTyping && (
                                     <div className="flex gap-3">
-                                        <div className="shrink-0 w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                                        <div className="shrink-0 w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
                                             <Bot className="h-4 w-4 text-white" />
                                         </div>
                                         <div className="bg-white/[0.04] border border-white/[0.02] rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
@@ -473,7 +471,7 @@ export default function AssistantPanel({
                                 <Textarea
                                     placeholder="Ask about this file..."
                                     className="min-h-[80px] resize-none pr-14 bg-white/[0.03] border border-white/[0.05]
-                                               focus-visible:ring-1 focus-visible:ring-purple-500/50
+                                               focus-visible:ring-1 focus-visible:ring-blue-500/50
                                                rounded-2xl text-[13px] text-white placeholder:text-white/30 transition-all"
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
@@ -483,8 +481,8 @@ export default function AssistantPanel({
                                 <Button
                                     size="icon"
                                     className="absolute right-2.5 bottom-2.5 h-9 w-9 rounded-xl
-                                               bg-gradient-to-br from-purple-500 to-indigo-600
-                                               hover:opacity-90 shadow-md shadow-purple-500/20 transition-all disabled:opacity-50"
+                                               bg-blue-600
+                                               hover:opacity-90 shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
                                     onClick={() => sendMsg()}
                                     disabled={!inputValue.trim() || isTyping}
                                 >
@@ -516,8 +514,7 @@ export default function AssistantPanel({
                             >
                                 {cards.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-20 text-center gap-3">
-                                        <div className="w-14 h-14 rounded-sm flex items-center justify-center text-2xl shadow-md"
-                                            style={{ background: "linear-gradient(160deg, #fef9c3 0%, #fde047 100%)" }}
+                                        <div className="w-14 h-14 rounded-sm flex items-center justify-center text-2xl shadow-md bg-gradient-to-br from-yellow-100 to-yellow-300 dark:from-yellow-200/90 dark:to-yellow-500/90"
                                         >📝</div>
                                         <div className="space-y-1">
                                             <p className="text-[13px] font-semibold text-white/70 tracking-wide uppercase">Board is empty</p>
@@ -573,16 +570,12 @@ export default function AssistantPanel({
                                 <button
                                     onClick={addCard}
                                     disabled={!noteInput.trim()}
-                                    className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center
+                                    className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center
                                                shadow-sm transition-all disabled:opacity-35 disabled:cursor-not-allowed
-                                               hover:scale-105 active:scale-95 border"
-                                    style={noteInput.trim() ? {
-                                        background: "linear-gradient(160deg, #fef9c3 0%, #eab308 100%)",
-                                        borderColor: "#ca8a04",
-                                    } : { borderColor: "rgba(255,255,255,0.08)" }}
+                                               hover:scale-105 active:scale-95 border ${noteInput.trim() ? "bg-gradient-to-br from-yellow-100 to-yellow-500 border-yellow-600 dark:from-yellow-200/90 dark:to-yellow-500/90" : "border-white/10"}`}
                                     title="Pin note"
                                 >
-                                    <Plus className="h-5 w-5" style={{ color: noteInput.trim() ? "#713f12" : "rgba(255,255,255,0.3)" }} />
+                                    <Plus className={`h-5 w-5 ${noteInput.trim() ? "text-yellow-900" : "text-white/30"}`} />
                                 </button>
                             </div>
 

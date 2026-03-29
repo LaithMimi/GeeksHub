@@ -58,7 +58,7 @@ function StepperBar({ current }: { current: number }) {
                 const active = current === step.id;
                 const isLast = idx === STEPS.length - 1;
 
-                const bg = done ? "bg-purple-600" : active ? "bg-purple-500" : "bg-white/[0.05]";
+                const bg = done ? "bg-blue-600" : active ? "bg-blue-500" : "bg-white/[0.05]";
                 const textColor = done || active ? "text-white" : "text-white/30";
 
                 return (
@@ -117,9 +117,9 @@ function StepperBar({ current }: { current: number }) {
 function SummaryChip({ label, value }: { label: string; value?: string }) {
     if (!value) return null;
     return (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20">
             <span className="text-[10px] text-white/30">{label}</span>
-            <span className="text-[11px] text-purple-300 font-medium">{value}</span>
+            <span className="text-[11px] text-blue-300 font-medium">{value}</span>
         </div>
     );
 }
@@ -268,7 +268,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                                 py-2.5 rounded-xl text-[13px] font-medium border transition-all duration-200
                                                 disabled:opacity-30 disabled:pointer-events-none
                                                 ${form.program_year === y.id
-                                                    ? "bg-purple-500/20 border-purple-500/50 text-purple-300"
+                                                    ? "bg-blue-500/20 border-blue-500/50 text-blue-300"
                                                     : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.07]"
                                                 }
                                             `}
@@ -306,7 +306,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                                 className={`
                                                     flex-1 py-2 rounded-xl text-[13px] font-medium border transition-all duration-200
                                                     ${form.semester === s.id
-                                                        ? "bg-purple-500/20 border-purple-500/50 text-purple-300"
+                                                        ? "bg-blue-500/20 border-blue-500/50 text-blue-300"
                                                         : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.07]"
                                                     }
                                                 `}
@@ -443,7 +443,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             relative flex flex-col items-center justify-center gap-3
                             border-2 border-dashed rounded-2xl p-8 cursor-pointer transition-all duration-200
                             ${form.file
-                                ? "border-purple-500/50 bg-purple-500/10"
+                                ? "border-blue-500/50 bg-blue-500/10"
                                 : "border-white/[0.1] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
                             }
                         `}>
@@ -455,8 +455,8 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             />
                             {form.file ? (
                                 <>
-                                    <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
-                                        <Check className="h-5 w-5 text-purple-400" />
+                                    <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                                        <Check className="h-5 w-5 text-blue-400" />
                                     </div>
                                     <div className="text-center">
                                         <p className="text-[13px] text-white font-medium">{form.file.name}</p>
@@ -521,7 +521,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             <button
                                 type="button"
                                 onClick={handleSubmit}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 text-white text-[13px] font-semibold hover:bg-purple-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
                                 {isSubmitting
                                     ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Submitting...</>
@@ -533,7 +533,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                 type="button"
                                 onClick={() => setStep((s) => s + 1)}
                                 disabled={!canProceed()}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 text-white text-[13px] font-semibold hover:bg-purple-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
                                 Next
                                 <ChevronRight className="h-3.5 w-3.5" />

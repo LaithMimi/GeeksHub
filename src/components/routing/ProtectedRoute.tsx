@@ -14,7 +14,7 @@ export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
     if (isLoading) {
         return (
             <div className="h-screen flex items-center justify-center bg-background">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
             </div>
         );
     }

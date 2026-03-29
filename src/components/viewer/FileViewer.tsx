@@ -187,7 +187,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
     if (isLoading) {
         return (
             <div className="h-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-purple-400" />
+                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
                 <span className="sr-only">Loading file...</span>
             </div>
         );
@@ -202,7 +202,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                 </div>
                 <h2 className="text-xl font-display font-bold text-white">File not found</h2>
                 <p className="text-white/40 mt-2 text-[14px]">The requested file could not be loaded.</p>
-                <Button variant="link" onClick={() => window.history.back()} className="mt-4 text-purple-400 hover:text-purple-300">
+                <Button variant="link" onClick={() => window.history.back()} className="mt-4 text-blue-400 hover:text-blue-300">
                     Go Back
                 </Button>
             </div>
@@ -246,7 +246,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                 <p className="text-white/40 mt-2 text-[14px] max-w-sm">
                     The download URL is not yet available. Please try again later.
                 </p>
-                <Button variant="link" onClick={() => window.history.back()} className="mt-4 text-purple-400 hover:text-purple-300">
+                <Button variant="link" onClick={() => window.history.back()} className="mt-4 text-blue-400 hover:text-blue-300">
                     Go Back
                 </Button>
             </div>
@@ -358,7 +358,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                         {/* Arrow */}
                         <div className="absolute left-1/2 -translate-x-1/2 top-full
                                         w-0 h-0 border-l-4 border-r-4 border-t-4
-                                        border-l-transparent border-r-transparent border-t-purple-600" />
+                                        border-l-transparent border-r-transparent border-t-blue-600" />
                     </div>
                 )}
 
@@ -368,7 +368,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                     onLoadError={onDocumentLoadError}
                     loading={
                         <div className="flex items-center gap-3 text-white/40 mt-20">
-                            <Loader2 className="h-5 w-5 animate-spin text-purple-400" />
+                            <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
                             <span className="text-[14px]">Loading PDF…</span>
                         </div>
                     }
@@ -382,7 +382,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                         className="shadow-2xl shadow-black/50 rounded-sm"
                         loading={
                             <div className="flex items-center justify-center h-96 w-full">
-                                <Loader2 className="h-5 w-5 animate-spin text-purple-400" />
+                                <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
                             </div>
                         }
                     />

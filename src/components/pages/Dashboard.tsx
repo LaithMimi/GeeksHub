@@ -47,7 +47,7 @@ const BLOCK_COLORS = [
     { bg: "bg-rose-500/70", border: "border-rose-400/30", glow: "shadow-[0_0_10px_rgba(244,63,94,0.25)]" },
     { bg: "bg-blue-500/70", border: "border-blue-400/30", glow: "shadow-[0_0_10px_rgba(59,130,246,0.25)]" },
     { bg: "bg-amber-500/70", border: "border-amber-400/30", glow: "shadow-[0_0_10px_rgba(245,158,11,0.25)]" },
-    { bg: "bg-purple-500/70", border: "border-purple-400/30", glow: "shadow-[0_0_10px_rgba(139,92,246,0.25)]" },
+    { bg: "bg-blue-500/70", border: "border-blue-400/30", glow: "shadow-[0_0_10px_rgba(37, 99, 235,0.25)]" },
     { bg: "bg-emerald-500/70", border: "border-emerald-400/30", glow: "shadow-[0_0_10px_rgba(16,185,129,0.25)]" },
     { bg: "bg-pink-500/70", border: "border-pink-400/30", glow: "shadow-[0_0_10px_rgba(236,72,153,0.25)]" },
 ];
@@ -268,7 +268,7 @@ function LearningPlan({ tasks, onOpenAddModal, onToggleTask }: {
                                 style={{ gridTemplateColumns: `60px repeat(${hours.length}, 1fr)` }}
                             >
                                 {/* Day Label */}
-                                <div className={`flex items-center text-[13px] font-medium pr-3 ${isTodayRow ? "text-purple-400" : "text-white/40"
+                                <div className={`flex items-center text-[13px] font-medium pr-3 ${isTodayRow ? "text-blue-400" : "text-white/40"
                                     }`}>
                                     {dayLabel}
                                 </div>
@@ -307,7 +307,7 @@ function LearningPlan({ tasks, onOpenAddModal, onToggleTask }: {
                                     {/* Drag Preview Ghost */}
                                     {showDragPreview && dragWidth > 0 && (
                                         <div
-                                            className="absolute top-1.5 bottom-1.5 rounded-lg bg-purple-500/30 border border-purple-400/40 border-dashed z-10 pointer-events-none animate-pulse"
+                                            className="absolute top-1.5 bottom-1.5 rounded-lg bg-blue-500/30 border border-blue-400/40 border-dashed z-10 pointer-events-none animate-pulse"
                                             style={{
                                                 left: `${dragLeft}%`,
                                                 width: `${Math.max(dragWidth, 1)}%`,
@@ -427,7 +427,7 @@ function MiniCalendar({ taskDates, selectedDate, onSelectDate }: {
                             key={dateStr}
                             onClick={() => onSelectDate(dateStr)}
                             className={`relative w-full aspect-square rounded-lg flex items-center justify-center text-[12px] transition-all ${isSelected
-                                ? "bg-purple-500 text-white font-semibold shadow-[0_0_12px_rgba(139,92,246,0.4)]"
+                                ? "bg-blue-500 text-white font-semibold shadow-[0_0_12px_rgba(37, 99, 235,0.4)]"
                                 : isTodayDate
                                     ? "bg-white/[0.08] text-white font-semibold"
                                     : isThisMonth
@@ -437,7 +437,7 @@ function MiniCalendar({ taskDates, selectedDate, onSelectDate }: {
                         >
                             {format(day, "d")}
                             {hasTask && !isSelected && (
-                                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-purple-400" />
+                                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-400" />
                             )}
                         </button>
                     );
@@ -494,7 +494,7 @@ function AddTaskModal({ onClose, onAdd, initialDate, initialStartHour, initialDu
                             value={title}
                             onChange={e => setTitle(e.target.value)}
                             placeholder="Current objective..."
-                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground placeholder:text-muted-foreground/50 border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground placeholder:text-muted-foreground/50 border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                         />
                     </div>
 
@@ -506,7 +506,7 @@ function AddTaskModal({ onClose, onAdd, initialDate, initialStartHour, initialDu
                             type="date"
                             value={date}
                             onChange={e => setDate(e.target.value)}
-                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all [color-scheme:dark]"
+                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                         />
                     </div>
 
@@ -518,7 +518,7 @@ function AddTaskModal({ onClose, onAdd, initialDate, initialStartHour, initialDu
                                 id="task-start"
                                 value={startHour}
                                 onChange={e => setStartHour(Number(e.target.value))}
-                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all [color-scheme:dark]"
+                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                             >
                                 {START_HOURS.map(h => (
                                     <option key={h} value={h} className="bg-background text-foreground">
@@ -533,7 +533,7 @@ function AddTaskModal({ onClose, onAdd, initialDate, initialStartHour, initialDu
                                 id="task-duration"
                                 value={duration}
                                 onChange={e => setDuration(Number(e.target.value))}
-                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all [color-scheme:dark]"
+                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                             >
                                 {DURATIONS.map(d => (
                                     <option key={d} value={d} className="bg-background text-foreground">
@@ -599,13 +599,13 @@ function formatDeadline(dateStr: string): { label: string; urgent: boolean } {
 // ────────────────────────────────────────────
 
 const progressColors: Record<string, string> = {
-    purple: "bg-purple-500",
+    purple: "bg-blue-500",
     green: "bg-emerald-500",
     red: "bg-red-500",
 };
 
 const progressGlows: Record<string, string> = {
-    purple: "shadow-[0_0_12px_rgba(139,92,246,0.4)]",
+    purple: "shadow-[0_0_12px_rgba(37, 99, 235,0.4)]",
     green: "shadow-[0_0_12px_rgba(16,185,129,0.4)]",
     red: "shadow-[0_0_12px_rgba(239,68,68,0.4)]",
 };
@@ -635,7 +635,7 @@ export default function Dashboard() {
                     <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
                     <h2 className="text-xl font-display font-bold text-white mb-2">Couldn't load dashboard</h2>
                     <p className="text-white/50 mb-6">Something went wrong. Let's try again.</p>
-                    <Button onClick={() => window.location.reload()} className="gradient-bg border-0 glow-purple-soft">
+                    <Button onClick={() => window.location.reload()} className="gradient-bg border-0 glow-blue-soft">
                         Try Again
                     </Button>
                 </div>
@@ -718,7 +718,7 @@ export default function Dashboard() {
             neutral: totalTasks === 0 || completedTasks < totalTasks,
             hero: false,
             icon: TrendingUp,
-            iconColor: "text-purple-400"
+            iconColor: "text-blue-400"
         },
         {
             label: "XP Earned",
@@ -757,18 +757,18 @@ export default function Dashboard() {
         <div className="space-y-8 animate-fade-in">
             {/* ── Continue Studying Hero ── */}
             {isLoadingRecent ? (
-                <Skeleton className="h-[104px] w-full rounded-2xl bg-white/[0.02] border border-purple-500/10" />
+                <Skeleton className="h-[104px] w-full rounded-2xl bg-white/[0.02] border border-blue-500/10" />
             ) : lastFile && (
                 <Link to={`/courses/${lastFile.courseId}/files/${lastFile.id}`} className="block group">
-                    <div className="liquid-glass rounded-2xl p-6 flex items-center gap-5 border-purple-500/15 hover:border-purple-500/30 transition-all glow-purple-soft">
+                    <div className="liquid-glass rounded-2xl p-6 flex items-center gap-5 border-blue-500/15 hover:border-blue-500/30 transition-colors">
                         <div className="w-14 h-14 rounded-2xl gradient-bg flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-lg">
                             <PlayCircle className="h-7 w-7 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-[11px] font-display font-semibold text-purple-400 uppercase tracking-[0.15em] mb-1">
+                            <p className="text-[11px] font-display font-semibold text-blue-400 uppercase tracking-[0.15em] mb-1">
                                 Continue Studying
                             </p>
-                            <h2 className="text-[20px] font-display font-bold text-white leading-tight truncate group-hover:text-purple-200 transition-colors">
+                            <h2 className="text-[20px] font-display font-bold text-white leading-tight truncate group-hover:text-blue-200 transition-colors">
                                 {lastFile.title}
                             </h2>
                             <p className="text-[12px] text-white/35 mt-1 flex items-center gap-2">
@@ -778,7 +778,7 @@ export default function Dashboard() {
                                 <span>{formatDistanceToNow(new Date(lastFile.viewedAt), { addSuffix: true })}</span>
                             </p>
                         </div>
-                        <div className="flex items-center gap-2 text-[13px] font-display font-semibold text-purple-400 group-hover:text-purple-300 transition-colors shrink-0">
+                        <div className="flex items-center gap-2 text-[13px] font-display font-semibold text-blue-400 group-hover:text-blue-300 transition-colors shrink-0">
                             Resume
                             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </div>
@@ -803,7 +803,7 @@ export default function Dashboard() {
                 {metrics.map((metric, i) => (
                     <div
                         key={metric.label}
-                        className={`rounded-2xl p-6 transition-all animate-fade-in-up opacity-0 ${metric.hero ? "liquid-glass border-purple-500/20 glow-purple-soft" : "liquid-glass"
+                        className={`rounded-2xl p-6 transition-all animate-fade-in-up opacity-0 ${metric.hero ? "liquid-glass border-blue-500/20 shadow-lg shadow-blue-500/5" : "liquid-glass"
                             } stagger-${i + 1}`}
                     >
                         <div className="flex items-center justify-between mb-4">
@@ -861,7 +861,7 @@ export default function Dashboard() {
                                         Browse courses to get started
                                     </p>
                                     <Link to="/courses">
-                                        <Button className="gradient-bg border-0 glow-purple-soft">Browse Courses</Button>
+                                        <Button className="gradient-bg border-0 glow-blue-soft">Browse Courses</Button>
                                     </Link>
                                 </div>
                             ) : (
@@ -875,7 +875,7 @@ export default function Dashboard() {
                                             <BookOpen className="h-8 w-8 text-blue-400/50 group-hover:text-blue-400 transition-colors" />
                                         </div>
                                         <div className="p-5 space-y-3">
-                                            <h3 className="text-[15px] font-display font-semibold text-white leading-tight group-hover:text-purple-300 transition-colors">
+                                            <h3 className="text-[15px] font-display font-semibold text-white leading-tight group-hover:text-blue-300 transition-colors">
                                                 {course.name}
                                             </h3>
                                             <p className="text-[12px] text-white/40">{course.meta}</p>
@@ -926,7 +926,7 @@ export default function Dashboard() {
                                                         <FileText className="h-4.5 w-4.5 text-amber-400/60 group-hover:text-amber-400 transition-colors" />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-[14px] font-medium text-white truncate group-hover:text-purple-300 transition-colors">
+                                                        <p className="text-[14px] font-medium text-white truncate group-hover:text-blue-300 transition-colors">
                                                             {file.title}
                                                         </p>
                                                     </div>
@@ -976,7 +976,7 @@ export default function Dashboard() {
                                 )}
                                 <button
                                     onClick={() => setShowAddTask(true)}
-                                    className="min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-purple-400 hover:bg-purple-500/15 transition-all"
+                                    className="min-w-[44px] min-h-[44px] rounded-lg flex items-center justify-center text-blue-400 hover:bg-blue-500/15 transition-all"
                                     title="Add task"
                                 >
                                     <Plus className="h-5 w-5" />
@@ -992,7 +992,7 @@ export default function Dashboard() {
                                 </p>
                                 <button
                                     onClick={() => setShowAddTask(true)}
-                                    className="text-[12px] text-purple-400 hover:text-purple-300 mt-2 transition-colors"
+                                    className="text-[12px] text-blue-400 hover:text-blue-300 mt-2 transition-colors"
                                 >
                                     Add a task
                                 </button>
@@ -1011,7 +1011,7 @@ export default function Dashboard() {
                                                 onClick={() => toggleTask(task.id)}
                                                 className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 transition-all ${task.completed
                                                     ? "bg-emerald-500/30 border-emerald-500/40 text-emerald-400"
-                                                    : "border-white/[0.15] hover:border-purple-500/40"
+                                                    : "border-white/[0.15] hover:border-blue-500/40"
                                                     }`}
                                             >
                                                 {task.completed && <Check className="h-3 w-3" />}
@@ -1083,12 +1083,12 @@ export default function Dashboard() {
                                             <div key={day.day} className="flex-1 flex flex-col items-center gap-2">
                                                 <div
                                                     className={`w-full rounded-md transition-all ${isToday
-                                                        ? "bg-purple-500/80 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
+                                                        ? "bg-blue-500/80 shadow-[0_0_8px_rgba(37, 99, 235,0.3)]"
                                                         : "bg-white/[0.08]"
                                                         }`}
                                                     style={{ height: `${Math.max(day.value, 4)}%` }}
                                                 />
-                                                <span className={`text-[11px] ${isToday ? "text-purple-400 font-semibold" : "text-white/35"}`}>{day.day}</span>
+                                                <span className={`text-[11px] ${isToday ? "text-blue-400 font-semibold" : "text-white/35"}`}>{day.day}</span>
                                             </div>
                                         );
                                     })
@@ -1099,9 +1099,9 @@ export default function Dashboard() {
 
                     {/* Reputation Card */}
                     {activitySummary && (
-                        <div className="liquid-glass rounded-2xl p-6 border-purple-500/20 glow-purple-soft">
+                        <div className="liquid-glass rounded-2xl p-6 border-blue-500/20 shadow-lg shadow-blue-500/5">
                             <div className="flex items-center gap-2 mb-3">
-                                <Zap className="h-4 w-4 text-purple-400" />
+                                <Zap className="h-4 w-4 text-blue-400" />
                                 <span className="text-[13px] font-display font-semibold text-white/70">Your Reputation</span>
                             </div>
                             <div className="text-[32px] font-display font-bold text-white leading-none">
