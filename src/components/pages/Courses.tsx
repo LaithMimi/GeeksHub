@@ -59,10 +59,10 @@ export default function Courses() {
     const { data: topContributors, isLoading: isLoadingContributors } = useTopContributors();
 
     // -- Derived Hierarchical Data --
-    const availableYears = allMajorCourses ? Array.from(new Set(allMajorCourses.map(c => c.year_id).filter(Boolean) as number[])) : [];
+    const availableYears = allMajorCourses ? Array.from(new Set(allMajorCourses.map(c => c.yearId).filter(Boolean) as number[])) : [];
     const yearData = availableYears.map(y => ({ id: y.toString(), label: `Year ${y}` })).sort((a, b) => Number(a.id) - Number(b.id));
 
-    const coursesInYear = selections.year ? allMajorCourses?.filter(c => c.year_id === parseInt(selections.year)) : allMajorCourses;
+    const coursesInYear = selections.year ? allMajorCourses?.filter(c => c.yearId === parseInt(selections.year)) : allMajorCourses;
 
     const availableSemesters = coursesInYear ? Array.from(new Set(coursesInYear.map(c => c.semester).filter(Boolean) as number[])) : [];
     const semesterData = availableSemesters.map(s => ({ id: s.toString(), label: `Semester ${s === 1 ? 'A' : 'B'}` })).sort((a, b) => Number(a.id) - Number(b.id));
@@ -142,7 +142,7 @@ export default function Courses() {
                                     setSelections({
                                         major: course.majorId || "",
                                         year: "",
-                                        semester: course.semesterId || "",
+                                        semester: "",
                                         course: course.id,
                                         lecturer: "",
                                         type: ""

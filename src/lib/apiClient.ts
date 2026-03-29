@@ -18,7 +18,11 @@
  * ============================================================================
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+// In development, use a relative path so Vite's proxy forwards requests to
+// the FastAPI backend on the same origin — this ensures the HttpOnly
+// auth_token cookie is attached to every request (cross-port = cross-origin).
+// In production, VITE_API_URL should be set to the full backend URL.
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
 
 // ── snake_case → camelCase transformer ──────────────────────────────────────
 

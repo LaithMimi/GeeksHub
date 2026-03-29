@@ -6,8 +6,9 @@
 
 /* ============================================
    LIQUID GLASS DESIGN SYSTEM — GeeksHub
-   Apple WWDC 2025 inspired: translucent panels,
-   backdrop blur, animated mesh, depth layers
+   Edtech SaaS palette: indigo-navy primary,
+   green success states, amber progress,
+   white light mode for clean reading sessions
    ============================================ */
 
 :root {
@@ -44,31 +45,36 @@
   --motion-slow: 350ms;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-bounce: cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* Quieter: Replaced bounce with standard */
 
-  /* Cyber Glass Tokens — Deep Teal */
-  --glass-bg: rgba(2, 11, 18, 0.4);
-  --glass-bg-hover: rgba(6, 20, 28, 0.6);
-  --glass-bg-active: rgba(10, 31, 41, 0.8);
-  --glass-border: rgba(76, 201, 216, 0.2);
-  /* Faint cyan edge */
-  --glass-border-strong: rgba(76, 201, 216, 0.4);
-  --glass-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px inset rgba(76, 201, 216, 0.05);
-  --glass-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px inset rgba(76, 201, 216, 0.1);
+  /* Glass Tokens — Deep Navy / Indigo
+     Shifted from cyber teal to indigo for edtech trust signal */
+  --glass-bg: rgba(7, 8, 20, 0.4);
+  --glass-bg-hover: rgba(10, 12, 28, 0.6);
+  --glass-bg-active: rgba(14, 16, 38, 0.8);
+  --glass-border: rgba(99, 102, 241, 0.18);
+  /* Indigo edge */
+  --glass-border-strong: rgba(99, 102, 241, 0.35);
+  --glass-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px inset rgba(99, 102, 241, 0.05);
+  --glass-shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px inset rgba(99, 102, 241, 0.08);
   --glass-blur: 16px;
   --glass-blur-heavy: 32px;
-  --glass-heavy-bg: rgba(2, 11, 18, 0.8);
-  --glass-subtle-bg: rgba(76, 201, 216, 0.02);
-  --glass-subtle-border: rgba(76, 201, 216, 0.08);
+  --glass-heavy-bg: rgba(7, 8, 20, 0.8);
+  --glass-subtle-bg: rgba(99, 102, 241, 0.02);
+  --glass-subtle-border: rgba(99, 102, 241, 0.06);
   --glass-inset-highlight: transparent;
-  --glass-inset-highlight-hover: rgba(76, 201, 216, 0.05);
+  --glass-inset-highlight-hover: rgba(99, 102, 241, 0.04);
 
-  /* Neon Glow Tokens (Sharp, saturated) */
-  --glow-purple: 0 0 16px rgba(76, 201, 216, 0.4), 0 0 32px rgba(76, 201, 216, 0.2);
-  /* Repurposed to cyan */
-  --glow-purple-soft: 0 0 24px rgba(76, 201, 216, 0.15);
+  /* Glow Tokens
+     Indigo = primary interaction
+     Green  = success/completion (viva pass, file done)
+     Red    = error/failure (viva fail, destructive) */
+  --glow-indigo: 0 0 16px rgba(99, 102, 241, 0.4), 0 0 32px rgba(99, 102, 241, 0.2);
+  --glow-indigo-soft: 0 0 24px rgba(99, 102, 241, 0.15);
   --glow-green: 0 0 16px rgba(16, 185, 129, 0.4), 0 0 32px rgba(16, 185, 129, 0.15);
   --glow-red: 0 0 16px rgba(244, 63, 94, 0.4), 0 0 32px rgba(244, 63, 94, 0.15);
+  /* Legacy alias — kept so existing .glow-purple classes don't break */
+  --glow-purple: var(--glow-indigo);
+  --glow-purple-soft: var(--glow-indigo-soft);
 
   /* Semantic Colors */
   --text-primary: rgba(255, 255, 255, 0.9);
@@ -83,6 +89,8 @@
 
 /* ============================================
    LIGHT MODE OVERRIDES
+   Warm off-white base (#F7F8FC) — reduces eye
+   fatigue during long reading/study sessions
    ============================================ */
 .light {
   --glass-bg: rgba(255, 255, 255, 0.65);
@@ -98,14 +106,17 @@
   --glass-inset-highlight: rgba(255, 255, 255, 0.5);
   --glass-inset-highlight-hover: rgba(255, 255, 255, 0.7);
 
-  --glow-purple: 0 0 20px rgba(139, 92, 246, 0.08);
-  --glow-purple-soft: 0 0 30px rgba(139, 92, 246, 0.04);
+  --glow-indigo: 0 0 20px rgba(99, 102, 241, 0.1);
+  --glow-indigo-soft: 0 0 30px rgba(99, 102, 241, 0.06);
+  --glow-purple: var(--glow-indigo);
+  --glow-purple-soft: var(--glow-indigo-soft);
 
-  --text-primary: rgba(15, 10, 40, 0.9);
-  --text-secondary: rgba(15, 10, 40, 0.6);
-  --text-tertiary: rgba(15, 10, 40, 0.4);
-  --text-muted: rgba(15, 10, 40, 0.25);
-  --heading-color: #1a1035;
+  --text-primary: rgba(10, 15, 40, 0.9);
+  --text-secondary: rgba(10, 15, 40, 0.6);
+  --text-tertiary: rgba(10, 15, 40, 0.4);
+  --text-muted: rgba(10, 15, 40, 0.25);
+  --heading-color: #0f1535;
+  /* Deep navy heading — authoritative */
   --divider: rgba(0, 0, 0, 0.06);
   --scrollbar-thumb: rgba(0, 0, 0, 0.12);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
@@ -123,126 +134,151 @@ body {
 }
 
 /* ============================================
-   CLEAN CYBER BACKGROUND (Deep Teal)
+   BACKGROUND — Deep Navy (Edtech Dark)
+   Shifted from teal-black to indigo-navy.
+   Less "hacker terminal", more focused study env.
    ============================================ */
 .mesh-background {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-color: #020b12;
-  /* Deep teal black */
-  /* Extremely subtle pure-CSS cyber grid instead of noisy SVG */
+  background-color: #07080f;
+  /* Deep indigo-navy */
   background-image:
-    linear-gradient(rgba(76, 201, 216, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(76, 201, 216, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(99, 102, 241, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.025) 1px, transparent 1px);
   background-size: 30px 30px;
 }
 
 .light .mesh-background {
-  background-color: #f8fafc;
+  background-color: #ffffff;
+  /* Pure white — clean, crisp reading surface */
   background-image:
-    linear-gradient(rgba(76, 201, 216, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(76, 201, 216, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(99, 102, 241, 0.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.022) 1px, transparent 1px);
   background-size: 30px 30px;
 }
 
 /* ============================================
-   COLOR PALETTE — Deep Teal / Cyan
+   COLOR PALETTE — Indigo / Blue-Navy
+   Edtech SaaS: trust (indigo), success (green),
+   progress (amber), error (rose)
    ============================================ */
 @layer base {
   :root {
-    --background: 206 80% 4%;
-    /* Deep Teal */
+    --background: 225 30% 5%;
+    /* Deep indigo-navy */
     --foreground: 0 0% 98%;
-    --card: 202 65% 7%;
-    /* Slightly lighter teal */
+    --card: 225 25% 8%;
+    /* Slightly lighter navy */
     --card-foreground: 0 0% 98%;
-    --popover: 202 65% 7%;
+    --popover: 225 25% 8%;
     --popover-foreground: 0 0% 98%;
 
-    /* PURPLE Accent */
-    --primary: 262 83% 58%;
-    --primary-foreground: 206 80% 4%;
-    /* Inverted text for bright cyan buttons */
+    /* Indigo Primary — academic trust signal */
+    --primary: 245 80% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Steely Dark */
-    --secondary: 200 60% 10%;
+    /* Navy Dark secondary */
+    --secondary: 225 25% 12%;
     --secondary-foreground: 0 0% 95%;
 
-    --muted: 200 60% 10%;
-    --muted-foreground: 200 20% 65%;
+    --muted: 225 25% 12%;
+    --muted-foreground: 225 15% 60%;
 
-    --accent: 186 65% 57%;
-    --accent-foreground: 206 80% 4%;
+    /* Blue accent — interactive highlights */
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
 
-    /* Laser Red */
-    --destructive: 345 90% 60%;
+    /* Semantic states — critical for edtech feedback */
+    --success: 142 70% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+
+    /* Rose destructive — used sparingly (viva fail, delete) */
+    --destructive: 345 80% 58%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 200 40% 16%;
-    --input: 200 40% 16%;
-    --ring: 186 65% 57%;
+    --border: 225 20% 18%;
+    --input: 225 20% 18%;
+    --ring: 245 80% 60%;
     --radius: 1rem;
 
     /* Sidebar */
-    --sidebar-background: 206 90% 2%;
+    --sidebar-background: 225 35% 4%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 186 65% 57%;
-    --sidebar-primary-foreground: 206 80% 4%;
-    --sidebar-accent: 200 60% 10%;
+    --sidebar-primary: 245 80% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 225 25% 12%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 200 40% 16%;
-    --sidebar-ring: 186 65% 57%;
+    --sidebar-border: 225 20% 18%;
+    --sidebar-ring: 245 80% 60%;
 
-    /* Chart Colors */
-    --chart-1: 186 65% 57%;
-    /* Cyan */
-    --chart-2: 265 100% 65%;
-    /* Purple */
-    --chart-3: 195 100% 60%;
-    /* Azure */
-    --chart-4: 45 100% 60%;
-    /* Volt Gold */
-    --chart-5: 330 100% 65%;
-    /* Hot Pink */
+    /* Chart Colors — edtech semantic palette
+       1 Indigo   → primary metric / progress
+       2 Green    → completion / success rate
+       3 Amber    → in-progress / warnings
+       4 Blue     → secondary data
+       5 Rose     → errors / failure states       */
+    --chart-1: 245 80% 60%;
+    /* Indigo */
+    --chart-2: 142 70% 45%;
+    /* Success Green */
+    --chart-3: 38 92% 50%;
+    /* Amber */
+    --chart-4: 217 91% 60%;
+    /* Blue */
+    --chart-5: 345 80% 60%;
+    /* Rose */
   }
 
   .light {
-    --background: 240 10% 99%;
-    --foreground: 260 40% 8%;
+    --background: 0 0% 100%;
+    /* Pure white background */
+    --foreground: 225 40% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 260 40% 8%;
+    --card-foreground: 225 40% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 260 40% 8%;
+    --popover-foreground: 225 40% 10%;
 
-    --primary: 265 85% 55%;
+    --primary: 245 80% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 10% 94%;
-    --secondary-foreground: 260 40% 20%;
+    --secondary: 220 15% 93%;
+    --secondary-foreground: 225 40% 20%;
 
-    --muted: 240 10% 94%;
-    --muted-foreground: 260 15% 45%;
+    --muted: 220 15% 93%;
+    --muted-foreground: 225 15% 45%;
 
-    --accent: 265 85% 55%;
+    --accent: 245 80% 55%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 345 80% 55%;
+    --success: 142 65% 38%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 85% 44%;
+    --warning-foreground: 0 0% 100%;
+    --info: 217 85% 55%;
+    --info-foreground: 0 0% 100%;
+
+    --destructive: 345 75% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 10% 90%;
-    --input: 240 10% 90%;
-    --ring: 265 85% 55%;
+    --border: 220 12% 90%;
+    --input: 220 12% 90%;
+    --ring: 245 80% 55%;
 
     /* Sidebar */
-    --sidebar-background: 240 20% 98%;
-    --sidebar-foreground: 260 40% 15%;
-    --sidebar-primary: 265 85% 55%;
+    --sidebar-background: 220 15% 97%;
+    --sidebar-foreground: 225 40% 15%;
+    --sidebar-primary: 245 80% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 10% 94%;
-    --sidebar-accent-foreground: 260 40% 20%;
-    --sidebar-border: 240 10% 90%;
-    --sidebar-ring: 265 85% 55%;
+    --sidebar-accent: 220 15% 93%;
+    --sidebar-accent-foreground: 225 40% 20%;
+    --sidebar-border: 220 12% 90%;
+    --sidebar-ring: 245 80% 55%;
   }
 }
 
@@ -355,22 +391,43 @@ body {
   }
 
   /* Glow Effects */
+  .glow-indigo {
+    box-shadow: var(--glow-indigo);
+  }
+
+  .glow-indigo-soft {
+    box-shadow: var(--glow-indigo-soft);
+  }
+
+  /* Legacy aliases */
   .glow-purple {
-    box-shadow: var(--glow-purple);
+    box-shadow: var(--glow-indigo);
   }
 
   .glow-purple-soft {
-    box-shadow: var(--glow-purple-soft);
+    box-shadow: var(--glow-indigo-soft);
   }
 
-  /* Gradient Text */
+  /* Semantic glow utilities — use these in edtech contexts */
+  .glow-success {
+    box-shadow: var(--glow-green);
+    /* Viva pass, completion */
+  }
+
+  .glow-error {
+    box-shadow: var(--glow-red);
+    /* Viva fail, destructive */
+  }
+
+  /* Gradient Text — indigo spectrum */
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #a78bfa, #818cf8, #c084fc);
+    background-image: linear-gradient(135deg, #818cf8, #6366f1, #4f6df5);
   }
 
+  /* Gradient BG — indigo primary */
   .gradient-bg {
-    background: linear-gradient(135deg, #8B5CF6, #6366F1, #A855F7);
+    background: linear-gradient(135deg, #4f6df5, #6366f1, #4338ca);
   }
 
   /* Legacy glass compatibility */
@@ -503,8 +560,6 @@ body {
 
 /* ============================================
    LIGHT MODE — COMPREHENSIVE THEME OVERRIDES
-   Remaps all white-alpha utility classes used
-   by components to dark equivalents for light bg.
    ============================================ */
 
 /* ---- Static text-white/xx ---- */
@@ -517,11 +572,11 @@ body {
 }
 
 .light .text-white\/80 {
-  color: rgba(15, 10, 40, 0.78);
+  color: rgba(10, 15, 40, 0.78);
 }
 
 .light .text-white\/75 {
-  color: rgba(15, 10, 40, 0.72);
+  color: rgba(10, 15, 40, 0.72);
 }
 
 .light .text-white\/70 {
@@ -533,11 +588,11 @@ body {
 }
 
 .light .text-white\/60 {
-  color: rgba(15, 10, 40, 0.55);
+  color: rgba(10, 15, 40, 0.55);
 }
 
 .light .text-white\/50 {
-  color: rgba(15, 10, 40, 0.5);
+  color: rgba(10, 15, 40, 0.5);
 }
 
 .light .text-white\/45 {
@@ -549,7 +604,7 @@ body {
 }
 
 .light .text-white\/35 {
-  color: rgba(15, 10, 40, 0.35);
+  color: rgba(10, 15, 40, 0.35);
 }
 
 .light .text-white\/30 {
@@ -561,11 +616,11 @@ body {
 }
 
 .light .text-white\/20 {
-  color: rgba(15, 10, 40, 0.18);
+  color: rgba(10, 15, 40, 0.18);
 }
 
 .light .text-white\/15 {
-  color: rgba(15, 10, 40, 0.14);
+  color: rgba(10, 15, 40, 0.14);
 }
 
 .light .text-white\/0 {
@@ -582,11 +637,11 @@ body {
 }
 
 .light .hover\:text-white\/80:hover {
-  color: rgba(15, 10, 40, 0.78);
+  color: rgba(10, 15, 40, 0.78);
 }
 
 .light .hover\:text-white\/75:hover {
-  color: rgba(15, 10, 40, 0.72);
+  color: rgba(10, 15, 40, 0.72);
 }
 
 .light .hover\:text-white\/70:hover {
@@ -594,7 +649,7 @@ body {
 }
 
 .light .hover\:text-white\/60:hover {
-  color: rgba(15, 10, 40, 0.55);
+  color: rgba(10, 15, 40, 0.55);
 }
 
 /* ---- focus:text-white/xx ---- */
@@ -615,11 +670,11 @@ body {
 
 /* ---- placeholder:text-white/xx ---- */
 .light .placeholder\:text-white\/30::placeholder {
-  color: rgba(15, 10, 40, 0.3);
+  color: rgba(10, 15, 40, 0.3);
 }
 
 .light .placeholder\:text-white\/40::placeholder {
-  color: rgba(15, 10, 40, 0.35);
+  color: rgba(10, 15, 40, 0.35);
 }
 
 /* ---- Light-mode border overrides ---- */
@@ -696,7 +751,7 @@ body {
 
 /* ---- Sidebar text overrides for light mode ---- */
 .light .text-sidebar-foreground {
-  color: rgba(15, 10, 40, 0.85);
+  color: rgba(10, 15, 40, 0.85);
 }
 
 /* ---- Gradient-bg text should stay white ---- */
@@ -709,29 +764,35 @@ body {
   color: #ffffff;
 }
 
-/* ---- Colored badge/status text should keep their colors ---- */
+/* ---- Colored badge/status text — keep semantic colors ---- */
 .light .text-emerald-400 {
   color: rgb(16, 185, 129);
+  /* Success */
 }
 
 .light .text-yellow-400 {
   color: rgb(202, 138, 4);
-}
-
-.light .text-red-400 {
-  color: rgb(248, 113, 113);
+  /* Warning */
 }
 
 .light .text-amber-400 {
   color: rgb(217, 119, 6);
+  /* In-progress */
+}
+
+.light .text-red-400 {
+  color: rgb(248, 113, 113);
+  /* Error */
 }
 
 .light .text-purple-400 {
-  color: rgb(139, 92, 246);
+  color: rgb(99, 102, 241);
+  /* Remapped to indigo */
 }
 
 .light .text-purple-300 {
-  color: rgb(168, 128, 255);
+  color: rgb(129, 140, 248);
+  /* Indigo-300 */
 }
 
 .light .text-blue-400 {
@@ -739,16 +800,16 @@ body {
 }
 
 .light .text-violet-400 {
-  color: rgb(139, 92, 246);
+  color: rgb(99, 102, 241);
 }
 
-/* ---- Status badge backgrounds (keep semi-transparent on light) ---- */
+/* ---- Status badge backgrounds ---- */
 .light .bg-purple-500\/10 {
-  background-color: rgba(139, 92, 246, 0.08);
+  background-color: rgba(99, 102, 241, 0.08);
 }
 
 .light .bg-purple-500\/15 {
-  background-color: rgba(139, 92, 246, 0.10);
+  background-color: rgba(99, 102, 241, 0.10);
 }
 
 .light .bg-blue-500\/10 {
@@ -784,7 +845,7 @@ body {
 
 .light input::placeholder,
 .light textarea::placeholder {
-  color: rgba(15, 10, 40, 0.35);
+  color: rgba(10, 15, 40, 0.35);
 }
 
 /* ============================================

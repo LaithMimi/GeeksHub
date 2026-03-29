@@ -127,12 +127,12 @@ export interface Course {
     id: string;
     code: string; // "CS101"
     name: string;
-    majorId: string;
-    semesterId: string; // For filtering
-    term: string; // Display string like "Fall 2024"
-    color: string; // Tailwind gradient classes for UI
-    year_id?: number;
-    semester?: number;
+    majorId: string;  // camelCase from snake_case major_id
+    semesterId?: string; // Optional, not all courses have a separate semesterId
+    term?: string; // Display string like "Fall 2024" (may not be in backend)
+    color?: string; // Tailwind gradient classes for UI (may not be in backend)
+    yearId?: number;   // camelCase from snake_case year_id (e.g. 1, 2, 3, 4)
+    semester?: number; // e.g. 1 = Fall, 2 = Spring
 }
 
 /**
