@@ -90,12 +90,16 @@ def viewer_heartbeat(
     if view_session.is_complete:
         return {"message": "Already complete", "score": 1.0, "isComplete": True}
 
-    # 2. Add the time the frontend told us to add
-    view_session.active_seconds += payload.active_seconds_to_add
+    # 2. Add the time the frontend told us to add (CLAMPED to prevent cheating)
+    # The heartbeat fires every ~10 seconds, so 30s is a generous upper bound
+    MAX_HEARTBEAT_SECONDS = 30
+    view_session.active_seconds += min(payload.active_seconds_to_add, MAX_HEARTBEAT_SECONDS)
 
     # 3. Calculate the score based on Laith's formula (Time x Pages)
+    # Sanitize visited_pages: only count valid, in-range page numbers
+    valid_pages = set(p for p in payload.visited_pages if 1 <= p <= payload.total_pages)
     time_ratio = min(view_session.active_seconds / max(view_session.required_active_seconds, 1), 1.0)
-    page_ratio = min((len(payload.visited_pages) / max(payload.total_pages, 1)), 1.0)
+    page_ratio = min(len(valid_pages) / max(payload.total_pages, 1), 1.0)
     
     view_session.completion_score = time_ratio * page_ratio
 

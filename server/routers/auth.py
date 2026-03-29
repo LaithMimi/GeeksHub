@@ -1,6 +1,7 @@
 import os
 import jwt
 import requests
+import time
 from fastapi import APIRouter, HTTPException, Depends, Response
 from sqlmodel import Session, select
 from auth0.authentication import GetToken
@@ -13,10 +14,19 @@ from utils.auth_utils import get_verified_user
 # This is the magic object that replaces "app" in this file
 router = APIRouter(tags=["Authentication"])
 
+# --- Cached Auth0 Management Client ---
+_auth0_admin = None
+_auth0_admin_expiry = 0
+
 def get_auth0_admin():
+    global _auth0_admin, _auth0_admin_expiry
+    
+    # Return the cached client if its token hasn't expired yet
+    if _auth0_admin and time.time() < _auth0_admin_expiry:
+        return _auth0_admin
+    
     try:
         domain = os.getenv("AUTH0_DOMAIN")
-        # 1. Get the token as before
         get_token = GetToken(
             domain, 
             os.getenv("AUTH0_M2M_ID"), 
@@ -24,11 +34,13 @@ def get_auth0_admin():
         )
         token_data = get_token.client_credentials(f'https://{domain}/api/v2/')
         
-        # 2. Initialize 
-        return Auth0(
+        _auth0_admin = Auth0(
             tenant_domain=domain, 
             token=token_data['access_token']
         )
+        # Cache for 50 minutes (M2M tokens last 24h, refresh well before expiry)
+        _auth0_admin_expiry = time.time() + 3000
+        return _auth0_admin
         
     except Exception as e:
         print(f"Auth0 Admin Error: {e}")
@@ -86,7 +98,8 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
             print(f"Rolling back: Deleting Auth0 user {auth0_id} due to DB error.")
             admin.users.delete(auth0_id)
             
-        raise HTTPException(status_code=400, detail=f"Registration failed: {str(e)}")
+        print(f"Registration error: {e}")  # Keep for server logs
+        raise HTTPException(status_code=400, detail="Registration failed. Please try again later.")
 
 @router.post("/api/v1/signin")
 def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(get_session)):
@@ -126,19 +139,22 @@ def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(
             cookie_lifespan = 86400
 
         # SET THE HTTP-ONLY COOKIE
+        # If we are on the real server, this will be "production". Otherwise, assume we are coding locally.
+        is_production = os.getenv("ENVIRONMENT", "development") == "production"
+
         response.set_cookie(
             key = "auth_token",
             value = access_token,
             httponly=True,  # Prevents JS from reading the token
-            secure=False,    # Only send cookie over HTTPS
-            samesite="lax", # CSRF protection
+            secure=is_production,    # Only send cookie over HTTPS
+            samesite="lax" if not is_production else "none", # CSRF protection
             max_age=cookie_lifespan # 24 hours
         )
         return {"user": user}
     
     except Exception as e:
-        print(f"Auth0 Login Error: {e}") 
-        raise HTTPException(status_code=401, detail=str(e))
+        print(f"Auth0 Login Error: {e}")  # Keep for server logs
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
 
 @router.post("/api/v1/signout")
 def sign_out(response: Response):

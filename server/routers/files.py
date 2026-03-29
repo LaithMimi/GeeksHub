@@ -21,26 +21,31 @@ bucket_name = os.getenv("BUCKET_NAME")
 async def upload_to_gcs(file: UploadFile, destination_blob_name: str):
     """
     Uploads a file to the Google Cloud Storage bucket.
+    Runs the blocking GCS call in a thread pool so it doesn't freeze the event loop.
     """
+    import asyncio
+
     try:
-        # 1. Connect to your specific bucket
         bucket = storage_client.bucket(bucket_name)
-        
-        # 2. Create a "blob" (Google's term for a file) at the destination path
         blob = bucket.blob(destination_blob_name)
-        
-        # 3. Ensure we are reading from the very beginning of the file stream
         file.file.seek(0)
         
-        # 4. Upload directly from the memory buffer to Google Cloud!
-        blob.upload_from_file(file.file, content_type=file.content_type)
+        # Run the blocking upload in a background thread
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(
+            None,  # Use the default thread pool
+            lambda: blob.upload_from_file(file.file, content_type=file.content_type)
+        )
         
-        # Return the exact path inside the bucket so we can store it in Neon DB
         return destination_blob_name
         
     except Exception as e:
         print(f"FATAL GCS ERROR: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload file to cloud storage.")
+
+def sanitize_like(value: str) -> str:
+    """Escape SQL LIKE wildcard characters."""
+    return value.replace("%", r"\%").replace("_", r"\_")
 
 # --- Endpoints ---
 
@@ -68,7 +73,8 @@ def list_files(
     if lecturer_id:
         statement = statement.where(Material.lecturer_id == lecturer_id)
     if search:
-        statement = statement.where(Material.title.ilike(f"%{search}%"))
+        safe_search = sanitize_like(search)
+        statement = statement.where(Material.title.ilike(f"%{safe_search}%"))
 
     # Execute and return the list
     materials = session.exec(statement).all()
@@ -125,20 +131,20 @@ def get_my_requests(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_verified_user)
 ):
-    """Enriched student queue"""
-    # Join the tables to grab the real names instead of just UUIDs
-    statement = select(FileRequest, Course, Lecturer).join(Course).join(Lecturer).where(FileRequest.user_id == current_user.id)
+    """Enriched student queue — single query with LEFT JOIN for XP."""
+    statement = (
+        select(FileRequest, Course, Lecturer, PointsTransaction)
+        .join(Course, FileRequest.course_id == Course.id)
+        .join(Lecturer, FileRequest.lecturer_id == Lecturer.id)
+        .outerjoin(PointsTransaction, PointsTransaction.request_id == FileRequest.id)
+        .where(FileRequest.user_id == current_user.id)
+    )
     results = session.exec(statement).all()
     
     enriched_list = []
-    for request, course, lecturer in results:
-        # Check if this was approved (if so, the Material ID matches the Request ID)
+    for request, course, lecturer, xp in results:
         mat_id = request.id if request.status == "approved" else None
-        # Calculate real XP from the database
-        xp_transaction = session.exec(
-            select(PointsTransaction).where(PointsTransaction.request_id == request.id)
-        ).first()
-        pts = xp_transaction.amount if xp_transaction else 0
+        pts = xp.amount if xp else 0
         
         enriched_list.append(
             FileRequestEnriched(
@@ -212,6 +218,9 @@ def withdraw_request(
     request = session.get(FileRequest, request_id)
     if not request or request.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Request not found.")
+    
+    if request.status != "pending":
+        raise HTTPException(status_code=400, detail="Only pending requests can be withdrawn.")
     
     try:
         bucket = storage_client.bucket(bucket_name)

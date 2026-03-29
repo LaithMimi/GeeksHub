@@ -8,6 +8,10 @@ from utils.auth_utils import get_verified_user
 
 router = APIRouter(tags=["Catalog"])
 
+def sanitize_like(value: str) -> str:
+    """Escape SQL LIKE wildcard characters."""
+    return value.replace("%", r"\%").replace("_", r"\_")
+
 @router.get("/api/v1/years")
 def get_years():
     """Returns static academic years for the frontend dropdowns/MyPath."""
@@ -65,9 +69,10 @@ def search_courses(
     if year_id:
         statement = statement.where(Course.year_id == year_id)
     if query:
+        safe_query = sanitize_like(query)
         # Search by both name and code (case-insensitive)
         statement = statement.where(
-            (Course.name.ilike(f"%{query}%")) | (Course.code.ilike(f"%{query}%"))
+            (Course.name.ilike(f"%{safe_query}%")) | (Course.code.ilike(f"%{safe_query}%"))
         )
 
     results = session.exec(statement).all()

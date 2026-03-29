@@ -9,7 +9,14 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 # The Engine is the "manager" of the connection
 # echo=True to see the SQL commands in your console
-engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_size=3,       # Base connections per Uvicorn worker
+    max_overflow=2,    # Burst connections per worker (3+2 = 5 max per worker)
+    pool_recycle=300,  # Reconnect every 5 min (Neon drops idle connections)
+)
 
 #  This function provides a session for FastAPI routes to use
 def get_session():

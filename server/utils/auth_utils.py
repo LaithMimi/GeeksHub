@@ -9,6 +9,18 @@ from database import get_session
 
 token_auth_scheme = HTTPBearer()
 
+_jwks_client = None
+
+def get_jwks_client():
+    """Fetches the JWKS client once and caches it in memory."""
+    global _jwks_client
+    if _jwks_client is None:
+        domain = os.getenv("AUTH0_DOMAIN")
+        jwks_url = f"https://{domain}/.well-known/jwks.json"
+        # 2. Tell the client to cache the keys for 3600 seconds (1 hour)
+        _jwks_client = jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
+    return _jwks_client
+
 # Utility function to verify Auth0 JWT and retrieve the corresponding user from the database
 def get_verified_user(request: Request,
     session: Session = Depends(get_session)):
@@ -28,8 +40,7 @@ def get_verified_user(request: Request,
 
     try:
         # 1. Get Auth0 Public Keys to verify the token is real
-        jwks_url = f"https://{domain}/.well-known/jwks.json"
-        jwks_client = jwt.PyJWKClient(jwks_url)
+        jwks_client = get_jwks_client()
         signing_key = jwks_client.get_signing_key_from_jwt(token)
 
         # 2. Decode and validate the token
@@ -52,7 +63,8 @@ def get_verified_user(request: Request,
         return user
 
     except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        print(f"JWT verification failed: {e}")  # Keep for server logs
+        raise HTTPException(status_code=401, detail="Authentication failed.")
     
 def get_admin_user(current_user: User = Depends(get_verified_user)):
     if current_user.role != "ADMIN":
