@@ -81,8 +81,8 @@ These tables **exist** in `server/models.py`:
 | `GET` | `/api/v1/majors` | `listMajors()` | ✅ |
 | `GET` | `/api/v1/types` | `listTypes()` | ✅ |
 | `GET` | `/api/v1/courses?major_id=&year_id=&query=` | `listCourses(filters)` | ✅ |
-| `GET` | `/api/v1/courses/{course_id}` | `getCourse(courseId)` | 🔴 |
-| `GET` | `/api/v1/lecturers?course_id=` | `listLecturers(filters)` | 🔴 |
+| `GET` | `/api/v1/courses/{course_id}` | `getCourse(courseId)` | ✅ |
+| `GET` | `/api/v1/lecturers?course_id=` | `listLecturers(filters)` | ✅ |
 
 ### Implementation Notes
 
@@ -113,7 +113,7 @@ def list_lecturers(course_id: Optional[UUID] = None, session: Session = Depends(
 
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
-| `GET` | `/api/v1/files?course_id=&type_id=&lecturer_id=&search=` | `listFiles(filters)` | 🔴 |
+| `GET` | `/api/v1/files?course_id=&type_id=&lecturer_id=&search=` | `listFiles(filters)` | ✅ |
 | `GET` | `/api/v1/files/{file_id}` | `getFile(fileId)` | ✅ |
 | `GET` | `/api/v1/files/{file_id}/download` | (used by PDF viewer) | ✅ |
 
@@ -158,14 +158,14 @@ user_recent_files(user_id UUID FK, file_id UUID FK, viewed_at TIMESTAMP, PRIMARY
 |--------|----------|---------------|--------|
 | `POST` | `/api/v1/courses/{course_id}/upload` | `createFileRequest(payload)` | ✅ |
 | `GET` | `/api/v1/me/requests` | `listMyRequests(userId)` | ✅ |
-| `DELETE` | `/api/v1/me/requests/{request_id}` | `withdrawRequest(id)` | 🔴 |
-| `GET` | `/api/v1/admin/requests?status=` | `listAllRequests(filters)` | 🔴 |
-| `GET` | `/api/v1/admin/requests/stats` | `getRequestStats()` | 🔴 |
-| `POST` | `/api/v1/admin/requests/{id}/approve` | `approveRequest(id, ...)` | 🔴 |
+| `DELETE` | `/api/v1/me/requests/{request_id}` | `withdrawRequest(id)` | ✅ |
+| `GET` | `/api/v1/admin/requests?status=` | `listAllRequests(filters)` | ✅ |
+| `GET` | `/api/v1/admin/requests/stats` | `getRequestStats()` | ✅ |
+| `POST` | `/api/v1/admin/requests/{id}/approve` | `approveRequest(id, ...)` | ✅ |
 | `POST` | `/api/v1/admin/requests/{id}/reject` | `rejectRequest(id, ...)` | ✅ |
-| `POST` | `/api/v1/admin/requests/bulk-approve` | `bulkApprove(ids, ...)` | 🔴 |
+| `POST` | `/api/v1/admin/requests/bulk-approve` | `bulkApprove(ids, ...)` | ✅ |
 | `POST` | `/api/v1/admin/requests/bulk-reject` | `bulkReject(ids, ...)` | ✅ |
-| `POST` | `/api/v1/admin/requests/{id}/undo-approve` | `undoApprove(id, ...)` | 🔴 |
+| `POST` | `/api/v1/admin/requests/{id}/undo-approve` | `undoApprove(id, ...)` | ✅ |
 | `POST` | `/api/v1/admin/requests/{id}/undo-reject` | `undoReject(id, ...)` | ✅ |
 
 ### Implementation Notes
@@ -213,9 +213,9 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
-| `POST` | `/api/v1/me/viewer/session-start` | `startViewerSession({ fileId })` | 🔴 |
-| `POST` | `/api/v1/me/viewer/heartbeat` | `sendViewerHeartbeat(...)` | 🔴 |
-| `POST` | `/api/v1/me/viewer/session-end` | `endViewerSession(sessionId)` | 🔴 |
+| `POST` | `/api/v1/me/viewer/session-start` | `startViewerSession({ fileId })` | ✅ |
+| `POST` | `/api/v1/me/viewer/heartbeat` | `sendViewerHeartbeat(...)` | ✅ |
+| `POST` | `/api/v1/me/viewer/session-end` | `endViewerSession(sessionId)` | ✅ |
 | `POST` | `/api/v1/me/session/start` | `startPlatformSession()` | ✅ |
 | `POST` | `/api/v1/me/session/heartbeat` | `sendPlatformHeartbeat(sessionId)` | 🔴 |
 | `POST` | `/api/v1/me/session/end` | `endPlatformSession(sessionId)` | 🔴 |
@@ -241,8 +241,8 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
 | `POST` | `/api/v1/assistant/chat` | `sendMessage(fileId, message, history)` | 🔴 |
-| `GET` | `/api/v1/me/notes?fileId=` | `getNotes(fileId)` | 🔴 |
-| `POST` | `/api/v1/me/notes` | `saveNotes(fileId, content)` | 🔴 |
+| `GET` | `/api/v1/me/notes?fileId=` | `getNotes(fileId)` | ✅ |
+| `POST` | `/api/v1/me/notes` | `saveNotes(fileId, content)` | ✅ |
 
 ### Implementation Notes
 - **Chat**: Integrate with Google Gemini or OpenAI. Send the file content + conversation history as context. Return the AI response string.
@@ -256,7 +256,7 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
-| `GET` | `/api/v1/admin/audit-logs?action=&actorId=&limit=` | `listAuditLogs(filters)` | 🔴 |
+| `GET` | `/api/v1/admin/audit-logs?action=&actorId=&limit=` | `listAuditLogs(filters)` | ✅ |
 
 ### Implementation Notes
 Requires new `audit_logs` table:
@@ -322,30 +322,30 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 ## 14. Implementation Priority
 
 ### 🔴 P0 — App is broken without these (frontend calls them NOW)
-1. `GET /api/v1/lecturers` (DB query)
-2. `GET /api/v1/courses/{course_id}` (single course lookup)
-3. `GET /api/v1/files` (list approved files with filters)
-6. `GET /api/v1/admin/requests` (admin moderation queue)
+1. `GET /api/v1/lecturers` (DB query) ✅
+2. `GET /api/v1/courses/{course_id}` (single course lookup) ✅
+3. `GET /api/v1/files` (list approved files with filters) ✅
+6. `GET /api/v1/admin/requests` (admin moderation queue) ✅
 
 ### 🔴 P1 — Admin dashboard is broken without these
-9. `GET /api/v1/admin/requests/stats`
-10. `POST /api/v1/admin/requests/{id}/approve`
-11. `POST /api/v1/admin/requests/{id}/reject`
-12. `POST /api/v1/admin/requests/bulk-approve`
-13. `POST /api/v1/admin/requests/bulk-reject`
-14. `POST /api/v1/admin/requests/{id}/undo-approve`
-15. `POST /api/v1/admin/requests/{id}/undo-reject`
-16. `DELETE /api/v1/me/requests/{id}` (withdraw)
+9. `GET /api/v1/admin/requests/stats` ✅
+10. `POST /api/v1/admin/requests/{id}/approve` ✅
+11. `POST /api/v1/admin/requests/{id}/reject` ✅
+12. `POST /api/v1/admin/requests/bulk-approve` ✅
+13. `POST /api/v1/admin/requests/bulk-reject` ✅
+14. `POST /api/v1/admin/requests/{id}/undo-approve` ✅
+15. `POST /api/v1/admin/requests/{id}/undo-reject` ✅
+16. `DELETE /api/v1/me/requests/{id}` (withdraw) ✅
 
 ### 🔴 P2 — Needs new DB tables
 17. `GET /api/v1/me/reputation` ✅
 18. `GET /api/v1/reputation/leaderboard` ✅
-19. `GET /api/v1/admin/audit-logs` (needs `audit_logs`)
+19. `GET /api/v1/admin/audit-logs` (needs `audit_logs`) ✅
 20. Recent files CRUD (needs `user_recent_files`)
 
 ### 🔴 P3 — AI features
 21. `POST /api/v1/assistant/chat` (needs LLM integration)
-22. Notes CRUD (needs `user_notes`)
+22. Notes CRUD (needs `user_notes`) ✅
 
 ### 🟡 P4 — Nice-to-have (frontend still uses localStorage)
 23. Settings, Tasks, Pinned Courses, Notifications

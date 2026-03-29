@@ -3,10 +3,10 @@ import datetime
 from uuid import UUID
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from google.cloud import storage
 from database import get_session
-from models import FileRequest, Course, Material, PointsTransaction, User
+from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog
 from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
 from utils.auth_utils import get_admin_user
 
@@ -87,6 +87,17 @@ def approve_file(
         session.add(uploader)
 
     request.status = "approved"
+
+    audit = AuditLog(
+        actor_id=admin.id,
+        actor_name=admin.name,
+        action="approve",
+        target_type="file_request",
+        target_ids=[str(request.id)],
+        meta_data={"title": request.title, "filename": filename}
+    )
+    session.add(audit)
+
     session.commit()
     return {"message": "File approved!"}
 
@@ -119,6 +130,16 @@ def reject_request(
     if payload and payload.note:
         request.admin_note = payload.note
         
+    audit = AuditLog(
+        actor_id=admin.id,
+        actor_name=admin.name,
+        action="reject",
+        target_type="file_request",
+        target_ids=[str(request.id)],
+        meta_data={"title": request.title, "filename": filename, "reason": payload.note if payload and payload.note else ""}
+    )
+    session.add(audit)
+
     session.commit()
     return {"message": "Request rejected and moved to trash for 3 days."}
 
@@ -183,6 +204,17 @@ def bulk_approve_requests(
         request.status = "approved"
         approved_count += 1
         
+    if approved_count > 0:
+        audit = AuditLog(
+            actor_id=admin.id,
+            actor_name=admin.name,
+            action="bulk_approve",
+            target_type="file_request",
+            target_ids=[str(req_id) for req_id in payload.request_ids],
+            meta_data={"count": approved_count}
+        )
+        session.add(audit)
+
     session.commit()
     return {"message": f"Successfully approved {approved_count} files!"}
 
@@ -216,6 +248,17 @@ def bulk_reject_requests(
             
         rejected_count += 1
         
+    if rejected_count > 0:
+        audit = AuditLog(
+            actor_id=admin.id,
+            actor_name=admin.name,
+            action="bulk_reject",
+            target_type="file_request",
+            target_ids=[str(req_id) for req_id in payload.request_ids],
+            meta_data={"count": rejected_count, "reason": payload.reason if payload.reason else ""}
+        )
+        session.add(audit)
+
     session.commit()
     return {"message": f"Successfully rejected and trashed {rejected_count} files."}
 
@@ -259,6 +302,16 @@ def undo_approve(
     
     # Note: For a true enterprise app, you would also move the file back from 
     # 'approved_materials/' to 'pending_uploads/' in Google Cloud here.
+
+    audit = AuditLog(
+        actor_id=admin.id,
+        actor_name=admin.name,
+        action="undo_approve",
+        target_type="file_request",
+        target_ids=[str(request.id)],
+        meta_data={"title": request.title}
+    )
+    session.add(audit)
     
     session.commit()
     return {"message": "Approval undone. File is back in pending queue and XP revoked."}
@@ -290,6 +343,17 @@ def undo_reject(
     # Flip the status and clear the rejection note
     request.status = "pending"
     request.admin_note = None 
+
+    audit = AuditLog(
+        actor_id=admin.id,
+        actor_name=admin.name,
+        action="undo_reject",
+        target_type="file_request",
+        target_ids=[str(request.id)],
+        meta_data={"title": request.title}
+    )
+    session.add(audit)
+
     session.commit()
     
     return {"message": "Rejection undone. File rescued from trash and back in pending queue."}
@@ -301,15 +365,46 @@ def get_request_stats(
 ):
     """Returns top-level metrics for the Admin dashboard."""
     # Count how many requests are currently pending
-    statement = select(FileRequest).where(FileRequest.status == "pending")
-    pending_count = len(session.exec(statement).all())
+    statement = select(func.count(FileRequest.id)).where(FileRequest.status == "pending")
+    pending_count = session.exec(statement).one()
     
-    # We will wire up the "Today" stats once we build the AuditLogs table in P2!
+    today_start = datetime.datetime.now(datetime.timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    audit_logs_today = session.exec(
+        select(AuditLog).where(AuditLog.timestamp >= today_start)
+    ).all()
+    
+    approved_count_today = sum(
+        len(al.target_ids) for al in audit_logs_today if al.action in ("approve", "bulk_approve")
+    )
+    rejected_count_today = sum(
+        len(al.target_ids) for al in audit_logs_today if al.action in ("reject", "bulk_reject")
+    )
+    
     return {
         "pending": pending_count,
-        "approvedToday": 0, 
-        "rejectedToday": 0
+        "approvedToday": approved_count_today, 
+        "rejectedToday": rejected_count_today
     }
+
+@router.get("/api/v1/admin/audit-logs")
+def list_audit_logs(
+    action: Optional[str] = Query(None),
+    actorId: Optional[UUID] = Query(None),
+    limit: int = Query(50),
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_admin_user)
+):
+    """Returns the history of admin moderation actions."""
+    statement = select(AuditLog).order_by(AuditLog.timestamp.desc())
+    
+    if action:
+        statement = statement.where(AuditLog.action == action)
+    if actorId:
+        statement = statement.where(AuditLog.actor_id == actorId)
+        
+    statement = statement.limit(limit)
+    return session.exec(statement).all()
 
 @router.get("/api/v1/admin/requests/{request_id}/url")
 def get_admin_request_preview_url(

@@ -2,6 +2,8 @@ from typing import Optional
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
 from sqlmodel import Relationship, SQLModel, Field, UniqueConstraint
+from sqlalchemy import Column, JSON
+from typing import List, Dict, Any
 
 # --- Database Models ---
 
@@ -160,3 +162,14 @@ class UserNote(SQLModel, table=True):
     file_id: UUID = Field(foreign_key="materials.id", primary_key=True)
     content: str
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class AuditLog(SQLModel, table=True):
+    __tablename__ = "audit_logs"
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+    actor_id: UUID = Field(foreign_key="users.id", index=True)
+    actor_name: str
+    action: str # approve, reject, bulk_approve, bulk_reject, undo_approve, undo_reject
+    target_type: str # e.g. "file_request"
+    target_ids: List[str] = Field(default=[], sa_column=Column(JSON))
+    meta_data: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
