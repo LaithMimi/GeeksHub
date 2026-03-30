@@ -4,18 +4,16 @@ from uuid import UUID
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlmodel import Session, select, func
-from google.cloud import storage
 from database import get_session
 from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog
 from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
 from utils.auth_utils import get_admin_user
+from utils.shared import storage_client, BUCKET_NAME
 
 router = APIRouter(tags=["Admin Moderation"])
 
 # --- Setup ---
 XP_UPLOAD_APPROVAL = 25
-storage_client = storage.Client()
-bucket_name = os.getenv("BUCKET_NAME")
 
 # --- Endpoints ---
 
@@ -57,7 +55,7 @@ def approve_file(
     final_gcs_path = f"{safe_course_name}/{filename}"
     
     try:
-        bucket = storage_client.bucket(bucket_name)
+        bucket = storage_client.bucket(BUCKET_NAME)
         temp_blob = bucket.blob(request.file_url)
         bucket.rename_blob(temp_blob, final_gcs_path) 
     except Exception as e:
@@ -117,7 +115,7 @@ def reject_request(
     trash_path = f"trash_bin/{filename}"
     
     try:
-        bucket = storage_client.bucket(bucket_name)
+        bucket = storage_client.bucket(BUCKET_NAME)
         temp_blob = bucket.blob(request.file_url)
         bucket.rename_blob(temp_blob, trash_path)
         
@@ -151,7 +149,7 @@ def bulk_approve_requests(
 ):
     """Approves multiple files at once and moves them in Google Cloud Storage."""
     approved_count = 0
-    bucket = storage_client.bucket(bucket_name)
+    bucket = storage_client.bucket(BUCKET_NAME)
     
     for req_id in payload.request_ids:
         request = session.get(FileRequest, req_id)
@@ -225,7 +223,7 @@ def bulk_reject_requests(
     admin: User = Depends(get_admin_user)
 ):
     rejected_count = 0
-    bucket = storage_client.bucket(bucket_name)
+    bucket = storage_client.bucket(BUCKET_NAME)
     
     for req_id in payload.request_ids:
         request = session.get(FileRequest, req_id)
@@ -331,7 +329,7 @@ def undo_reject(
     pending_path = f"pending_uploads/{filename}"
     
     try:
-        bucket = storage_client.bucket(bucket_name)
+        bucket = storage_client.bucket(BUCKET_NAME)
         trash_blob = bucket.blob(request.file_url)
         bucket.rename_blob(trash_blob, pending_path)
         
@@ -370,16 +368,19 @@ def get_request_stats(
     
     today_start = datetime.datetime.now(datetime.timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     
-    audit_logs_today = session.exec(
-        select(AuditLog).where(AuditLog.timestamp >= today_start)
-    ).all()
+    approved_count_today = session.exec(
+        select(func.count(AuditLog.id)).where(
+            AuditLog.timestamp >= today_start,
+            AuditLog.action.in_(("approve", "bulk_approve"))
+        )
+    ).one()
     
-    approved_count_today = sum(
-        len(al.target_ids) for al in audit_logs_today if al.action in ("approve", "bulk_approve")
-    )
-    rejected_count_today = sum(
-        len(al.target_ids) for al in audit_logs_today if al.action in ("reject", "bulk_reject")
-    )
+    rejected_count_today = session.exec(
+        select(func.count(AuditLog.id)).where(
+            AuditLog.timestamp >= today_start,
+            AuditLog.action.in_(("reject", "bulk_reject"))
+        )
+    ).one()
     
     return {
         "pending": pending_count,
@@ -418,7 +419,7 @@ def get_admin_request_preview_url(
         raise HTTPException(status_code=404, detail="Request not found.")
 
     try:
-        bucket = storage_client.bucket(bucket_name)
+        bucket = storage_client.bucket(BUCKET_NAME)
         blob = bucket.blob(request.file_url) 
         
         # Generate the self-destructing link

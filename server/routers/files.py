@@ -3,20 +3,18 @@ import random
 import string
 import datetime
 from uuid import UUID
+from sqlmodel import func
 from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Depends, Query, Form, UploadFile, File
 from sqlmodel import Session, select
-from google.cloud import storage
 from database import get_session
 from models import Material, FileRequest, Course, Lecturer, User, PointsTransaction
 from schemas import FileRequestEnriched
 from utils.auth_utils import get_verified_user
 from utils.upload_utils import validate_uploaded_file
+from utils.shared import storage_client, BUCKET_NAME
 
 router = APIRouter(tags=["Files & Requests"])
-
-storage_client = storage.Client()
-bucket_name = os.getenv("BUCKET_NAME")
 
 async def upload_to_gcs(file: UploadFile, destination_blob_name: str):
     """
@@ -26,7 +24,7 @@ async def upload_to_gcs(file: UploadFile, destination_blob_name: str):
     import asyncio
 
     try:
-        bucket = storage_client.bucket(bucket_name)
+        bucket = storage_client.bucket(BUCKET_NAME)
         blob = bucket.blob(destination_blob_name)
         file.file.seek(0)
         
@@ -105,7 +103,7 @@ def get_single_file(
 
     # Generate a Signed URL for the frontend PDF viewer
     try:
-        bucket = storage_client.bucket(bucket_name)
+        bucket = storage_client.bucket(BUCKET_NAME)
         blob = bucket.blob(material.file_url) # Our real GCS path saved during approval
         
         download_url = blob.generate_signed_url(
@@ -172,6 +170,20 @@ async def upload_course_file(
     current_user: User = Depends(get_verified_user),
     session: Session = Depends(get_session)
 ):
+    # 0. RATE LIMIT — max 10 uploads per hour per student (L5 from security audit)
+    one_hour_ago = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
+    recent_uploads = session.exec(
+        select(func.count(FileRequest.id)).where(
+            FileRequest.user_id == current_user.id,
+            FileRequest.created_at >= one_hour_ago
+        )
+    ).one()
+    if recent_uploads >= 10:
+        raise HTTPException(
+            status_code=429,
+            detail="Upload limit reached. You can submit up to 10 files per hour."
+        )
+
     # 1. THE SECURITY BOUNCER
     # This will throw a 400/413 error if it's a virus, too big, or fake extension
     safe_ext = await validate_uploaded_file(file)
@@ -224,7 +236,7 @@ def withdraw_request(
         raise HTTPException(status_code=400, detail="Only pending requests can be withdrawn.")
     
     try:
-        bucket = storage_client.bucket(bucket_name)
+        bucket = storage_client.bucket(BUCKET_NAME)
         bucket.blob(request.file_url).delete()
     except Exception as e:
         print(f"GCS Delete failed: {e}")

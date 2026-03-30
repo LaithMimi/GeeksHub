@@ -79,7 +79,11 @@ def search_courses(
     return results
 
 @router.get("/api/v1/courses/{course_id}")
-def get_single_course(course_id: UUID, session: Session = Depends(get_session)):
+def get_single_course(
+    course_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
+):
     """Fetches a single course by its ID."""
     course = session.get(Course, course_id)
     if not course:

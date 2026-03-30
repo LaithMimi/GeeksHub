@@ -11,8 +11,6 @@ from utils.auth_utils import get_verified_user
 router = APIRouter(tags=["User Activity Dashboard"])
 
 
-
-
 @router.get("/api/v1/me/recent-files", response_model=List[RecentFileResponse])
 def get_recent_files(
     session: Session = Depends(get_session),
@@ -53,11 +51,15 @@ def get_activity_summary(
     files_statement = select(func.sum(UserCourseActivity.files_completed)).where(UserCourseActivity.user_id == current_user.id)
     completed_files = session.exec(files_statement).first() or 0
 
+    # Count how many courses the user has engaged with
+    courses_statement = select(func.count(UserCourseActivity.course_id)).where(UserCourseActivity.user_id == current_user.id)
+    courses_engaged = session.exec(courses_statement).one()
+
     return {
         "totalPoints": current_user.total_points,
         "totalStudyMinutes": total_seconds // 60,
         "filesCompleted": completed_files,
-        "coursesEngaged": len(session.exec(select(UserCourseActivity).where(UserCourseActivity.user_id == current_user.id)).all())
+        "coursesEngaged": courses_engaged
     }
 
 @router.post("/api/v1/me/recent-files/{file_id}")

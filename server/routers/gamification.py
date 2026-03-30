@@ -5,6 +5,7 @@ from database import get_session
 from models import User, PointsTransaction
 from schemas import MyReputationResponse, LeaderboardEntry 
 from utils.auth_utils import get_verified_user
+from utils.shared import get_badge_tier
 
 router = APIRouter(tags=["Gamification & Tracking"])
 
@@ -22,24 +23,17 @@ def get_my_reputation(
     # 2. Calculate their total XP
     total_points = current_user.total_points  # We keep a running total in the User table for efficiency
     
-    # 3. Calculate their Badge Tier
-    if total_points > 1000:
-        badge = "Gold"
-    elif total_points > 500:
-        badge = "Silver"
-    else:
-        badge = "Bronze"
-        
     return {
         "userId": current_user.id,
         "totalPoints": total_points,
-        "badge": badge,
+        "badge": get_badge_tier(total_points),
         "transactions": transactions
     }
 
 @router.get("/api/v1/reputation/leaderboard", response_model=List[LeaderboardEntry])
 def get_leaderboard(
-    session: Session = Depends(get_session)
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user)
 ):
     """Returns the top 10 users with the highest XP on the platform."""
     
@@ -50,20 +44,12 @@ def get_leaderboard(
     
     leaderboard = []
     for user in top_users:
-        # Calculate badge for the leaderboard display
-        if user.total_points > 1000:
-            badge = "Gold"
-        elif user.total_points > 500:
-            badge = "Silver"
-        else:
-            badge = "Bronze"
-            
         leaderboard.append(
             LeaderboardEntry(
                 userId=user.id,
                 name=user.name,
                 totalPoints=user.total_points,
-                badge=badge
+                badge=get_badge_tier(user.total_points)
             )
         )
         

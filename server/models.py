@@ -18,7 +18,7 @@ class User(SQLModel, table=True):
     email: str = Field(index=True, unique=True) # User's email, must be unique
     name: str # User's full name
     role: str = Field(default="STUDENT") # Default role is student
-    major_id: Optional[UUID] = Field(default=None, foreign_key="majors.id, index=True") # Foreign key linking users to their selected major
+    major_id: Optional[UUID] = Field(default=None, foreign_key="majors.id", index=True) # Foreign key linking users to their selected major
     total_points: int = Field(default=0, index=True) # Total reputation points accumulated by the user
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of user creation
 
@@ -39,7 +39,7 @@ class Course(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     code: str = Field(index=True, unique=True) # Course code (e.g., "CS101")
     name: str # Full name of the course (e.g., "Introduction to Programming")
-    major_id: UUID = Field(foreign_key="majors.id, index=True") # Foreign key linking to the major this course belongs to
+    major_id: UUID = Field(foreign_key="majors.id", index=True) # Foreign key linking to the major this course belongs to
     year_id: int # Academic year the course is typically offered (e.g., 1 for freshman year)
     semester: int # Semester the course is typically offered (e.g., 1 for Fall, 2 for Spring)
 
@@ -69,9 +69,9 @@ class Material(SQLModel, table=True):
     title: str
     academic_year: int #e.g., 1, 2, 3, or 4
     material_year: int # The year the material is relevant to (e.g., 2020 for "Midterm 2020")
-    course_id: UUID = Field(foreign_key="courses.id, index=True")
-    lecturer_id: UUID = Field(foreign_key="lecturers.id, index=True")
-    type_id: UUID = Field(foreign_key="material_types.id, index=True")
+    course_id: UUID = Field(foreign_key="courses.id", index=True)
+    lecturer_id: UUID = Field(foreign_key="lecturers.id", index=True)
+    type_id: UUID = Field(foreign_key="material_types.id", index=True)
     uploader_id: UUID = Field(foreign_key="users.id") # Keep track of who gets the credit!
     notes: str | None = None
     
@@ -123,7 +123,7 @@ class UserRecentFile(SQLModel, table=True):
     # Using a composite primary key so a user only has ONE recent entry per file
     user_id: UUID = Field(foreign_key="users.id", primary_key=True)
     file_id: UUID = Field(foreign_key="materials.id", primary_key=True) 
-    viewed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    viewed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
 class UserPlatformSession(SQLModel, table=True):
     __tablename__ = "user_platform_sessions"
@@ -169,7 +169,7 @@ class AuditLog(SQLModel, table=True):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
     actor_id: UUID = Field(foreign_key="users.id", index=True)
     actor_name: str
-    action: str # approve, reject, bulk_approve, bulk_reject, undo_approve, undo_reject
+    action: str = Field(index=True) # approve, reject, bulk_approve, bulk_reject, undo_approve, undo_reject
     target_type: str # e.g. "file_request"
     target_ids: List[str] = Field(default=[], sa_column=Column(JSON))
     meta_data: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
