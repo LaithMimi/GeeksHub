@@ -112,7 +112,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
     useEffect(() => {
         if (!onTextSelect) return;
 
-        function handleMouseUp(e: MouseEvent) {
+        function handleMouseUp() {
             // Small delay so the browser has time to finalise the selection
             setTimeout(() => {
                 const selection = window.getSelection();

@@ -44,7 +44,7 @@
  *      → DELETE FROM tasks WHERE id = :taskId AND user_id = :userId
  *      → Response: 204 No Content
  *
- * 3. Create TanStack Query hooks (e.g. src/queries/useTasks.ts):
+ * 3. Create TanStack Query hooks (e.g. src/hooks/useTasks.ts):
  *    ```ts
  *    export const useTasks = () => useQuery({
  *        queryKey: ["my-tasks"],
