@@ -134,8 +134,8 @@ def get_my_requests(
     """Enriched student queue — single query with LEFT JOIN for XP."""
     statement = (
         select(FileRequest, Course, Lecturer, PointsTransaction)
-        .join(Course, FileRequest.course_id == Course.id)
-        .join(Lecturer, FileRequest.lecturer_id == Lecturer.id)
+        .outerjoin(Course, FileRequest.course_id == Course.id)
+        .outerjoin(Lecturer, FileRequest.lecturer_id == Lecturer.id)
         .outerjoin(PointsTransaction, PointsTransaction.request_id == FileRequest.id)
         .where(FileRequest.user_id == current_user.id)
     )
@@ -150,7 +150,8 @@ def get_my_requests(
             FileRequestEnriched(
                 id=request.id, title=request.title, status=request.status,
                 academic_year=request.academic_year, material_year=request.material_year,
-                course_id=request.course_id, course_name=course.name, lecturer_name=lecturer.name,
+                course_id=request.course_id, course_name=course.name if course else "Unknown Course",
+                lecturer_name=lecturer.name if lecturer else "Unknown Lecturer",
                 material_id=mat_id, points_awarded=pts, created_at=request.created_at,
                 admin_note=request.admin_note
             )

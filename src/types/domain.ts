@@ -85,6 +85,8 @@ export interface User {
     role: Role;
     avatarInitials: string; // e.g., "JD" - consider avatarUrl for production
     majorId?: string;
+    totalPoints?: number;
+    createdAt?: string;
 }
 
 // ============================================================================

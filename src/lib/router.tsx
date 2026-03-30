@@ -25,6 +25,7 @@ const Dashboard = Loadable(React.lazy(() => import("@/components/pages/Dashboard
 const UserUploads = Loadable(React.lazy(() => import("@/components/pages/UserUploads")));
 const Recent = Loadable(React.lazy(() => import("@/components/pages/Recent")));
 const Settings = Loadable(React.lazy(() => import("@/components/pages/Settings")));
+const UserProfile = Loadable(React.lazy(() => import("@/components/pages/UserProfile")));
 const Courses = Loadable(React.lazy(() => import("@/components/pages/Courses")));
 const AuthPage = Loadable(React.lazy(() => import("@/components/pages/Auth/AuthPage")));
 const ResetPasswordPage = Loadable(React.lazy(() => import("@/components/pages/Auth/ResetPasswordPage")));
@@ -75,6 +76,10 @@ export const router = createBrowserRouter([
                     {
                         path: "settings",
                         element: <Settings />
+                    },
+                    {
+                        path: "profile",
+                        element: <UserProfile />
                     },
                     {
                         path: "courses",

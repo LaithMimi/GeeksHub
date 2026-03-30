@@ -39,7 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 displayName: user.name, // Note: backend uses 'name'
                 role: user.role as Role,
                 avatarInitials: user.name.charAt(0).toUpperCase(),
-                majorId: user.major_id
+                majorId: user.major_id,
+                totalPoints: user.totalPoints ?? user.total_points,
+                createdAt: user.createdAt ?? user.created_at
             };
             if (rememberMe) {
                 localStorage.setItem("mock_user_session", JSON.stringify(newUser));

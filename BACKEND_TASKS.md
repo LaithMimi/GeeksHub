@@ -39,7 +39,7 @@ These tables **exist** in `server/models.py`:
 
 | Table | Model | Notes |
 |-------|-------|-------|
-| `users` | `User` | Has `major_id` FK to `majors` |
+| `users` | `User` | Has `major_id` FK to `majors`. **MUST ADD**: `bio` (text), `university` (text), `avatar_url` (text), `last_login_at` (timestamp) for Profile Page. |
 | `majors` | `Major` | `id` is UUID, has `name` + `slug` |
 | `courses` | `Course` | Has `major_id`, `year_id` (int), `semester` (int) |
 | `lecturers` | `Lecturer` | `id` (UUID), `name`, `email` |
@@ -264,14 +264,15 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 
 ---
 
-## 11. User Settings & Preferences (🟡 localStorage)
+## 11. User Settings & Preferences
 
-> **Frontend source:** `src/components/pages/Settings.tsx` — currently uses localStorage
+> **Frontend source:** `src/components/pages/Settings.tsx`
+> **Important:** The frontend currently resets settings on reload because `localStorage` causes silent divergence bugs across devices. These endpoints must be implemented to preserve settings reliably.
 
 | Method | Endpoint | Description | Status |
 |--------|----------|-------------|--------|
-| `GET` | `/api/v1/me/settings` | Get user preferences | 🟡 |
-| `PATCH` | `/api/v1/me/settings` | Update user preferences | 🟡 |
+| `GET` | `/api/v1/me/settings` | Get user preferences | 🔴 |
+| `PATCH` | `/api/v1/me/settings` | Update user preferences | 🔴 |
 
 ---
 

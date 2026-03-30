@@ -14,7 +14,6 @@ import { Bell, Monitor, Globe, BookOpen, Brain, Clock, CheckCircle, Sun, Moon, L
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useMajors, useYears } from "@/queries/useCatalog";
-import { Link } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 
 // Language Options
@@ -122,21 +121,17 @@ export default function Settings() {
     return (
         <div className="animate-fade-in max-w-3xl mx-auto pb-20">
             {/* Header */}
-            <div className="top-0 z-20 py-4 mb-8 flex items-center justify-between">
+            <div className="top-0 z-20 py-4 mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-[28px] font-display font-bold text-white tracking-[-0.03em]">Settings</h1>
-                    <p className="text-[13px] text-white/40 mt-0.5">Manage your preferences and defaults</p>
-                </div>
-                <div className="flex items-center gap-2 text-[13px] text-emerald-400">
-                    <CheckCircle className="h-4 w-4" />
-                    Saved
+                    <h1 className="text-[28px] font-display font-bold text-foreground tracking-[-0.03em]">Settings</h1>
+                    <p className="text-[13px] text-muted-foreground mt-0.5">Manage your preferences and defaults</p>
                 </div>
             </div>
 
             <div className="space-y-6">
                 {/* 1. Theme / Appearance — Featured Section */}
                 <GlassSection icon={Palette} iconColor="text-violet-400" title="Theme" desc="Choose how GeeksHub looks for you.">
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {themeOptions.map(option => {
                             const Icon = option.icon;
                             const isActive = theme === option.value;
@@ -144,9 +139,10 @@ export default function Settings() {
                                 <button
                                     key={option.value}
                                     onClick={() => setTheme(option.value)}
-                                    className={`relative rounded-xl p-3 text-left transition-all duration-200 border-2 ${isActive
+                                    aria-label={`Select ${option.label} theme`}
+                                    className={`relative rounded-xl p-3 text-left transition-all duration-200 border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${isActive
                                         ? "border-blue-500 bg-blue-500/[0.08] shadow-[0_0_20px_rgba(37, 99, 235,0.15)]"
-                                        : "border-transparent liquid-glass-subtle hover:border-white/[0.12]"
+                                        : "border-transparent liquid-glass-subtle hover:border-white/[0.12] dark:hover:border-white/[0.12] hover:border-black/[0.12]"
                                         }`}
                                 >
                                     {/* Preview */}
@@ -154,8 +150,8 @@ export default function Settings() {
 
                                     {/* Label */}
                                     <div className="flex items-center gap-2 mt-3">
-                                        <Icon className={`h-4 w-4 ${isActive ? "text-blue-400" : "text-white/40"}`} />
-                                        <span className={`text-[13px] font-display font-semibold ${isActive ? "text-white" : "text-white/60"}`}>
+                                        <Icon className={`h-4 w-4 ${isActive ? "text-blue-500" : "text-muted-foreground"}`} />
+                                        <span className={`text-[13px] font-display font-semibold ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
                                             {option.label}
                                         </span>
                                     </div>
@@ -177,22 +173,22 @@ export default function Settings() {
                     {/* Language */}
                     <div className="space-y-3 pb-4 border-b border-white/[0.06]">
                         <div>
-                            <span className="text-[14px] font-medium text-white">Language</span>
-                            <p className="text-[12px] text-white/35 mt-0.5">Changes the interface language. Course files stay in their original language.</p>
+                            <span className="text-[14px] font-medium text-foreground">Language</span>
+                            <p className="text-[12px] text-muted-foreground mt-0.5">Changes the interface language. Course files stay in their original language.</p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <Globe className="h-4 w-4 text-white/30" />
+                            <Globe className="h-4 w-4 text-muted-foreground" />
                             <Select value={language} onValueChange={setLanguage}>
-                                <SelectTrigger className="w-[180px] liquid-glass-subtle border-white/[0.08] text-white/70 h-10 [&>span]:text-[13px]">
+                                <SelectTrigger aria-label="Language selection" className="w-[180px] liquid-glass-subtle text-foreground h-10 [&>span]:text-[13px]">
                                     <SelectValue placeholder="Select Language" />
                                 </SelectTrigger>
-                                <SelectContent className="liquid-glass-heavy border-white/[0.1]">
+                                <SelectContent className="liquid-glass border-white/[0.1]">
                                     {languages.map(lang => (
-                                        <SelectItem key={lang.code} value={lang.code} className="text-white/70 focus:bg-white/[0.08] focus:text-white">
+                                        <SelectItem key={lang.code} value={lang.code} className="text-foreground focus:bg-white/[0.08] focus:text-foreground">
                                             <div className="flex items-center justify-between w-full gap-4">
                                                 <span>{lang.name}</span>
                                                 {lang.dir === 'rtl' && (
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/[0.1] text-white/30">RTL</span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/[0.1] text-muted-foreground">RTL</span>
                                                 )}
                                             </div>
                                         </SelectItem>
@@ -279,28 +275,9 @@ export default function Settings() {
                     />
                 </GlassSection>
 
-                <GlassSection icon={Clock} iconColor="text-white/40" title="Active Requests" desc="A quick glance at your file submission statuses.">
-                    <p className="text-[13px] text-white/30">
-                        Visit <Link to="/uploads" className="text-blue-400 hover:text-blue-300 hover:underline transition-colors">Uploads</Link> to see your active requests.
-                    </p>
-                </GlassSection>
-
-                {/* 7. About */}
-                <GlassSection icon={Sparkles} iconColor="text-blue-400" title="About GeeksHub" desc="Version and platform info.">
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between text-[13px]">
-                            <span className="text-white/50">Version</span>
-                            <span className="text-white/70 font-mono">1.0.0-beta</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[13px]">
-                            <span className="text-white/50">Frontend</span>
-                            <span className="text-white/70 font-mono">React + Vite</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[13px]">
-                            <span className="text-white/50">Design System</span>
-                            <span className="text-white/70 font-mono">Liquid Glass</span>
-                        </div>
-                    </div>
+                {/* 6. About */}
+                <GlassSection icon={Sparkles} iconColor="text-blue-500" title="About GeeksHub" desc="Platform version: 1.0.0-beta">
+                    <p className="text-[13px] text-muted-foreground">GeeksHub is built with React, Vite, and the Liquid Glass design system.</p>
                 </GlassSection>
             </div>
         </div>
@@ -317,18 +294,18 @@ function GlassSection({ icon: Icon, iconColor, title, desc, children }: {
     children: React.ReactNode;
 }) {
     return (
-        <div className="liquid-glass rounded-2xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-white/[0.06]">
+        <section className="liquid-glass rounded-2xl overflow-hidden">
+            <div className="px-6 py-5 border-b border-white/[0.06] dark:border-white/[0.06] border-black/[0.06]">
                 <div className="flex items-center gap-2.5 mb-1">
                     <Icon className={`h-[18px] w-[18px] ${iconColor}`} />
-                    <h3 className="text-[16px] font-display font-bold text-white">{title}</h3>
+                    <h2 className="text-[16px] font-display font-bold text-foreground">{title}</h2>
                 </div>
-                <p className="text-[12px] text-white/35 ms-[30px]">{desc}</p>
+                <p className="text-[12px] text-muted-foreground ms-[30px]">{desc}</p>
             </div>
             <div className="px-6 py-5 space-y-4">
                 {children}
             </div>
-        </div>
+        </section>
     );
 }
 
@@ -338,13 +315,16 @@ function GlassToggle({ label, desc, checked, onCheckedChange }: {
     checked: boolean;
     onCheckedChange: (v: boolean) => void;
 }) {
+    const id = label.replace(/\s+/g, '-').toLowerCase();
     return (
-        <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-                <span className="text-[14px] font-medium text-white">{label}</span>
-                <p className="text-[12px] text-white/35">{desc}</p>
+        <div className="flex flex-row items-center justify-between min-h-[44px] py-1.5 gap-3">
+            <div className="space-y-0.5 flex-1 min-w-0 pr-2">
+                <label htmlFor={id} className="text-[14px] font-medium text-foreground cursor-pointer select-none block truncate">{label}</label>
+                <p className="text-[12px] text-muted-foreground leading-snug break-words">{desc}</p>
             </div>
-            <Switch checked={checked} onCheckedChange={onCheckedChange} />
+            <div className="shrink-0 flex items-center">
+                <Switch id={id} aria-label={label} checked={checked} onCheckedChange={onCheckedChange} />
+            </div>
         </div>
     );
 }
@@ -355,14 +335,15 @@ function GlassSelect({ label, value, onValueChange, children }: {
     onValueChange: (v: string) => void;
     children: React.ReactNode;
 }) {
+    const defaultAriaLabel = `Select ${label}`;
     return (
         <div className="space-y-2">
-            <span className="text-[12px] font-display font-semibold text-white/35 uppercase tracking-wider">{label}</span>
+            <label className="text-[12px] font-display font-semibold text-muted-foreground uppercase tracking-wider block">{label}</label>
             <Select value={value} onValueChange={onValueChange}>
-                <SelectTrigger className="liquid-glass-subtle border-white/[0.08] text-white/70 hover:bg-white/[0.06] transition-all [&>span]:text-[13px] h-10">
+                <SelectTrigger aria-label={defaultAriaLabel} className="liquid-glass-subtle text-foreground hover:bg-white/[0.06] dark:hover:bg-white/[0.06] hover:bg-black/[0.02] transition-all [&>span]:text-[13px] h-10">
                     <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="liquid-glass-heavy border-white/[0.1]">
+                <SelectContent className="liquid-glass border-white/[0.1] dark:border-white/[0.1] border-black/[0.1]">
                     {children}
                 </SelectContent>
             </Select>

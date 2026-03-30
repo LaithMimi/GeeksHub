@@ -35,6 +35,7 @@ import {
     Home, History, Settings, BookOpen, Upload,
     Bell, Search, GraduationCap, Sparkles,
     PanelLeftClose, PanelLeftOpen, Shield, Menu,
+    User,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Link, Outlet, useLocation } from "react-router-dom";
@@ -328,6 +329,12 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
+                                    <Link to="/profile" className="cursor-pointer w-full">
+                                        <User className="mr-2 h-4 w-4" />
+                                        <span>Profile</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
                                     <Link to="/settings" className="cursor-pointer w-full">
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Settings</span>
@@ -387,8 +394,8 @@ export default function AppShell() {
 
     return (
         <div className="flex h-screen overflow-hidden relative">
-            <a 
-                href="#main-content" 
+            <a
+                href="#main-content"
                 className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:font-semibold focus:outline-none focus:ring-2 focus:ring-white"
             >
                 Skip to main content
@@ -413,7 +420,7 @@ export default function AppShell() {
                             </SheetTrigger>
                             <SheetContent side="left" className="w-[260px] p-0 border-r border-white/[0.06] liquid-glass-heavy text-white">
                                 <SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
-                                <GlassSidebar collapsed={false} onToggle={() => {}} />
+                                <GlassSidebar collapsed={false} onToggle={() => { }} />
                             </SheetContent>
                         </Sheet>
                     </div>
@@ -430,7 +437,7 @@ export default function AppShell() {
                                 {isMac ? "⌘K" : "Ctrl+K"}
                             </kbd>
                         </button>
-                        <button 
+                        <button
                             className="relative w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
                             aria-label="Notifications"
                         >
