@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import RequestFileModal from "@/components/features/RequestFileModal";
 
-import { useMajors, useCourses, useLecturers, useTypes } from "@/queries/useCatalog";
-import { useFiles, useTopContributors } from "@/queries/useFiles";
+import { useMajors, useCourses, useLecturers, useTypes } from "@/hooks/useCatalog";
+import { useFiles, useTopContributors } from "@/hooks/useFiles";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
 import { useAuth } from "@/context/AuthContext";
 

@@ -19,7 +19,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
     import.meta.url
 ).toString();
-import { useRequestPreviewUrl } from "@/queries/useRequests";
+import { useRequestPreviewUrl } from "@/hooks/useRequests";
 import {
     Sheet,
     SheetContent,
@@ -58,7 +58,7 @@ export function RequestDetailSheet({
     isRejecting = false,
 }: RequestDetailSheetProps) {
     const { data: previewData, isLoading: isLoadingPreview } = useRequestPreviewUrl(open && request ? request.id : undefined);
-    
+
     const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
     const [duplicateWarningOpen, setDuplicateWarningOpen] = React.useState(false);
 

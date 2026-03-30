@@ -18,7 +18,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { useAuditLogs } from "@/queries/useAudit";
+import { useAuditLogs } from "@/hooks/useAudit";
 import type { AuditAction, AuditLogEntry } from "@/types/domain";
 
 // Action display config

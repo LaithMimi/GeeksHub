@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMajors } from "@/queries/useCatalog";
+import { useMajors } from "@/hooks/useCatalog";
 import { toast } from "sonner";
 
 export default function SignUpForm() {
@@ -52,7 +52,7 @@ export default function SignUpForm() {
             toast.success("Account created! 📧 Please check your email to verify before logging in.", {
                 duration: 8000, // Keep it on screen a bit longer so they read it
             });
-            
+
             // [backend update] Since we now require email verification, we won't auto-login the user after sign-up.
             // 2. Route them to the sign-in page so they can log in AFTER verifying.
             // (If your sliding auth page is on a specific route like "/auth", change this to that route)

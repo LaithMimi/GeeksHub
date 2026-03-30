@@ -1,8 +1,8 @@
 import { useAuth } from "@/context/AuthContext";
-import { useMajors } from "@/queries/useCatalog";
-import { useReputation } from "@/queries/useReputation";
-import { useMyRequests } from "@/queries/useRequests";
-import { useActivitySummary } from "@/queries/useLearningPath";
+import { useMajors } from "@/hooks/useCatalog";
+import { useReputation } from "@/hooks/useReputation";
+import { useMyRequests } from "@/hooks/useRequests";
+import { useActivitySummary } from "@/hooks/useLearningPath";
 import { authService } from "@/services/authService";
 import { formatDate } from "@/lib/formatDate";
 import { toast } from "sonner";
@@ -65,18 +65,18 @@ export default function UserProfile() {
     const { data: reputation } = useReputation(user?.id || "");
     const { data: activity } = useActivitySummary();
     const { data: uploads } = useMyRequests();
-    
+
     const [isResetLoading, setIsResetLoading] = useState(false);
 
     if (!user) return null;
 
     const userMajor = majors?.find(m => m.id === user.majorId)?.name || "Undecided Major";
-    
+
     // Stats computation
     const pendingUploads = uploads?.filter(u => u.status === "pending").length || 0;
     const approvedUploads = uploads?.filter(u => u.status === "approved").length || 0;
     const totalUploads = uploads?.length || 0;
-    
+
     // Password reset handler
     const handlePasswordReset = useCallback(async () => {
         setIsResetLoading(true);
@@ -101,7 +101,7 @@ export default function UserProfile() {
             <div className="fixed top-0 left-0 right-0 h-[300px] bg-violet-600/10 blur-[120px] pointer-events-none -z-10" />
 
             <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
-                
+
                 {/* 1. PROFILE HEADER */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-6 border-b border-border">
                     {/* Avatar */}
@@ -124,7 +124,7 @@ export default function UserProfile() {
                                 </span>
                             )}
                         </div>
-                        
+
                         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1.5"><Mail size={14} className="opacity-70" /> {user.email}</span>
                             <span className="flex items-center gap-1.5"><GraduationCap size={14} className="opacity-70" /> {userMajor}</span>
@@ -157,7 +157,7 @@ export default function UserProfile() {
                                             <div className="flex items-baseline gap-1.5 cursor-default group w-fit">
                                                 <span className="text-4xl font-light font-display text-foreground tracking-tight group-hover:text-amber-500 transition-colors">{user.totalPoints || reputation?.totalPoints || 0}</span>
                                                 <span className="text-sm font-medium text-muted-foreground flex items-center gap-1 relative">
-                                                    XP 
+                                                    XP
                                                     <Sparkles size={14} className="text-amber-500 opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all absolute -right-5" />
                                                 </span>
                                             </div>
@@ -167,7 +167,7 @@ export default function UserProfile() {
                                         </TooltipContent>
                                     </Tooltip>
                                 </div>
-                                
+
                                 {/* Badge Tier Card */}
                                 <div className="flex flex-col gap-1.5 flex-1 py-4 md:py-0 md:px-8 lg:px-12">
                                     <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
@@ -273,7 +273,7 @@ export default function UserProfile() {
                         headerColor="text-rose-500 dark:text-rose-400"
                     >
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <button 
+                            <button
                                 onClick={handlePasswordReset}
                                 disabled={isResetLoading}
                                 className="flex items-center justify-between p-4 rounded-xl border border-border bg-transparent hover:bg-muted/50 transition-all text-left group disabled:opacity-50 min-h-[44px]"
@@ -284,10 +284,10 @@ export default function UserProfile() {
                                 </div>
                                 <ChevronRight size={18} className="text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
                             </button>
-                            
+
                             <Dialog>
                                 <DialogTrigger asChild>
-                                    <button 
+                                    <button
                                         className="flex items-center justify-between p-4 rounded-xl border border-rose-500/20 bg-transparent hover:bg-rose-500/10 transition-all text-left group min-h-[44px]"
                                     >
                                         <div className="flex flex-col gap-1 pr-4">
@@ -310,8 +310,8 @@ export default function UserProfile() {
                                                 Cancel
                                             </button>
                                         </DialogTrigger>
-                                        <button 
-                                            onClick={handleSignOut} 
+                                        <button
+                                            onClick={handleSignOut}
                                             className="px-5 py-2 rounded-lg bg-rose-500/90 text-white hover:bg-rose-600 text-sm font-medium transition-all w-full sm:w-auto shadow-sm"
                                         >
                                             Sign out securely

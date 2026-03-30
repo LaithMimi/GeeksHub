@@ -52,8 +52,8 @@ import {
 } from "@/components/ui/tooltip";
 import { CommandPalette } from "../ui/command-palette";
 import { isMac } from "@/lib/utils";
-import { useCourse } from "@/queries/useCatalog";
-import { useFile } from "@/queries/useFiles";
+import { useCourse } from "@/hooks/useCatalog";
+import { useFile } from "@/hooks/useFiles";
 
 // ── Static config ─────────────────────────────────────────────────────────────
 

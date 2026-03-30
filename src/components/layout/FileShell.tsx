@@ -1,6 +1,6 @@
 import { Outlet, useParams } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
-import { useFile } from "@/queries/useFiles";
+import { useFile } from "@/hooks/useFiles";
 
 export default function FileShell() {
     const { fileId } = useParams();

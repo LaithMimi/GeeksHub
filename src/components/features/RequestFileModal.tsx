@@ -12,8 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useMajors, useCourses, useLecturers, useTypes } from "@/queries/useCatalog";
-import { useCreateRequest } from "@/queries/useRequests";
+import { useMajors, useCourses, useLecturers, useTypes } from "@/hooks/useCatalog";
+import { useCreateRequest } from "@/hooks/useRequests";
 
 interface RequestFileModalProps {
     open: boolean;
@@ -98,8 +98,8 @@ function StepperBar({ current }: { current: number }) {
                                     borderTop: "20px solid transparent",
                                     borderBottom: "20px solid transparent",
                                     borderLeft: `12px solid ${done ? "#9333ea" :
-                                            active ? "#a855f7" :
-                                                "rgba(255,255,255,0.05)"
+                                        active ? "#a855f7" :
+                                            "rgba(255,255,255,0.05)"
                                         }`,
                                     transform: "translateX(100%)",
                                 }}

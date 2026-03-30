@@ -4,7 +4,7 @@ import {
     useViewerSessionStart,
     useViewerHeartbeat,
     useViewerSessionEnd,
-} from "@/queries/useGamification";
+} from "@/hooks/useGamification";
 
 const VIEWER_HEARTBEAT_INTERVAL_MS = 5 * 1000; // 5 seconds
 const VIEWER_IDLE_TIMEOUT_MS = 60 * 1000; // 1 minute idle within viewer

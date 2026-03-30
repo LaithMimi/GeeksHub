@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useMyRequests, useWithdrawRequest } from "@/queries/useRequests";
+import { useMyRequests, useWithdrawRequest } from "@/hooks/useRequests";
 import RequestFileModal from "@/components/features/RequestFileModal";
 import { formatDistanceToNow } from "date-fns";
 import type { FileRequest } from "@/types/domain";

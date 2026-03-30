@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { BookOpen, Clock, FileText, Trash2, Loader2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useRecentFiles, useClearRecentFiles } from "@/queries/useFiles";
-import { useCourses } from "@/queries/useCatalog";
+import { useRecentFiles, useClearRecentFiles } from "@/hooks/useFiles";
+import { useCourses } from "@/hooks/useCatalog";
 
 export default function Recent() {
     const { data: recentFiles, isLoading } = useRecentFiles();

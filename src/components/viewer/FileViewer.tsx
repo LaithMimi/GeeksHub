@@ -6,7 +6,7 @@ import {
     ZoomIn, ZoomOut, RotateCw, Sparkles,
 } from "lucide-react";
 import { useParams } from 'react-router-dom';
-import { useFile, useAddRecentFile } from '@/queries/useFiles';
+import { useFile, useAddRecentFile } from '@/hooks/useFiles';
 import { Button } from '@/components/ui/button';
 import { useViewerSession } from '@/hooks/useViewerSession';
 import { toast } from 'sonner';

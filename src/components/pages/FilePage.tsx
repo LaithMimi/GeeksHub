@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { useFile } from "@/queries/useFiles";
+import { useFile } from "@/hooks/useFiles";
 import FileViewer from "@/components/viewer/FileViewer";
 import AssistantPanel from "@/components/assistant/AssistantPanel";
 

@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { Bell, Monitor, Globe, BookOpen, Brain, Clock, CheckCircle, Sun, Moon, Laptop, Palette, Sparkles } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useMajors, useYears } from "@/queries/useCatalog";
+import { useMajors, useYears } from "@/hooks/useCatalog";
 import { useTheme } from "@/hooks/useTheme";
 
 // Language Options

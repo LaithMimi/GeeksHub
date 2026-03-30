@@ -19,13 +19,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useRecentFiles } from "@/queries/useFiles";
-import { useMyRequests } from "@/queries/useRequests";
+import { useRecentFiles } from "@/hooks/useFiles";
+import { useMyRequests } from "@/hooks/useRequests";
 import { usePinnedCourses } from "@/hooks/usePinnedCourses";
 import { useTasks, type Task } from "@/hooks/useTasks";
 import { useAuth } from "@/context/AuthContext";
-import { useCourses, useMajors } from "@/queries/useCatalog";
-import { useActivitySummary } from "@/queries/useLearningPath";
+import { useCourses, useMajors } from "@/hooks/useCatalog";
+import { useActivitySummary } from "@/hooks/useLearningPath";
 import {
     formatDistanceToNow, format, isToday, isTomorrow, isPast,
     startOfMonth, endOfMonth, eachDayOfInterval, getDay,
@@ -335,11 +335,10 @@ function LearningPlan({ tasks, onOpenAddModal, onToggleTask }: {
                                             >
                                                 <button
                                                     onClick={() => onToggleTask(task.id)}
-                                                    className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
-                                                        task.completed
+                                                    className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${task.completed
                                                             ? 'bg-white/90 border-white/90'
                                                             : 'border-white/50 hover:border-white/80 hover:bg-white/10'
-                                                    }`}
+                                                        }`}
                                                     aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
                                                 >
                                                     {task.completed && (
@@ -811,8 +810,7 @@ export default function Dashboard() {
                                 <metric.icon className={`h-4 w-4 ${metric.iconColor}`} />
                                 <span className="text-[12px] text-white/45 font-medium">{metric.label}</span>
                             </div>
-                            <span className={`text-[12px] font-display font-semibold ${
-                                metric.neutral ? "text-white/40" : metric.positive ? "text-emerald-400" : "text-red-400"
+                            <span className={`text-[12px] font-display font-semibold ${metric.neutral ? "text-white/40" : metric.positive ? "text-emerald-400" : "text-red-400"
                                 }`}>
                                 {metric.change}
                             </span>

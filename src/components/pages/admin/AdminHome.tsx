@@ -3,7 +3,7 @@ import { ClipboardList, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRequestStats } from "@/queries/useRequests";
+import { useRequestStats } from "@/hooks/useRequests";
 
 export default function AdminHome() {
     const { data: stats, isLoading, error } = useRequestStats();
