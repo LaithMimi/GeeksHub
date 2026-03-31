@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - AUTH0_AUDIENCE=${AUTH0_AUDIENCE}
+      - AUTH0_DOMAIN=${AUTH0_DOMAIN}
+      - AUTH0_M2M_ID=${AUTH0_M2M_ID}
+      - AUTH0_M2M_SECRET=${AUTH0_M2M_SECRET}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
+      - BUCKET_NAME=${BUCKET_NAME}
+      - FRONTEND_URL=http://frontend:80
+    volumes:
+      - ./server:/app
+      - ./server/gcp_key.json:/app/gcp_key.json:ro
+    networks:
+      - geekshub-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - geekshub-network
+
+networks:
+  geekshub-network:
+    driver: bridge
