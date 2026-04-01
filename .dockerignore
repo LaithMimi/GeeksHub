@@ -4,7 +4,6 @@ dist
 .gitignore
 .env
 Dockerfile
-nginx.conf
 server/venv
 server/.env
 server/__pycache__
