@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 from datetime import datetime, timezone
 from sqlmodel import Relationship, SQLModel, Field, UniqueConstraint
 from sqlalchemy import Column, JSON
+from pgvector.sqlalchemy import Vector
 from typing import List, Dict, Any
 
 # --- Database Models ---
@@ -173,3 +174,15 @@ class AuditLog(SQLModel, table=True):
     target_type: str # e.g. "file_request"
     target_ids: List[str] = Field(default=[], sa_column=Column(JSON))
     meta_data: Dict[str, Any] = Field(default={}, sa_column=Column(JSON))
+
+# RAG (Retrieval Augmented Generation)
+class MaterialChunk(SQLModel, table=True):
+    __tablename__ = "material_chunks"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    material_id: UUID = Field(foreign_key="materials.id")
+    content: str
+    # We use a 768-dimension vector for Gemini embeddings
+    embedding: list[float] = Field(sa_column=Column(Vector(768))) 
+    page_number: int | None = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

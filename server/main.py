@@ -5,7 +5,7 @@ from fastapi import FastAPI,Depends
 from sqlmodel import Session, select
 from contextlib import asynccontextmanager
 from database import get_session, init_db
-from routers import auth, catalog, files, admin, gamification, activity, viewer
+from routers import auth, catalog, files, admin, gamification, activity, viewer, ai
 
 
 # Resolve GCP key path relative to this file so it works from any CWD
@@ -42,6 +42,7 @@ app.include_router(admin.router)
 app.include_router(gamification.router)
 app.include_router(activity.router)
 app.include_router(viewer.router)
+app.include_router(ai.router)
 
 # --- Base System Routes ---
 @app.get("/api/v1/health", tags=["System"])

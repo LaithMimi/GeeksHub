@@ -121,3 +121,13 @@ class ViewerHeartbeatPayload(BaseModel):
 
 class NotePayload(BaseModel):
     content: str
+
+class AIChatRequest(BaseModel):
+    fileId: UUID               # The file they are currently reading (camelCase to match frontend)
+    message: str
+    history: list["ChatMessage"] = []  # Conversation history for multi-turn context
+
+class ChatMessage(BaseModel):
+    """One message in the conversation history sent by the frontend."""
+    role: str       # "user" or "assistant"
+    content: str

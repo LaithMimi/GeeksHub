@@ -2,18 +2,53 @@ import os
 import datetime
 from uuid import UUID
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Response
 from sqlmodel import Session, select, func
-from database import get_session
+from database import get_session, engine
 from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog
 from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
 from utils.auth_utils import get_admin_user
 from utils.shared import storage_client, BUCKET_NAME
+from utils.ai_utils import process_and_embed_pdf
 
 router = APIRouter(tags=["Admin Moderation"])
 
 # --- Setup ---
 XP_UPLOAD_APPROVAL = 25
+
+# ---------------------------------------------------------------------------
+# Background embedding helpers
+# These functions MUST open their own Session because FastAPI closes the
+# request-scoped session before any BackgroundTask runs.
+# ---------------------------------------------------------------------------
+
+def embed_single(material_id: str, gcs_path: str) -> None:
+    """Downloads one file from GCS and generates Gemini embeddings."""
+    try:
+        blob = storage_client.bucket(BUCKET_NAME).blob(gcs_path)
+        file_bytes = blob.download_as_bytes()
+        with Session(engine) as bg_session:
+            process_and_embed_pdf(file_bytes, material_id, bg_session)
+        print(f"✅ Background embedding complete: {material_id}")
+    except Exception as e:
+        print(f"⚠️  Background embedding failed for {material_id}: {e}")
+
+
+def embed_batch(approved_materials: list[tuple[str, str]]) -> None:
+    """Downloads and embeds each file in the approved batch sequentially.
+    
+    Runs in a single BackgroundTask so all 10 files share one session
+    and we don't spawn 10 parallel tasks that could spike past 15 RPM.
+    """
+    with Session(engine) as bg_session:
+        for material_id, gcs_path in approved_materials:
+            try:
+                blob = storage_client.bucket(BUCKET_NAME).blob(gcs_path)
+                file_bytes = blob.download_as_bytes()
+                process_and_embed_pdf(file_bytes, material_id, bg_session)
+                print(f"✅ Background embedding complete: {material_id}")
+            except Exception as e:
+                print(f"⚠️  Background embedding failed for {material_id}: {e}")
 
 # --- Endpoints ---
 
@@ -38,6 +73,7 @@ def list_admin_requests(
 @router.post("/api/v1/admin/requests/{request_id}/approve")
 def approve_file(
     request_id: UUID,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
@@ -97,6 +133,11 @@ def approve_file(
     session.add(audit)
 
     session.commit()
+
+    # Fire-and-forget: admin gets an instant response; embedding runs in the background.
+    # embed_single opens its own Session — the request session is already closed here.
+    background_tasks.add_task(embed_single, str(new_material.id), final_gcs_path)
+
     return {"message": "File approved!"}
 
 @router.post("/api/v1/admin/requests/{request_id}/reject")
@@ -141,15 +182,39 @@ def reject_request(
     session.commit()
     return {"message": "Request rejected and moved to trash for 3 days."}
 
+# Gemini 1.5 free-tier limit: 15 RPM. We embed 1 API call per file,
+# so capping at 10 files/minute gives a comfortable safety buffer.
+BULK_APPROVE_LIMIT = 10
+
 @router.post("/api/v1/admin/requests/bulk-approve")
 def bulk_approve_requests(
     payload: BulkActionPayload,
+    response: Response,
+    background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
-    """Approves multiple files at once and moves them in Google Cloud Storage."""
+    """Approves up to 10 files at once (Gemini 1.5 free-tier: 15 RPM).
+    
+    If you have more files to approve, wait 60 seconds and submit the next batch.
+    The response includes a 'Retry-After: 60' header as a hint to the frontend.
+    """
+    # --- Hard cap: reject batches larger than BULK_APPROVE_LIMIT ---
+    if len(payload.request_ids) > BULK_APPROVE_LIMIT:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Bulk approval is limited to {BULK_APPROVE_LIMIT} files at a time "
+                f"to stay within Gemini's 15 RPM free-tier limit. "
+                f"You sent {len(payload.request_ids)} IDs. "
+                f"Please split your selection into batches of {BULK_APPROVE_LIMIT} "
+                f"and wait 60 seconds between submissions."
+            )
+        )
+
     approved_count = 0
     bucket = storage_client.bucket(BUCKET_NAME)
+    approved_materials: list[tuple[str, str]] = []  # (material_id, final_gcs_path)
     
     for req_id in payload.request_ids:
         request = session.get(FileRequest, req_id)
@@ -160,7 +225,7 @@ def bulk_approve_requests(
         course = session.get(Course, request.course_id)
         safe_course_name = course.name.replace(" ", "_")
 
-        #  MOVE FILE IN GOOGLE CLOUD STORAGE
+        # MOVE FILE IN GOOGLE CLOUD STORAGE
         filename = request.file_url.split('/')[-1]
         final_gcs_path = f"{safe_course_name}/{filename}"
         
@@ -169,11 +234,10 @@ def bulk_approve_requests(
             bucket.rename_blob(temp_blob, final_gcs_path) 
         except Exception as e:
             print(f"GCS Move failed for request {req_id}: {e}")
-            # IMPORTANT: If the cloud move fails, we skip to the next file! 
-            # We don't want to award XP for a broken file.
+            # If the cloud move fails, skip — don't award XP for a broken file.
             continue
 
-        # 2. CREATE THE OFFICIAL CATALOG ENTRY
+        # CREATE THE OFFICIAL CATALOG ENTRY
         new_material = Material(
             id=request.id,
             title=request.title, academic_year=request.academic_year, material_year=request.material_year,
@@ -182,7 +246,7 @@ def bulk_approve_requests(
         )
         session.add(new_material)
         
-        # 3. AWARD GAMIFICATION XP
+        # AWARD GAMIFICATION XP
         reward = PointsTransaction(
             user_id=request.user_id,
             amount=XP_UPLOAD_APPROVAL, 
@@ -192,15 +256,15 @@ def bulk_approve_requests(
         )
         session.add(reward)
 
-        # 4. UPDATE THE USER'S TOTAL POINTS (We have to do this manually since we are bypassing the single-approval route)
+        # UPDATE THE USER'S TOTAL POINTS
         uploader = session.get(User, request.user_id)
         if uploader:
             uploader.total_points += XP_UPLOAD_APPROVAL
             session.add(uploader)
         
-        # 5. UPDATE STATUS
         request.status = "approved"
         approved_count += 1
+        approved_materials.append((str(new_material.id), final_gcs_path))
         
     if approved_count > 0:
         audit = AuditLog(
@@ -214,6 +278,16 @@ def bulk_approve_requests(
         session.add(audit)
 
     session.commit()
+
+    # Fire-and-forget: register ONE background task for the entire batch.
+    # embed_batch opens its own Session and processes files sequentially
+    # so we never exceed ~10 RPM even for a full 10-file batch.
+    if approved_materials:
+        background_tasks.add_task(embed_batch, approved_materials)
+
+    # Tell the frontend: "if you have more files, wait 60 s before the next batch"
+    response.headers["Retry-After"] = "60"
+
     return {"message": f"Successfully approved {approved_count} files!"}
 
 @router.post("/api/v1/admin/requests/bulk-reject")
