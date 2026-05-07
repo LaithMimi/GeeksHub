@@ -17,7 +17,7 @@ def get_jwks_client():
     if _jwks_client is None:
         domain = os.getenv("AUTH0_DOMAIN")
         jwks_url = f"https://{domain}/.well-known/jwks.json"
-        # 2. Tell the client to cache the keys for 3600 seconds (1 hour)
+        # Tell the client to cache the keys for 3600 seconds (1 hour)
         _jwks_client = jwt.PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)
     return _jwks_client
 

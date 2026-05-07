@@ -1,5 +1,5 @@
 import re
-from typing import List, Optional, Self
+from typing import List, Self
 from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, field_validator, model_validator
@@ -99,7 +99,6 @@ class LeaderboardEntry(BaseModel):
     name: str
     totalPoints: int
     badge: str
-
 
 class RecentFileResponse(BaseModel):
     id: UUID
