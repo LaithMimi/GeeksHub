@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import UUID, uuid4
 from datetime import datetime, timezone
 from sqlmodel import Relationship, SQLModel, Field, UniqueConstraint
-from sqlalchemy import Column, JSON
+from sqlalchemy import Column, JSON, Index
 from pgvector.sqlalchemy import Vector
 from typing import List, Dict, Any
 
@@ -186,3 +186,13 @@ class MaterialChunk(SQLModel, table=True):
     embedding: list[float] = Field(sa_column=Column(Vector(768))) 
     page_number: int | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index(
+            "hnsw_index_for_material_chunks", 
+            "embedding", 
+            postgresql_using="hnsw", 
+            postgresql_with={"m": 16, "ef_construction": 64}, 
+            postgresql_ops={"embedding": "vector_cosine_ops"}
+        ),
+    )

@@ -1,7 +1,10 @@
 from schemas import AIChatRequest
 import os
 from google.genai import types
+from google.genai.errors import APIError
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 from fastapi import APIRouter, Depends, HTTPException
+import time
 from sqlmodel import Session, select
 from database import engine, get_session
 from models import User, Material, MaterialChunk
@@ -28,6 +31,18 @@ def search_course_knowledge(query: str, course_id: str) -> str:
     with Session(engine) as session:
         return search_material_context(query, course_id, session, limit=3)
 
+# Global in-memory store for Gemini Document Caches
+# Maps material_id -> (cache_name, expiry_timestamp)
+_active_document_caches = {}
+
+# API Resilience: Auto-retry for rate limits / temporary API errors
+@retry(
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    stop=stop_after_attempt(3),
+    retry=retry_if_exception_type(APIError)
+)
+def _send_chat_message_with_retry(chat, message):
+    return chat.send_message(message)
 
 @router.post("/api/v1/assistant/chat")
 def ask_ai_tutor(
@@ -98,9 +113,11 @@ You have access to the `search_course_knowledge` tool which can search across AL
 
 8. **Be encouraging.** Students are stressed. Acknowledge good questions, celebrate when they understand something, and never be condescending."""
 
-        # 4. Convert frontend history into Gemini Content objects
+        # 4. Convert frontend history into Gemini Content objects (Sliding Window)
         gemini_history = []
-        for msg in payload.history:
+        # Keep only the last 10 messages to prevent context bloat and save tokens
+        recent_history = payload.history[-10:] if len(payload.history) > 10 else payload.history
+        for msg in recent_history:
             gemini_history.append(
                 types.Content(
                     role="user" if msg.role == "user" else "model",
@@ -108,19 +125,58 @@ You have access to the `search_course_knowledge` tool which can search across AL
                 )
             )
 
-        # 5. Create the Agent with the Tool enabled and conversation history
-        chat = client.chats.create(
-            model='gemini-1.5-flash',
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                tools=[search_course_knowledge],
-                temperature=0.3  # Keep it focused and academic
-            ),
-            history=gemini_history  # Multi-turn memory!
-        )
+        # 5. Handle Context Caching for large documents
+        # Gemini caching requires at least 32,768 tokens (roughly 130,000 characters).
+        is_large_enough = len(base_context) > 135000
+        cache_name = None
+        
+        if is_large_enough:
+            mat_id = str(material.id)
+            cached_data = _active_document_caches.get(mat_id)
+            if cached_data and cached_data[1] > time.time():
+                # Cache is valid
+                cache_name = cached_data[0]
+            else:
+                # Create a new cache
+                try:
+                    new_cache = client.caches.create(
+                        model='models/gemini-1.5-flash',
+                        config=types.CreateCachedContentConfig(
+                            system_instruction=system_prompt,
+                            # We must pass the document in contents to cache it
+                            contents=[types.Content(role="user", parts=[types.Part.from_text("Here is the document context:\n" + base_context)])],
+                            ttl="3600s" # 1 hour
+                        )
+                    )
+                    cache_name = new_cache.name
+                    _active_document_caches[mat_id] = (cache_name, time.time() + 3500)
+                except Exception as e:
+                    print(f"Cache creation skipped/failed: {e}")
 
-        # 6. Send the message and get the response!
-        response = chat.send_message(payload.message)
+        # 6. Create the Agent with the Tool enabled
+        if cache_name:
+            chat = client.chats.create(
+                model='gemini-1.5-flash',
+                config=types.GenerateContentConfig(
+                    cached_content=cache_name,
+                    tools=[search_course_knowledge],
+                    temperature=0.3
+                ),
+                history=gemini_history
+            )
+        else:
+            chat = client.chats.create(
+                model='gemini-1.5-flash',
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    tools=[search_course_knowledge],
+                    temperature=0.3
+                ),
+                history=gemini_history
+            )
+
+        # 6. Send the message and get the response (with auto-retry)
+        response = _send_chat_message_with_retry(chat, payload.message)
         
         return {
             "reply": response.text,
