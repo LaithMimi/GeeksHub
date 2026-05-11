@@ -182,8 +182,8 @@ class MaterialChunk(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     material_id: UUID = Field(foreign_key="materials.id")
     content: str
-    # We use a 768-dimension vector for Gemini embeddings
-    embedding: list[float] = Field(sa_column=Column(Vector(768))) 
+    # gemini-embedding-001 truncated to 1536 dims (fits under pgvector HNSW 2000-dim limit)
+    embedding: list[float] = Field(sa_column=Column(Vector(1536))) 
     page_number: int | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

@@ -1,10 +1,10 @@
 from schemas import AIChatRequest
 import os
 from google.genai import types
-from google.genai.errors import APIError
-from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception
 from fastapi import APIRouter, Depends, HTTPException
 import time
+import traceback
 from sqlmodel import Session, select
 from database import engine, get_session
 from models import User, Material, MaterialChunk
@@ -35,11 +35,14 @@ def search_course_knowledge(query: str, course_id: str) -> str:
 # Maps material_id -> (cache_name, expiry_timestamp)
 _active_document_caches = {}
 
-# API Resilience: Auto-retry for rate limits / temporary API errors
+CHAT_MODEL = "gemini-2.5-flash"  # confirmed working on this account
+
+# API Resilience: Retry on transient errors only — explicitly exclude HTTPException
+# so 404s and auth errors are NOT retried and bubble up immediately.
 @retry(
-    wait=wait_exponential(multiplier=1, min=2, max=10),
+    wait=wait_exponential(multiplier=1, min=2, max=30),
     stop=stop_after_attempt(3),
-    retry=retry_if_exception_type(APIError)
+    retry=retry_if_exception(lambda e: not isinstance(e, (HTTPException, KeyboardInterrupt, SystemExit)))
 )
 def _send_chat_message_with_retry(chat, message):
     return chat.send_message(message)
@@ -114,10 +117,14 @@ You have access to the `search_course_knowledge` tool which can search across AL
 8. **Be encouraging.** Students are stressed. Acknowledge good questions, celebrate when they understand something, and never be condescending."""
 
         # 4. Convert frontend history into Gemini Content objects (Sliding Window)
+        # IMPORTANT: Gemini requires history to alternate user/model starting with 'user'.
+        # The frontend sends the AI welcome message first (role='assistant') — skip it.
         gemini_history = []
-        # Keep only the last 10 messages to prevent context bloat and save tokens
         recent_history = payload.history[-10:] if len(payload.history) > 10 else payload.history
         for msg in recent_history:
+            # Skip the static welcome message (id='1') — it's not a real exchange
+            if msg.role == "assistant" and not gemini_history:
+                continue
             gemini_history.append(
                 types.Content(
                     role="user" if msg.role == "user" else "model",
@@ -140,7 +147,7 @@ You have access to the `search_course_knowledge` tool which can search across AL
                 # Create a new cache
                 try:
                     new_cache = client.caches.create(
-                        model='models/gemini-1.5-flash',
+                        model='models/gemini-2.5-flash',
                         config=types.CreateCachedContentConfig(
                             system_instruction=system_prompt,
                             # We must pass the document in contents to cache it
@@ -156,7 +163,7 @@ You have access to the `search_course_knowledge` tool which can search across AL
         # 6. Create the Agent with the Tool enabled
         if cache_name:
             chat = client.chats.create(
-                model='gemini-1.5-flash',
+                model=CHAT_MODEL,
                 config=types.GenerateContentConfig(
                     cached_content=cache_name,
                     tools=[search_course_knowledge],
@@ -166,7 +173,7 @@ You have access to the `search_course_knowledge` tool which can search across AL
             )
         else:
             chat = client.chats.create(
-                model='gemini-1.5-flash',
+                model=CHAT_MODEL,
                 config=types.GenerateContentConfig(
                     system_instruction=system_prompt,
                     tools=[search_course_knowledge],
@@ -184,10 +191,11 @@ You have access to the `search_course_knowledge` tool which can search across AL
         }
 
     except HTTPException:
-        raise  # Re-raise 404s and other HTTP exceptions as-is
+        raise  # Re-raise 404s and auth errors as-is
 
     except Exception as e:
-        print(f"AI Error: {e}")
+        print(f"[AI CHAT ERROR] {type(e).__name__}: {e}")
+        traceback.print_exc()
         raise HTTPException(
             status_code=503, 
             detail="The AI Tutor is currently helping a lot of students! Please take a deep breath and try again in a few seconds."

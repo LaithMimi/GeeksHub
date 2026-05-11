@@ -1,5 +1,6 @@
 import os
 import datetime
+import traceback
 from uuid import UUID
 from typing import List, Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Response
@@ -24,31 +25,36 @@ XP_UPLOAD_APPROVAL = 25
 
 def embed_single(material_id: str, gcs_path: str) -> None:
     """Downloads one file from GCS and generates Gemini embeddings."""
+    print(f"[BG] embed_single started: material={material_id}, path={gcs_path}")
     try:
+        print(f"[BG] Downloading from GCS: {gcs_path}")
         blob = storage_client.bucket(BUCKET_NAME).blob(gcs_path)
         file_bytes = blob.download_as_bytes()
+        print(f"[BG] Download OK: {len(file_bytes):,} bytes")
         with Session(engine) as bg_session:
             process_and_embed_pdf(file_bytes, material_id, bg_session)
-        print(f"✅ Background embedding complete: {material_id}")
+        print(f"[BG] ✅ embed_single complete: {material_id}")
     except Exception as e:
-        print(f"⚠️  Background embedding failed for {material_id}: {e}")
+        print(f"[BG] ❌ embed_single FAILED for {material_id}: {type(e).__name__}: {e}")
+        traceback.print_exc()
 
 
 def embed_batch(approved_materials: list[tuple[str, str]]) -> None:
-    """Downloads and embeds each file in the approved batch sequentially.
-    
-    Runs in a single BackgroundTask so all 10 files share one session
-    and we don't spawn 10 parallel tasks that could spike past 15 RPM.
-    """
+    """Downloads and embeds each file in the approved batch sequentially."""
+    print(f"[BG] embed_batch started for {len(approved_materials)} files")
     with Session(engine) as bg_session:
         for material_id, gcs_path in approved_materials:
+            print(f"[BG] Processing: material={material_id}, path={gcs_path}")
             try:
+                print(f"[BG] Downloading from GCS: {gcs_path}")
                 blob = storage_client.bucket(BUCKET_NAME).blob(gcs_path)
                 file_bytes = blob.download_as_bytes()
+                print(f"[BG] Download OK: {len(file_bytes):,} bytes")
                 process_and_embed_pdf(file_bytes, material_id, bg_session)
-                print(f"✅ Background embedding complete: {material_id}")
+                print(f"[BG] ✅ embed_batch item complete: {material_id}")
             except Exception as e:
-                print(f"⚠️  Background embedding failed for {material_id}: {e}")
+                print(f"[BG] ❌ embed_batch item FAILED for {material_id}: {type(e).__name__}: {e}")
+                traceback.print_exc()
 
 # --- Endpoints ---
 
