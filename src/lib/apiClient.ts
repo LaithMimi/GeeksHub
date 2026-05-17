@@ -123,3 +123,14 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     return snakeToCamel<T>(json);
 }
 
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+        ...init,
+        credentials: "include",
+    });
+    if (!res.ok) {
+        throw new ApiError(res.status, `API error ${res.status}`);
+    }
+    return res;
+}
+

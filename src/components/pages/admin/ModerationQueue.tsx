@@ -157,7 +157,7 @@ export default function ModerationQueue() {
                     <ArrowUpDown className="h-3 w-3" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="font-medium">{row.getValue("courseId")}</span>,
+            cell: ({ row }) => <span className="font-medium">{row.original.courseName ?? row.getValue("courseId")}</span>,
         },
         {
             accessorKey: "lecturerName",

@@ -172,15 +172,14 @@ export interface File {
     id: string;
     title: string;
     type: MaterialType;
-    lecturer: string; // Name for display (denormalized)
-    lecturerId?: string; // FK to lecturers table
+    lecturerId: string;
     courseId: string;
-    date: string; // ISO or display string - consider createdAt timestamp
-    size: string; // Consider sizeBytes: number for production
+    materialYear: number;
+    academicYear: number;
     status: FileStatus;
-    points?: number; // Points awarded for this file
+    points?: number;
     rejectionReason?: string;
-    downloadUrl?: string; // Pre-signed S3/GCS URL for download
+    downloadUrl?: string;
 }
 
 /**

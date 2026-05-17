@@ -285,11 +285,7 @@ export default function Courses() {
                                                 {file.title}
                                             </p>
                                             <div className="flex items-center gap-2 text-[12px] text-white/35 mt-0.5">
-                                                <span>{file.lecturer}</span>
-                                                <span>•</span>
-                                                <span>{file.date}</span>
-                                                <span>•</span>
-                                                <span>{file.size}</span>
+                                                <span>{file.materialYear}</span>
                                                 {file.status === "rejected" && (
                                                     <span className="text-red-400">• {file.rejectionReason}</span>
                                                 )}
