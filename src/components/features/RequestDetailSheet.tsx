@@ -111,7 +111,7 @@ export function RequestDetailSheet({
                                     <BookOpen className="h-4 w-4" />
                                     <span>Course</span>
                                 </div>
-                                <div className="font-medium">{request.courseId}</div>
+                                <div className="font-medium">{request.courseName ?? request.courseId}</div>
 
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <User className="h-4 w-4" />

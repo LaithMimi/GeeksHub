@@ -77,7 +77,7 @@ export default function CourseNotes() {
                             {file.title}
                         </p>
                         <p className="text-[12px] text-white/35 mt-0.5">
-                            {file.lecturer} · {file.date}
+                            {file.materialYear}
                         </p>
                     </div>
                 </Link>

@@ -16,6 +16,8 @@ interface BulkActionBarProps {
     onClear: () => void;
     isApproving?: boolean;
     isRejecting?: boolean;
+    isCoolingDown?: boolean;
+    cooldownSeconds?: number;
 }
 
 export function BulkActionBar({
@@ -25,6 +27,8 @@ export function BulkActionBar({
     onClear,
     isApproving = false,
     isRejecting = false,
+    isCoolingDown = false,
+    cooldownSeconds = 0,
 }: BulkActionBarProps) {
     if (selectedCount === 0) return null;
 
@@ -42,10 +46,10 @@ export function BulkActionBar({
                     size="sm"
                     className="gap-1.5 bg-green-600 hover:bg-green-700"
                     onClick={onApprove}
-                    disabled={isApproving || isRejecting}
+                    disabled={isApproving || isRejecting || isCoolingDown}
                 >
                     <CheckCircle2 className="h-4 w-4" />
-                    Approve All
+                    {isCoolingDown ? `Wait ${cooldownSeconds}s` : "Approve All"}
                 </Button>
 
                 <Button

@@ -6,7 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Response
 from sqlmodel import Session, select, func
 from database import get_session, engine
-from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog
+from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog, Lecturer, MaterialType
 from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
 from utils.auth_utils import get_admin_user
 from utils.shared import storage_client, BUCKET_NAME
@@ -58,23 +58,47 @@ def embed_batch(approved_materials: list[tuple[str, str]]) -> None:
 
 # --- Endpoints ---
 
-@router.get("/api/v1/admin/requests", response_model=List[FileRequest])
+@router.get("/api/v1/admin/requests")
 def list_admin_requests(
     status: Optional[str] = Query(None),
     session: Session = Depends(get_session),
-    # Security Check: Only an Admin can call this route!
-    admin: User = Depends(get_admin_user) 
+    admin: User = Depends(get_admin_user)
 ):
-    """
-    Returns all file requests across the entire application for admins to review.
-    Supports filtering by status (e.g., ?status=pending).
-    """
-    statement = select(FileRequest)
-    
+    """Returns all file requests with enriched names for the admin moderation UI."""
+    statement = (
+        select(FileRequest, Course, Lecturer, User, MaterialType)
+        .join(Course, FileRequest.course_id == Course.id)
+        .join(Lecturer, FileRequest.lecturer_id == Lecturer.id)
+        .join(User, FileRequest.user_id == User.id)
+        .join(MaterialType, FileRequest.type_id == MaterialType.id)
+    )
     if status:
         statement = statement.where(FileRequest.status == status.lower())
-      
-    return session.exec(statement).all()
+
+    results = session.exec(statement).all()
+
+    return [
+        {
+            "id": req.id,
+            "user_id": req.user_id,
+            "uploader_name": uploader.name,
+            "course_id": req.course_id,
+            "course_name": course.name,
+            "lecturer_id": req.lecturer_id,
+            "lecturer_name": lecturer.name,
+            "type": material_type.display_name,
+            "type_id": req.type_id,
+            "title": req.title,
+            "academic_year": req.academic_year,
+            "material_year": req.material_year,
+            "status": req.status,
+            "notes": req.notes,
+            "admin_note": req.admin_note,
+            "file_url": req.file_url,
+            "created_at": req.created_at,
+        }
+        for req, course, lecturer, uploader, material_type in results
+    ]
 
 @router.post("/api/v1/admin/requests/{request_id}/approve")
 def approve_file(
@@ -514,3 +538,20 @@ def get_admin_request_preview_url(
     except Exception as e:
         print(f"GCS Admin Preview Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to generate secure preview link.")
+
+@router.get("/api/v1/admin/requests/{request_id}/preview")
+def proxy_admin_request_preview(
+    request_id: UUID,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_admin_user),
+):
+    request = session.get(FileRequest, request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found.")
+    try:
+        blob = storage_client.bucket(BUCKET_NAME).blob(request.file_url)
+        pdf_bytes = blob.download_as_bytes()
+        return Response(content=pdf_bytes, media_type="application/pdf")
+    except Exception as e:
+        print(f"GCS Admin Preview Proxy Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch preview.")

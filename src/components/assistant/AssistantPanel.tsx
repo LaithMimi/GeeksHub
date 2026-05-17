@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import {
     Bot, Send, Sparkles, FileText, MessageCircle,
     StickyNote, User, Loader2, CheckCircle, AlertCircle,
-    Copy, Trash2, BookOpen, ChevronLeft, ChevronRight, Plus, X,
+    Copy, Trash2, BookOpen, ChevronLeft, ChevronRight, Plus, X, Search,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { sendMessage, getNotes, saveNotes } from "@/services/assistantService";
@@ -281,9 +281,9 @@ export default function AssistantPanel({
         setIsTyping(true);
         setShowChips(false);
         try {
-            const response = await sendMessage(fileId, text, messages);
+            const { reply, agentAction } = await sendMessage(fileId, text, messages);
             setMessages(prev => [...prev, {
-                id: (Date.now() + 1).toString(), role: "assistant", content: response, timestamp: new Date(),
+                id: (Date.now() + 1).toString(), role: "assistant", content: reply, timestamp: new Date(), agentAction,
             }]);
         } catch {
             setMessages(prev => [...prev, {
@@ -427,6 +427,12 @@ export default function AssistantPanel({
                                                     >
                                                         <BookOpen className="h-3 w-3" />Pin to notes
                                                     </button>
+                                                    {msg.agentAction === "tool_used" && (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] text-white/30 ml-auto">
+                                                            <Search className="h-2.5 w-2.5" />
+                                                            searched course files
+                                                        </span>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

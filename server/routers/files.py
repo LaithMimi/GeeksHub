@@ -5,7 +5,7 @@ import datetime
 from uuid import UUID
 from sqlmodel import func
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Query, Form, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, Query, Form, UploadFile, File, Response
 from sqlmodel import Session, select
 from database import get_session
 from models import Material, FileRequest, Course, Lecturer, User, PointsTransaction
@@ -123,6 +123,23 @@ def get_single_file(
     response_data["lecturerId"] = material.lecturer_id
 
     return response_data
+
+@router.get("/api/v1/files/{file_id}/stream")
+def stream_file(
+    file_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_verified_user),
+):
+    material = session.get(Material, file_id)
+    if not material:
+        raise HTTPException(status_code=404, detail="File not found")
+    try:
+        blob = storage_client.bucket(BUCKET_NAME).blob(material.file_url)
+        pdf_bytes = blob.download_as_bytes()
+        return Response(content=pdf_bytes, media_type="application/pdf")
+    except Exception as e:
+        print(f"GCS Stream Error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to stream file.")
 
 @router.get("/api/v1/me/requests", response_model=List[FileRequestEnriched])
 def get_my_requests(

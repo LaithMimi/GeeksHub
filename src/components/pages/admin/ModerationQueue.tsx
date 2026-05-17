@@ -11,6 +11,7 @@
  */
 
 import * as React from "react";
+import { toast } from "sonner";
 import type { ColumnDef } from "@tanstack/react-table";
 import { formatDate } from "@/lib/formatDate";
 import { MoreHorizontal, Eye, CheckCircle2, XCircle, ArrowUpDown } from "lucide-react";
@@ -42,6 +43,14 @@ export default function ModerationQueue() {
     const [selectedRequest, setSelectedRequest] = React.useState<FileRequest | null>(null);
     const [detailSheetOpen, setDetailSheetOpen] = React.useState(false);
     const [bulkRejectOpen, setBulkRejectOpen] = React.useState(false);
+    const [cooldownSeconds, setCooldownSeconds] = React.useState(0);
+    const isCoolingDown = cooldownSeconds > 0;
+
+    React.useEffect(() => {
+        if (cooldownSeconds <= 0) return;
+        const id = setTimeout(() => setCooldownSeconds(s => s - 1), 1000);
+        return () => clearTimeout(id);
+    }, [cooldownSeconds]);
 
     // Queries & Mutations
     const { data: requests, isLoading } = useAllRequests({ status: statusFilter });
@@ -87,9 +96,14 @@ export default function ModerationQueue() {
 
     const handleBulkApprove = () => {
         const ids = selectedRows.map(r => r.id);
+        if (ids.length > 10) {
+            toast.error(`Select at most 10 files at a time. You selected ${ids.length}. Wait 60s between batches.`);
+            return;
+        }
         bulkApproveMutation.mutate(ids, {
             onSuccess: () => {
                 setSelectedRows([]);
+                setCooldownSeconds(60);
             }
         });
     };
@@ -143,7 +157,7 @@ export default function ModerationQueue() {
                     <ArrowUpDown className="h-3 w-3" />
                 </Button>
             ),
-            cell: ({ row }) => <span className="font-medium">{row.getValue("courseId")}</span>,
+            cell: ({ row }) => <span className="font-medium">{row.original.courseName ?? row.getValue("courseId")}</span>,
         },
         {
             accessorKey: "lecturerName",
@@ -290,6 +304,8 @@ export default function ModerationQueue() {
                 onClear={() => setSelectedRows([])}
                 isApproving={bulkApproveMutation.isPending}
                 isRejecting={bulkRejectMutation.isPending}
+                isCoolingDown={isCoolingDown}
+                cooldownSeconds={cooldownSeconds}
             />
 
             {/* Request Detail Sheet */}

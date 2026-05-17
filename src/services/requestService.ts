@@ -1,4 +1,4 @@
-import { api } from "@/lib/apiClient";
+import { api, apiFetch } from "@/lib/apiClient";
 import type { FileRequest, RejectReason, RequestStats, FileStatus } from "@/types/domain";
 
 // ============================================================================
@@ -168,5 +168,7 @@ export const undoReject = async (requestId: string): Promise<void> => {
  * @backend GET /api/v1/admin/requests/{request_id}/url
  */
 export const getRequestPreviewUrl = async (requestId: string): Promise<{ url: string }> => {
-    return await api<{ url: string }>(`/admin/requests/${requestId}/url`);
+    const res = await apiFetch(`/admin/requests/${requestId}/preview`);
+    const blob = await res.blob();
+    return { url: URL.createObjectURL(blob) };
 };

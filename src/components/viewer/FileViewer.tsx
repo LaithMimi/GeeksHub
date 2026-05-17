@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useViewerSession } from '@/hooks/useViewerSession';
 import { toast } from 'sonner';
 import CourseCompletionCelebration from '@/components/ui/CourseCompletionCelebration';
+import { apiFetch } from '@/lib/apiClient';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -64,6 +65,20 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
     const [scale, setScale] = useState(1.0);
     const [rotation, setRotation] = useState(0);
     const [pdfError, setPdfError] = useState(false);
+    const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!fileId || !file || !isPdf(file.title, file.downloadUrl)) return;
+        let objectUrl: string;
+        apiFetch(`/files/${fileId}/stream`)
+            .then(res => res.blob())
+            .then(blob => {
+                objectUrl = URL.createObjectURL(blob);
+                setPdfBlobUrl(objectUrl);
+            })
+            .catch(() => setPdfError(true));
+        return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
+    }, [fileId, file?.id]);
 
     // Text-selection tooltip state
     const [tooltip, setTooltip] = useState<{ pos: TooltipPos; text: string } | null>(null);
@@ -235,20 +250,11 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
         );
     }
 
-    // ── PDF but no URL ────────────────────────────────────────────────────────
-    if (!file.downloadUrl) {
+    // ── Waiting for blob URL (PDF is being fetched via proxy) ─────────────────
+    if (!pdfBlobUrl) {
         return (
-            <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4">
-                    <AlertCircle className="h-7 w-7 text-amber-400" />
-                </div>
-                <h2 className="text-lg font-display font-bold text-white">File not available for preview</h2>
-                <p className="text-white/40 mt-2 text-[14px] max-w-sm">
-                    The download URL is not yet available. Please try again later.
-                </p>
-                <Button variant="link" onClick={() => window.history.back()} className="mt-4 text-blue-400 hover:text-blue-300">
-                    Go Back
-                </Button>
+            <div className="h-full flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
             </div>
         );
     }
@@ -363,7 +369,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                 )}
 
                 <Document
-                    file={file.downloadUrl}
+                    file={pdfBlobUrl}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
                     loading={
