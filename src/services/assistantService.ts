@@ -6,7 +6,10 @@ export interface AssistantMessage {
     role: 'user' | 'assistant';
     content: string;
     timestamp: Date;
+    agentAction?: 'tool_used' | 'direct_answer';
 }
+
+type AIChatResponse = { reply: string; agentAction: 'tool_used' | 'direct_answer' };
 
 /**
  * Sends a message to the AI assistant and returns a response.
@@ -19,12 +22,12 @@ export const sendMessage = async (
     fileId: string,
     message: string,
     history: AssistantMessage[]
-): Promise<string> => {
-    const response = await api<{ reply: string }>("/assistant/chat", {
+): Promise<AIChatResponse> => {
+    const response = await api<AIChatResponse>("/assistant/chat", {
         method: "POST",
         body: JSON.stringify({ fileId, message, history }),
     });
-    return response.reply;
+    return { reply: response.reply, agentAction: response.agentAction };
 };
 
 /**
