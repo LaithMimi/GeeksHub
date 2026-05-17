@@ -3,7 +3,7 @@
 > **For:** Backend Engineer
 > **Frontend Stack:** React + TypeScript + TanStack Query
 > **Backend Stack:** FastAPI + SQLModel + Neon PostgreSQL + Auth0 + Google Cloud Storage
-> **Last Updated:** March 24, 2026
+> **Last Updated:** May 17, 2026
 
 ---
 
@@ -236,7 +236,7 @@ points_transactions(id UUID PK, user_id UUID FK, amount INT, reason TEXT, date T
 
 | Method | Endpoint | Frontend Call | Status |
 |--------|----------|---------------|--------|
-| `POST` | `/api/v1/assistant/chat` | `sendMessage(fileId, message, history)` | 🔴 |
+| `POST` | `/api/v1/assistant/chat` | `sendMessage(fileId, message, history)` | ✅ |
 | `GET` | `/api/v1/me/notes?fileId=` | `getNotes(fileId)` | ✅ |
 | `POST` | `/api/v1/me/notes` | `saveNotes(fileId, content)` | ✅ |
 
@@ -338,10 +338,10 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 17. `GET /api/v1/me/reputation` ✅
 18. `GET /api/v1/reputation/leaderboard` ✅
 19. `GET /api/v1/admin/audit-logs` (needs `audit_logs`) ✅
-20. Recent files CRUD (needs `user_recent_files`)
+20. Recent files CRUD (needs `user_recent_files`) ✅
 
 ### 🔴 P3 — AI features
-21. `POST /api/v1/assistant/chat` (needs LLM integration)
+21. `POST /api/v1/assistant/chat` (needs LLM integration) ✅
 22. Notes CRUD (needs `user_notes`) ✅
 
 ### 🟡 P4 — Nice-to-have (frontend still uses localStorage)

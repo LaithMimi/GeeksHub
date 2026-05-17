@@ -128,7 +128,7 @@ You have access to the `search_course_knowledge` tool which can search across AL
             gemini_history.append(
                 types.Content(
                     role="user" if msg.role == "user" else "model",
-                    parts=[types.Part.from_text(msg.content)]
+                    parts=[types.Part(text=msg.content)]
                 )
             )
 
@@ -151,7 +151,7 @@ You have access to the `search_course_knowledge` tool which can search across AL
                         config=types.CreateCachedContentConfig(
                             system_instruction=system_prompt,
                             # We must pass the document in contents to cache it
-                            contents=[types.Content(role="user", parts=[types.Part.from_text("Here is the document context:\n" + base_context)])],
+                            contents=[types.Content(role="user", parts=[types.Part(text="Here is the document context:\n" + base_context)])],
                             ttl="3600s" # 1 hour
                         )
                     )
