@@ -51,8 +51,7 @@ class Lecturer(SQLModel, table=True):
     __tablename__ = "lecturers"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    name: str = Field(index=True) # Full name of the lecturer (e.g., "Dr. Jane Smith")
-    email: str | None = Field(default=None, unique=True, index=True) # Optional email for the lecturer
+    name: str = Field(index=True, unique=True) # Full name of the lecturer (e.g., "Dr. Jane Smith")
 
 class MaterialType(SQLModel, table=True):
     """
