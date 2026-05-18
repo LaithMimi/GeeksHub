@@ -196,3 +196,22 @@ class MaterialChunk(SQLModel, table=True):
             postgresql_ops={"embedding": "vector_cosine_ops"}
         ),
     )
+
+# Tasks
+class UserTask(SQLModel, table=True):
+    """Personal learning-plan tasks created by a student."""
+    __tablename__ = "user_tasks"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    title: str
+    date: str  # stored as "YYYY-MM-DD" — keeps it simple, no TZ issues
+    start_hour: float = Field(default=12.0)  # 0–23, supports 0.5 steps
+    duration: float = Field(default=1.0)     # hours
+    priority: str = Field(default="normal")  # "normal" | "high" | "urgent"
+    completed: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index("idx_user_tasks_user_date", "user_id", "date"),
+    )

@@ -1,5 +1,5 @@
 import re
-from typing import List, Self
+from typing import List, Optional, Self
 from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, field_validator, model_validator
@@ -131,3 +131,32 @@ class ChatMessage(BaseModel):
     """One message in the conversation history sent by the frontend."""
     role: str       # "user" or "assistant"
     content: str
+
+# --- Tasks Payloads ---
+class TaskCreate(BaseModel):
+    title: str
+    date: str                  # "YYYY-MM-DD"
+    priority: str = "normal"   # "normal" | "high" | "urgent"
+    startHour: float = 12.0
+    duration: float = 1.0
+
+class TaskPatch(BaseModel):
+    title: Optional[str] = None
+    date: Optional[str] = None
+    priority: Optional[str] = None
+    startHour: Optional[float] = None
+    duration: Optional[float] = None
+    completed: Optional[bool] = None
+
+class TaskResponse(BaseModel):
+    id: UUID
+    title: str
+    date: str
+    startHour: float
+    duration: float
+    priority: str
+    completed: bool
+    createdAt: str
+
+    class Config:
+        from_attributes = True
