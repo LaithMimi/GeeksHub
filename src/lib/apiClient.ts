@@ -38,7 +38,7 @@ function toCamelCase(str: string): string {
  * Recursively converts all object keys from snake_case to camelCase.
  * Handles nested objects, arrays, and preserves primitives.
  */
-function snakeToCamel<T>(data: unknown): T {
+export function snakeToCamel<T>(data: unknown): T {
     if (data === null || data === undefined) return data as T;
     if (Array.isArray(data)) return data.map((item) => snakeToCamel(item)) as T;
     if (typeof data === "object" && !(data instanceof Date)) {

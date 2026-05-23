@@ -27,6 +27,7 @@ export const useViewerSession = (fileId: string, currentPage: number) => {
     const activeSecondsRef = useRef<number>(0);
     const lastActivityRef = useRef<number>(Date.now());
     const intervalRef = useRef<number | null>(null);
+    const isCompletedRef = useRef(false);
 
     // Track visited pages
     useEffect(() => {
@@ -96,7 +97,8 @@ export const useViewerSession = (fileId: string, currentPage: number) => {
 
                             if (!isMounted) return;
 
-                            if (hbRes.isComplete && !viewerEvents.completed) {
+                            if (hbRes.isComplete && !isCompletedRef.current) {
+                                isCompletedRef.current = true;
                                 setViewerEvents({
                                     completed: hbRes.isComplete,
                                     pointsAwarded: hbRes.pointsAwarded,

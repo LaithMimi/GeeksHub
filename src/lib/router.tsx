@@ -10,11 +10,12 @@ const PageLoader = () => (
     </div>
 );
 
-const Loadable = (Component: React.ElementType) => (props: any) => (
-    <Suspense fallback={<PageLoader />}>
-        <Component {...props} />
-    </Suspense>
-);
+const Loadable = <T extends object>(Component: React.ComponentType<T>) =>
+    (props: T) => (
+        <Suspense fallback={<PageLoader />}>
+            <Component {...props} />
+        </Suspense>
+    );
 
 const AppShell = Loadable(React.lazy(() => import("@/components/layout/AppShell")));
 const AdminShell = Loadable(React.lazy(() => import("@/components/layout/AdminShell")));

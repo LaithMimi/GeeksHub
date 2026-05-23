@@ -126,21 +126,21 @@ function SummaryChip({ label, value }: { label: string; value?: string }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+const defaultForm = {
+    major: "",
+    program_year: "",   // 1–4, required — sent as `academic_year` to backend
+    semester: "",   // optional filter
+    course: "",
+    lecturer: "",
+    type_id: "",
+    title: "",
+    description: "",
+    material_year: "",   // 2016–current, sent as `material_year` to backend
+    file: null as File | null,
+};
+
 export default function RequestFileModal({ open, onOpenChange, initialData }: RequestFileModalProps) {
     const [step, setStep] = useState(1);
-
-    const defaultForm = {
-        major: "",
-        program_year: "",   // 1–4, required — sent as `academic_year` to backend
-        semester: "",   // optional filter
-        course: "",
-        lecturer: "",
-        type_id: "",
-        title: "",
-        description: "",
-        material_year: "",   // 2016–current, sent as `material_year` to backend
-        file: null as File | null,
-    };
 
     const [form, setForm] = useState(defaultForm);
 

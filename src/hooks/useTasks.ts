@@ -6,6 +6,7 @@ import {
     deleteTask,
     type Task,
     type CreateTaskPayload,
+    type PatchTaskPayload,
 } from "@/services/taskService";
 
 export type { Task };
@@ -37,6 +38,15 @@ export const useToggleTask = () => {
     });
 };
 
+export const useUpdateTask = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, patch }: { id: string; patch: PatchTaskPayload }) =>
+            updateTask(id, patch),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ["my-tasks"] }),
+    });
+};
+
 export const useDeleteTask = () => {
     const qc = useQueryClient();
     return useMutation({
@@ -53,6 +63,7 @@ export function useTasks() {
     const { data: tasks = [] } = useTasksQuery();
     const createMutation = useCreateTask();
     const toggleMutation = useToggleTask();
+    const updateMutation = useUpdateTask();
     const deleteMutation = useDeleteTask();
 
     const addTask = (
@@ -71,6 +82,10 @@ export function useTasks() {
         if (task) toggleMutation.mutate({ id, completed: !task.completed });
     };
 
+    const moveTask = (id: string, date: string, startHour: number) => {
+        updateMutation.mutate({ id, patch: { date, startHour } });
+    };
+
     const removeTask = (id: string) => deleteMutation.mutate(id);
 
     // Sort: incomplete first, then by date asc
@@ -81,5 +96,5 @@ export function useTasks() {
 
     const taskDates = new Set(tasks.filter(t => !t.completed).map(t => t.date));
 
-    return { tasks: sortedTasks, taskDates, addTask, toggleTask, deleteTask: removeTask };
+    return { tasks: sortedTasks, taskDates, addTask, toggleTask, moveTask, deleteTask: removeTask };
 }

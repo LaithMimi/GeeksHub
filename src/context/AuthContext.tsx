@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import { authService } from "@/services/authService";
+import { SESSION_KEY } from "@/lib/constants";
 import type { User, Role } from "@/types/domain";
 
 interface AuthState {
@@ -21,7 +22,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [state, setState] = useState<AuthState>(() => {
-        const saved = localStorage.getItem("mock_user_session") || sessionStorage.getItem("mock_user_session");
+        const saved = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
         return {
             user: saved ? JSON.parse(saved) : null,
             isLoading: false,
@@ -36,19 +37,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const newUser = {
                 id: user.id,
                 email,
-                displayName: user.name, // Note: backend uses 'name'
+                displayName: user.name,
                 role: user.role as Role,
                 avatarInitials: user.name.charAt(0).toUpperCase(),
-                majorId: user.major_id,
-                totalPoints: user.totalPoints ?? user.total_points,
-                createdAt: user.createdAt ?? user.created_at
+                majorId: user.majorId,
+                totalPoints: user.totalPoints,
+                createdAt: user.createdAt,
             };
             if (rememberMe) {
-                localStorage.setItem("mock_user_session", JSON.stringify(newUser));
-                sessionStorage.removeItem("mock_user_session");
+                localStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
+                sessionStorage.removeItem(SESSION_KEY);
             } else {
-                sessionStorage.setItem("mock_user_session", JSON.stringify(newUser));
-                localStorage.removeItem("mock_user_session");
+                sessionStorage.setItem(SESSION_KEY, JSON.stringify(newUser));
+                localStorage.removeItem(SESSION_KEY);
             }
             setState({
                 user: newUser,
@@ -86,8 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.error("Failed to sign out from server", error);
         } finally {
             // Wipe frontend state regardless
-            localStorage.removeItem("mock_user_session");
-            sessionStorage.removeItem("mock_user_session");
+            localStorage.removeItem(SESSION_KEY);
+            sessionStorage.removeItem(SESSION_KEY);
             setState({ user: null, isLoading: false, error: null });
         }
     }, []);

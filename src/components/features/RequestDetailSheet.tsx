@@ -1,6 +1,6 @@
 /**
  * RequestDetailSheet Component
- * 
+ *
  * A side panel for viewing file request details with:
  * - File metadata display
  * - Notes from uploader
@@ -10,7 +10,7 @@
 
 import * as React from "react";
 import { formatDate } from "@/lib/formatDate";
-import { FileText, Calendar, User, BookOpen, Tag, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { FileText, Calendar, User, BookOpen, Tag, AlertTriangle, CheckCircle2, XCircle, Maximize2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -27,6 +27,10 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
+import {
+    Dialog,
+    DialogContent,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -61,11 +65,25 @@ export function RequestDetailSheet({
 
     const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
     const [duplicateWarningOpen, setDuplicateWarningOpen] = React.useState(false);
+    const [fullscreenOpen, setFullscreenOpen] = React.useState(false);
+
+    // Fullscreen viewer state
+    const [numPages, setNumPages] = React.useState<number | null>(null);
+    const [pageNumber, setPageNumber] = React.useState(1);
+    const [scale, setScale] = React.useState(1.0);
+    const [rotation, setRotation] = React.useState(0);
+
+    const handleFullscreenOpen = () => {
+        setPageNumber(1);
+        setScale(1.0);
+        setRotation(0);
+        setNumPages(null);
+        setFullscreenOpen(true);
+    };
 
     if (!request) return null;
 
     const isPending = request.status === "pending";
-
 
     const handleApprove = () => {
         onApprove(request.id);
@@ -150,13 +168,30 @@ export function RequestDetailSheet({
 
                         {/* File Preview */}
                         <div className="space-y-2">
-                            <h4 className="text-sm font-medium">File Preview</h4>
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-medium">File Preview</h4>
+                                {previewData?.url && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 gap-1.5 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                                        onClick={handleFullscreenOpen}
+                                    >
+                                        <Maximize2 className="h-3.5 w-3.5" />
+                                        Full Screen
+                                    </Button>
+                                )}
+                            </div>
                             {isLoadingPreview ? (
                                 <div className="border-2 rounded-lg p-8 flex flex-col items-center justify-center text-muted-foreground animate-pulse">
                                     <p className="text-sm">Fetching secure preview link...</p>
                                 </div>
                             ) : previewData?.url ? (
-                                <div className="border-2 rounded-lg bg-black/20 flex flex-col items-center justify-center overflow-auto max-h-[400px] p-4">
+                                <div
+                                    className="border-2 rounded-lg bg-black/20 flex flex-col items-center justify-center overflow-auto max-h-[400px] p-4 cursor-pointer hover:border-blue-500/40 transition-colors"
+                                    onClick={handleFullscreenOpen}
+                                    title="Click to view full screen"
+                                >
                                     <Document
                                         file={previewData.url}
                                         loading={<p className="text-sm text-muted-foreground py-4">Loading PDF...</p>}
@@ -249,6 +284,108 @@ export function RequestDetailSheet({
                     )}
                 </SheetContent>
             </Sheet>
+
+            {/* Fullscreen PDF Preview */}
+            {previewData?.url && (
+                <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
+                    <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] p-0 flex flex-col bg-[#1a1a2e] border-white/10">
+                        {/* Toolbar */}
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] bg-white/[0.02] shrink-0">
+                            <div className="flex items-center gap-3">
+                                <FileText className="h-4 w-4 text-white/40" />
+                                <span className="text-sm font-medium text-white/80 truncate max-w-[300px]">
+                                    {request.title}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 pr-8">
+                                {/* Page navigation */}
+                                <button
+                                    onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+                                    disabled={pageNumber <= 1}
+                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </button>
+                                <span className="text-[13px] text-white/60 min-w-[80px] text-center tabular-nums">
+                                    {pageNumber} / {numPages ?? '—'}
+                                </span>
+                                <button
+                                    onClick={() => setPageNumber(p => Math.min(numPages ?? 1, p + 1))}
+                                    disabled={pageNumber >= (numPages ?? 1)}
+                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </button>
+
+                                <div className="w-px h-4 bg-white/[0.08] mx-1" />
+
+                                {/* Zoom */}
+                                <button
+                                    onClick={() => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1)))}
+                                    disabled={scale <= 0.5}
+                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ZoomOut className="h-4 w-4" />
+                                </button>
+                                <span className="text-[13px] text-white/60 min-w-[44px] text-center tabular-nums">
+                                    {Math.round(scale * 100)}%
+                                </span>
+                                <button
+                                    onClick={() => setScale(s => Math.min(2.5, +(s + 0.2).toFixed(1)))}
+                                    disabled={scale >= 2.5}
+                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ZoomIn className="h-4 w-4" />
+                                </button>
+
+                                <div className="w-px h-4 bg-white/[0.08] mx-1" />
+
+                                {/* Rotate */}
+                                <button
+                                    onClick={() => setRotation(r => (r + 90) % 360)}
+                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] transition-all"
+                                >
+                                    <RotateCw className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* PDF canvas */}
+                        <div className="flex-1 overflow-auto flex justify-center py-6 px-4">
+                            <Document
+                                file={previewData.url}
+                                onLoadSuccess={({ numPages: n }) => { setNumPages(n); }}
+                                loading={
+                                    <div className="flex items-center gap-3 text-white/40 mt-20">
+                                        <span className="text-[14px]">Loading PDF...</span>
+                                    </div>
+                                }
+                                error={
+                                    <div className="flex flex-col items-center gap-2 text-red-400 mt-20">
+                                        <FileText className="h-8 w-8" />
+                                        <p className="text-sm">Failed to load PDF</p>
+                                    </div>
+                                }
+                            >
+                                <Page
+                                    pageNumber={pageNumber}
+                                    scale={scale}
+                                    rotate={rotation}
+                                    renderTextLayer={true}
+                                    renderAnnotationLayer={true}
+                                    className="shadow-2xl shadow-black/50 rounded-sm"
+                                    loading={
+                                        <div className="flex items-center justify-center h-96 w-full">
+                                            <span className="text-sm text-white/40">Rendering page...</span>
+                                        </div>
+                                    }
+                                />
+                            </Document>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
 
             <RejectDialog
                 open={rejectDialogOpen}

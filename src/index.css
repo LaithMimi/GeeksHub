@@ -73,9 +73,6 @@
   --glow-blue-soft: 0 0 24px rgba(37, 99, 235, 0.15);
   --glow-green: 0 0 16px rgba(16, 185, 129, 0.4), 0 0 32px rgba(16, 185, 129, 0.15);
   --glow-red: 0 0 16px rgba(244, 63, 94, 0.4), 0 0 32px rgba(244, 63, 94, 0.15);
-  /* Legacy alias — kept so existing .glow-blue classes don't break */
-  --glow-blue: var(--glow-blue);
-  --glow-blue-soft: var(--glow-blue-soft);
 
   /* Semantic Colors */
   --text-primary: rgba(255, 255, 255, 0.9);
@@ -112,8 +109,6 @@
   --glow-blue-soft: 0 0 30px rgba(37, 99, 235, 0.06);
   --glow-green: 0 0 16px rgba(16, 185, 129, 0.1), 0 0 32px rgba(16, 185, 129, 0.05);
   --glow-red: 0 0 16px rgba(244, 63, 94, 0.1), 0 0 32px rgba(244, 63, 94, 0.05);
-  --glow-blue: var(--glow-blue);
-  --glow-blue-soft: var(--glow-blue-soft);
 
   --text-primary: rgba(10, 15, 40, 0.9);
   --text-secondary: rgba(10, 15, 40, 0.6);

@@ -1,125 +1,144 @@
-import { api } from "@/lib/apiClient";
+import { api, ApiError } from "@/lib/apiClient";
+import type { Role } from "@/types/domain";
 
 export type AuthError = {
     message: string;
     field?: string;
 };
 
-// Simulated API delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+/** Shape returned by /signin after snake_case→camelCase conversion. */
+export interface AuthUserDTO {
+    id: string;
+    name: string;
+    email: string;
+    role: Role;
+    majorId?: string;
+    totalPoints?: number;
+    createdAt?: string;
+}
 
-const formatAuthError = (errStr: string, defaultMsg: string): string => {
-    if (typeof errStr !== "string") return defaultMsg;
-    if (errStr.includes("Wrong email or password")) return "Invalid email or password.";
-    if (errStr.includes("Too Many Requests") || errStr.includes("429")) return "Too many failed attempts. Please try again later.";
+export interface SignInResponse {
+    user: AuthUserDTO;
+}
 
-    try {
-        const first = errStr.indexOf('{');
-        const last = errStr.lastIndexOf('}');
-        if (first !== -1 && last !== -1 && last > first) {
-            const errData = JSON.parse(errStr.substring(first, last + 1));
+export interface SignUpResponse {
+    user: AuthUserDTO;
+}
 
-            if (errData.error_description) {
-                let msg = errData.error_description;
-                if (msg.includes("Wrong email or password")) return "Invalid email or password.";
-                return msg;
-            }
-            if (errData.message) {
-                let msg = errData.message;
-                if (msg.includes("PasswordStrengthError")) {
-                    return "Password is too weak. It must be at least 8 characters and include a number, an uppercase letter, and a lowercase letter.";
-                }
-                return msg;
-            }
-        }
-    } catch {
-        // ignore JSON parse errors
+interface ValidationErrorItem {
+    msg?: string;
+    [key: string]: unknown;
+}
+
+/**
+ * Extract a human-readable message from an ApiError's `data` payload.
+ * Handles FastAPI's `{ detail: string | { msg } | [{ msg }] }` envelope plus
+ * Auth0's `{ error_description }` payload. No string parsing.
+ */
+function extractAuthErrorMessage(err: unknown, fallback: string): string {
+    if (!(err instanceof ApiError)) {
+        return err instanceof Error ? err.message : fallback;
     }
 
-    return errStr || defaultMsg;
-};
+    const data = err.data as
+        | { detail?: string | ValidationErrorItem | ValidationErrorItem[]; error_description?: string; message?: string }
+        | undefined;
+
+    if (data?.detail) {
+        const { detail } = data;
+        if (Array.isArray(detail)) {
+            return detail.map((d) => d.msg ?? JSON.stringify(d)).join(", ");
+        }
+        if (typeof detail === "object") {
+            return detail.msg ?? JSON.stringify(detail);
+        }
+        if (typeof detail === "string") {
+            if (detail.includes("Wrong email or password")) return "Invalid email or password.";
+            if (detail.includes("Too Many Requests") || detail.includes("429")) {
+                return "Too many failed attempts. Please try again later.";
+            }
+            if (detail.includes("PasswordStrengthError")) {
+                return "Password is too weak. It must be at least 8 characters and include a number, an uppercase letter, and a lowercase letter.";
+            }
+            return detail;
+        }
+    }
+
+    if (data?.error_description) {
+        return data.error_description.includes("Wrong email or password")
+            ? "Invalid email or password."
+            : data.error_description;
+    }
+
+    return data?.message ?? err.message ?? fallback;
+}
+
+export interface SignInPayload {
+    email: string;
+    password: string;
+    rememberMe?: boolean;
+}
+
+export interface SignUpPayload {
+    name: string;
+    email: string;
+    password: string;
+    majorId: string;
+}
 
 export const authService = {
-    signIn: async ({ email, password }: Record<string, any>) => {
+    signIn: async ({ email, password }: SignInPayload): Promise<SignInResponse> => {
         try {
-            const data = await api<any>("/signin", {
-                method: 'POST',
+            const data = await api<SignInResponse>("/signin", {
+                method: "POST",
                 body: JSON.stringify({ email, password }),
             });
             return { user: data.user };
-        } catch (err: any) {
-            if (err.status === 403) {
+        } catch (err: unknown) {
+            if (err instanceof ApiError && err.status === 403) {
                 throw { message: "Please check your email to verify your account before logging in." };
             }
-            let errorMessage = "Login failed";
-            if (err.data?.detail) {
-                if (Array.isArray(err.data.detail)) {
-                    errorMessage = err.data.detail.map((e: any) => e.msg || JSON.stringify(e)).join(", ");
-                } else if (typeof err.data.detail === 'object') {
-                    errorMessage = err.data.detail.msg || JSON.stringify(err.data.detail);
-                } else {
-                    errorMessage = formatAuthError(String(err.data.detail), "Login failed");
-                }
-            } else if (err.message) {
-                errorMessage = formatAuthError(err.message, "Login failed");
-            }
-            throw { message: errorMessage };
+            throw { message: extractAuthErrorMessage(err, "Login failed") };
         }
     },
 
-    signUp: async ({ name, email, password, majorId }: Record<string, string>) => {
+    signUp: async ({ name, email, password, majorId }: SignUpPayload): Promise<SignUpResponse> => {
         try {
-            return await api<any>("/signup", {
-                method: 'POST',
+            return await api<SignUpResponse>("/signup", {
+                method: "POST",
                 body: JSON.stringify({
                     username: name,
                     email,
                     password,
                     password_confirm: password,
-                    major_id: majorId
+                    major_id: majorId,
                 }),
             });
-        } catch (err: any) {
-            let errorMessage = "Signup failed";
-            if (err.data?.detail) {
-                if (Array.isArray(err.data.detail)) {
-                    errorMessage = err.data.detail.map((e: any) => e.msg || JSON.stringify(e)).join(", ");
-                } else if (typeof err.data.detail === 'object') {
-                    errorMessage = err.data.detail.msg || JSON.stringify(err.data.detail);
-                } else {
-                    errorMessage = formatAuthError(String(err.data.detail), "Signup failed");
-                }
-            } else if (err.message) {
-                errorMessage = formatAuthError(err.message, "Signup failed");
-            }
-            throw { message: errorMessage };
+        } catch (err: unknown) {
+            throw { message: extractAuthErrorMessage(err, "Signup failed") };
         }
     },
 
-    signOut: async () => {
+    signOut: async (): Promise<{ success: true }> => {
         try {
-            await api<any>("/signout", {
-                method: 'POST',
-            });
-            return { success: true };
+            await api<unknown>("/signout", { method: "POST" });
         } catch (error) {
             console.error("Network error during signout:", error);
-            return { success: true };
         }
+        return { success: true };
     },
 
-    requestPasswordReset: async (email: string) => {
-        return await api<any>("/forgot-password", {
-            method: 'POST',
+    requestPasswordReset: async (email: string): Promise<{ success: boolean; message?: string }> => {
+        return await api<{ success: boolean; message?: string }>("/forgot-password", {
+            method: "POST",
             body: JSON.stringify({ email }),
         });
     },
 
-    confirmPasswordReset: async ({ token, password }: Record<string, string>) => {
-        await delay(600);
-        if (token === "invalid") throw { message: "Invalid or expired token." };
-        if (password.length < 8) throw { message: "Password must be at least 8 characters." };
-        return { success: true, message: "Password has been reset successfully." };
-    }
+    confirmPasswordReset: async ({ token, password }: { token: string; password: string }): Promise<{ success: boolean; message: string }> => {
+        return await api<{ success: boolean; message: string }>("/reset-password", {
+            method: "POST",
+            body: JSON.stringify({ token, password }),
+        });
+    },
 };
-

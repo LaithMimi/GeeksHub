@@ -24,6 +24,12 @@ export default function ResetPasswordForm() {
         const password = formData.get("password") as string;
         const confirmPassword = formData.get("confirmPassword") as string;
 
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters.");
+            setIsLoading(false);
+            return;
+        }
+
         if (password !== confirmPassword) {
             setError("Passwords do not match.");
             setIsLoading(false);

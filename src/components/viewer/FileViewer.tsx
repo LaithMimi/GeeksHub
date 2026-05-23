@@ -67,8 +67,10 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
     const [pdfError, setPdfError] = useState(false);
     const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
+    const fileTitle = file?.title;
+    const fileDownloadUrl = file?.downloadUrl;
     useEffect(() => {
-        if (!fileId || !file || !isPdf(file.title, file.downloadUrl)) return;
+        if (!fileId || !fileTitle || !isPdf(fileTitle, fileDownloadUrl)) return;
         let objectUrl: string;
         apiFetch(`/files/${fileId}/stream`)
             .then(res => res.blob())
@@ -78,7 +80,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
             })
             .catch(() => setPdfError(true));
         return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
-    }, [fileId, file?.id]);
+    }, [fileId, fileTitle, fileDownloadUrl]);
 
     // Text-selection tooltip state
     const [tooltip, setTooltip] = useState<{ pos: TooltipPos; text: string } | null>(null);
