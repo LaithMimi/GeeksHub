@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { logger } from "@/lib/logger";
 import {
     useViewerSessionStart,
     useViewerHeartbeat,
@@ -107,12 +108,12 @@ export const useViewerSession = (fileId: string, currentPage: number) => {
                                 });
                             }
                         } catch (err) {
-                            console.error("Viewer heartbeat failed:", err);
+                            logger.error("Viewer heartbeat failed:", err);
                         }
                     }
                 }, VIEWER_HEARTBEAT_INTERVAL_MS);
             } catch (err) {
-                console.error("Failed to start viewer session:", err);
+                logger.error("Failed to start viewer session:", err);
             }
         };
 
@@ -124,7 +125,7 @@ export const useViewerSession = (fileId: string, currentPage: number) => {
                 clearInterval(intervalRef.current);
             }
             if (activeSessionId) {
-                endSession(activeSessionId).catch(console.error);
+                endSession(activeSessionId).catch((err) => logger.error("Failed to end viewer session:", err));
             }
         };
     }, [fileId, user, startSession, sendHeartbeat, endSession]);

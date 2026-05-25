@@ -42,6 +42,7 @@ import {
     getRequestPreviewUrl,
 } from "@/services/requestService";
 import { toast } from "sonner";
+import { ApiError } from "@/lib/apiClient";
 import type { RejectReason, FileStatus } from "@/types/domain";
 
 // ============================================================================
@@ -71,8 +72,9 @@ export const useCreateRequest = () => {
             queryClient.invalidateQueries({ queryKey: ["my-requests"] });
             toast.success("File submitted successfully");
         },
-        onError: () => {
-            toast.error("Failed to submit file. Try again.");
+        onError: (err) => {
+            const detail = err instanceof ApiError ? err.message : null;
+            toast.error(detail || "Failed to submit file. Try again.");
         },
     });
 };

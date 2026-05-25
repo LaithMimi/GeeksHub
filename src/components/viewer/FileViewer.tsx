@@ -72,7 +72,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
     useEffect(() => {
         if (!fileId || !fileTitle || !isPdf(fileTitle, fileDownloadUrl)) return;
         let objectUrl: string;
-        apiFetch(`/files/${fileId}/stream`)
+        apiFetch(`/files/${encodeURIComponent(fileId)}/stream`)
             .then(res => res.blob())
             .then(blob => {
                 objectUrl = URL.createObjectURL(blob);

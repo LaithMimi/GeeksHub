@@ -11,6 +11,9 @@ export interface AssistantMessage {
 
 type AIChatResponse = { reply: string; agentAction: 'tool_used' | 'direct_answer' };
 
+/** Cap how much conversation history we replay to the backend each turn. */
+const MAX_HISTORY_MESSAGES = 10;
+
 /**
  * Sends a message to the AI assistant and returns a response.
  * @param fileId - The file being viewed
@@ -25,7 +28,7 @@ export const sendMessage = async (
 ): Promise<AIChatResponse> => {
     const response = await api<AIChatResponse>("/assistant/chat", {
         method: "POST",
-        body: JSON.stringify({ fileId, message, history }),
+        body: JSON.stringify({ fileId, message, history: history.slice(-MAX_HISTORY_MESSAGES) }),
     });
     return { reply: response.reply, agentAction: response.agentAction };
 };
@@ -36,7 +39,8 @@ export const sendMessage = async (
  * @backend GET /api/v1/me/notes?fileId=:fileId
  */
 export const getNotes = async (fileId: string): Promise<string> => {
-    const response = await api<{ content: string }>(`/me/notes?fileId=${fileId}`);
+    const params = new URLSearchParams({ fileId });
+    const response = await api<{ content: string }>(`/me/notes?${params}`);
     return response.content ?? "";
 };
 
@@ -47,7 +51,8 @@ export const getNotes = async (fileId: string): Promise<string> => {
  * @backend POST /api/v1/me/notes
  */
 export const saveNotes = async (fileId: string, content: string): Promise<void> => {
-    await api(`/me/notes?fileId=${fileId}`, {
+    const params = new URLSearchParams({ fileId });
+    await api(`/me/notes?${params}`, {
         method: "POST",
         body: JSON.stringify({ content }),
     });

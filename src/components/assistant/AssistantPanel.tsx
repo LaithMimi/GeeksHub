@@ -67,6 +67,8 @@ function buildWelcomeMessage(fileTitle: string) {
     return `I've loaded **${fileTitle}**. Ask me anything about it — I can summarize key concepts, explain difficult topics, or quiz you on the material.`;
 }
 
+// SECURITY: render content as plain text + <strong> only. Never switch this to
+// dangerouslySetInnerHTML — user and AI text flows through here unsanitised.
 function RichContent({ content }: { content: string }) {
     const parts = content.split(/(\*\*[^*]+\*\*)/g);
     return (
@@ -476,6 +478,7 @@ export default function AssistantPanel({
                             <div className="relative">
                                 <Textarea
                                     placeholder="Ask about this file..."
+                                    maxLength={2000}
                                     className="min-h-[80px] resize-none pr-14 bg-white/[0.03] border border-white/[0.05]
                                                focus-visible:ring-1 focus-visible:ring-blue-500/50
                                                rounded-2xl text-[13px] text-white placeholder:text-white/30 transition-all"
@@ -566,6 +569,7 @@ export default function AssistantPanel({
                             <div className="flex items-end gap-2.5">
                                 <Textarea
                                     placeholder="Write a note… Enter or + to pin"
+                                    maxLength={500}
                                     className="flex-1 min-h-[60px] max-h-[120px] resize-none bg-white/[0.03] border border-white/[0.05]
                                                focus-visible:ring-1 focus-visible:ring-yellow-500/50
                                                rounded-2xl text-[13px] text-white placeholder:text-white/30 transition-all"

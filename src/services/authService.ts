@@ -1,4 +1,5 @@
 import { api, ApiError } from "@/lib/apiClient";
+import { logger } from "@/lib/logger";
 import type { Role } from "@/types/domain";
 
 export type AuthError = {
@@ -83,6 +84,7 @@ export interface SignUpPayload {
     name: string;
     email: string;
     password: string;
+    passwordConfirm: string;
     majorId: string;
 }
 
@@ -102,7 +104,7 @@ export const authService = {
         }
     },
 
-    signUp: async ({ name, email, password, majorId }: SignUpPayload): Promise<SignUpResponse> => {
+    signUp: async ({ name, email, password, passwordConfirm, majorId }: SignUpPayload): Promise<SignUpResponse> => {
         try {
             return await api<SignUpResponse>("/signup", {
                 method: "POST",
@@ -110,7 +112,7 @@ export const authService = {
                     username: name,
                     email,
                     password,
-                    password_confirm: password,
+                    password_confirm: passwordConfirm,
                     major_id: majorId,
                 }),
             });
@@ -119,11 +121,20 @@ export const authService = {
         }
     },
 
+    /**
+     * Fetches the authenticated user from the server, which derives identity
+     * and role from the HttpOnly JWT cookie. This is the authoritative source
+     * of the user's role — never trust the role cached in localStorage.
+     */
+    getMe: async (): Promise<AuthUserDTO> => {
+        return api<AuthUserDTO>("/me");
+    },
+
     signOut: async (): Promise<{ success: true }> => {
         try {
             await api<unknown>("/signout", { method: "POST" });
         } catch (error) {
-            console.error("Network error during signout:", error);
+            logger.error("Network error during signout:", error);
         }
         return { success: true };
     },

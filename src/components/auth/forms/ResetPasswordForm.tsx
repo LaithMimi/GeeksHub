@@ -7,9 +7,21 @@ import { authService } from "@/services/authService";
 import { Loader2, CheckCircle2, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 
+/**
+ * Prefer the token from the URL fragment (#token=...) over the query string.
+ * Fragments are never sent to servers, never logged, and never leak via the
+ * Referer header — unlike query params. Query is kept as a fallback so existing
+ * email links keep working until the backend switches to fragment-based links.
+ */
+function readResetToken(searchParams: URLSearchParams): string {
+    const hash = typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
+    const fromHash = new URLSearchParams(hash).get("token");
+    return fromHash || searchParams.get("token") || "";
+}
+
 export default function ResetPasswordForm() {
     const [searchParams] = useSearchParams();
-    const token = searchParams.get("token") || "";
+    const token = readResetToken(searchParams);
 
     const [isLoading, setIsLoading] = useState(false);
     const [success, setSuccess] = useState(false);

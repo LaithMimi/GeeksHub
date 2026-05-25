@@ -18,11 +18,32 @@
  * ============================================================================
  */
 
+import { SESSION_KEY } from "@/lib/constants";
+
 // In development, use a relative path so Vite's proxy forwards requests to
 // the FastAPI backend on the same origin — this ensures the HttpOnly
 // auth_token cookie is attached to every request (cross-port = cross-origin).
 // In production, VITE_API_URL should be set to the full backend URL.
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api/v1";
+
+// Auth endpoints own their own 401 handling (a failed login legitimately
+// returns 401 and must NOT trigger a session wipe / redirect). The boot-time
+// `/me` check is reconciled by AuthContext, so it's excluded here too.
+const AUTH_PATHS = ["/signin", "/signup", "/signout", "/forgot-password", "/reset-password", "/me"];
+
+/**
+ * Reacts to an expired/invalid session on a protected request: clears any
+ * cached session and sends the user to the login page. Skipped for auth
+ * endpoints and when already on /auth to avoid redirect loops.
+ */
+function handleUnauthorized(path: string): void {
+    if (AUTH_PATHS.some((p) => path === p || path.startsWith(`${p}?`) || path.startsWith(`${p}/`))) return;
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+    if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
+        window.location.assign("/auth");
+    }
+}
 
 // ── snake_case → camelCase transformer ──────────────────────────────────────
 
@@ -107,6 +128,8 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
             // Response body is not JSON
         }
 
+        if (res.status === 401) handleUnauthorized(path);
+
         const message = (data as any)?.detail
             || (data as any)?.message
             || `API error ${res.status}`;
@@ -129,6 +152,7 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
         credentials: "include",
     });
     if (!res.ok) {
+        if (res.status === 401) handleUnauthorized(path);
         throw new ApiError(res.status, `API error ${res.status}`);
     }
     return res;

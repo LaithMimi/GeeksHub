@@ -48,7 +48,7 @@ export default function SignUpForm() {
         }
 
         try {
-            await signUp(data.name as string, data.email as string, data.password as string, majorId);
+            await signUp(data.name as string, data.email as string, data.password as string, data.confirmPassword as string, majorId);
             toast.success("Account created! 📧 Please check your email to verify before logging in.", {
                 duration: 8000, // Keep it on screen a bit longer so they read it
             });

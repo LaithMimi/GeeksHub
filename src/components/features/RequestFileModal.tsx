@@ -41,6 +41,23 @@ const MATERIAL_YEARS = Array.from({ length: currentYear - 2016 + 1 }, (_, i) => 
     return { id: y, label: y };
 });
 
+// Frontend guardrails matching the UI copy ("PDF, PPTX, DOCX, JPG or PNG — max 25 MB").
+// The `accept` attribute is only a hint; these checks are the real client-side gate.
+// (The backend remains the authoritative enforcement layer.)
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = [".pdf", ".pptx", ".ppt", ".docx", ".jpg", ".jpeg", ".png"];
+
+function validateFile(file: File): string | null {
+    const name = file.name.toLowerCase();
+    if (!ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext))) {
+        return "Unsupported file type. Use PDF, PPTX, DOCX, JPG, or PNG.";
+    }
+    if (file.size > MAX_FILE_SIZE) {
+        return `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 25 MB.`;
+    }
+    return null;
+}
+
 const STEPS = [
     { id: 1, label: "Major" },
     { id: 2, label: "Course" },
@@ -143,6 +160,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
     const [step, setStep] = useState(1);
 
     const [form, setForm] = useState(defaultForm);
+    const [fileError, setFileError] = useState("");
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -176,6 +194,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
     useEffect(() => {
         if (open) {
             setStep(1);
+            setFileError("");
             setForm(
                 initialData
                     ? { ...defaultForm, major: initialData.major || "", course: initialData.course || "", lecturer: initialData.lecturer || "", type_id: initialData.type || "" }
@@ -191,9 +210,15 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
             const updated = { ...prev, [key]: value };
             const cascade = ["major", "program_year", "semester", "course", "lecturer"];
             const idx = cascade.indexOf(key);
-            if (idx >= 0) for (let i = idx + 1; i < cascade.length; i++) (updated as any)[cascade[i]] = "";
+            if (idx >= 0) {
+                for (let i = idx + 1; i < cascade.length; i++) (updated as any)[cascade[i]] = "";
+                // A changed upstream selection invalidates the already-chosen file
+                // so it can't be submitted against the wrong course/lecturer.
+                updated.file = null;
+            }
             return updated;
         });
+        setFileError("");
     };
 
     const set = (key: string, value: string) =>
@@ -205,13 +230,19 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
         if (step === 1) return !!form.major && !!form.program_year;
         if (step === 2) return !!form.course;
         if (step === 3) return !!form.lecturer && !!form.type_id && !!form.title && !!form.material_year;
-        if (step === 4) return !!form.file;
+        if (step === 4) return !!form.file && !fileError;
         return false;
     };
 
     // ── Submit ────────────────────────────────────────────────────────────────
 
     const handleSubmit = () => {
+        if (!form.file) return;
+        const err = validateFile(form.file);
+        if (err) {
+            setFileError(err);
+            return;
+        }
         submitRequest(
             {
                 courseId: form.course,
@@ -449,9 +480,20 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                         `}>
                             <input
                                 type="file"
-                                accept=".pdf,.pptx,.ppt,.docx,.jpg,.png"
+                                accept=".pdf,.pptx,.ppt,.docx,.jpg,.jpeg,.png"
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                onChange={(e) => { if (e.target.files?.[0]) set("file", e.target.files[0] as any); }}
+                                onChange={(e) => {
+                                    const f = e.target.files?.[0];
+                                    if (!f) return;
+                                    const err = validateFile(f);
+                                    if (err) {
+                                        setFileError(err);
+                                        setForm((prev) => ({ ...prev, file: null }));
+                                        return;
+                                    }
+                                    setFileError("");
+                                    setForm((prev) => ({ ...prev, file: f }));
+                                }}
                             />
                             {form.file ? (
                                 <>
@@ -477,6 +519,9 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                 </>
                             )}
                         </label>
+                        {fileError && (
+                            <p className="text-red-400 text-[12px] mt-1">{fileError}</p>
+                        )}
                     </div>
                 );
 
