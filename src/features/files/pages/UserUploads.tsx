@@ -1,12 +1,12 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
     FileText, Search, AlertCircle, CheckCircle, Clock,
     XCircle, ChevronLeft, Zap, Loader2, Plus, Trash2
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useMyRequests, useWithdrawRequest } from "@/hooks/useRequests";
-import RequestFileModal from "@/components/features/RequestFileModal";
+import { useMyRequests, useWithdrawRequest } from "@/features/files/hooks/useRequests";
+import RequestFileModal from "@/features/admin/components/RequestFileModal";
 import { formatDistanceToNow } from "date-fns";
 import type { FileRequest } from "@/types/domain";
 import { toast } from "sonner";

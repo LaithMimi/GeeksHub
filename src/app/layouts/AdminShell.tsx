@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import {
     Home, ClipboardList, FileSearch, BookOpen, Users,
     Bell, Search, GraduationCap,
@@ -32,16 +32,16 @@ import {
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CommandPalette } from "../ui/command-palette";
+import { CommandPalette } from "@/components/ui/command-palette";
 import { isMac } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
-// ── Static config ─────────────────────────────────────────────────────────────
+// -- Static config -------------------------------------------------------------
 
 const languages = [
     { code: "en", name: "English", dir: "ltr" },
-    { code: "ar", name: "العربية", dir: "rtl" },
-    { code: "he", name: "עברית", dir: "rtl" },
+    { code: "ar", name: "???????", dir: "rtl" },
+    { code: "he", name: "?????", dir: "rtl" },
 ];
 
 const adminNavItems = [
@@ -61,7 +61,7 @@ const adminLabelMap: Record<string, string> = {
     audit: "Audit Log",
 };
 
-// ── Admin Breadcrumbs ─────────────────────────────────────────────────────────
+// -- Admin Breadcrumbs ---------------------------------------------------------
 
 const AdminBreadcrumbs = () => {
     const location = useLocation();
@@ -121,7 +121,7 @@ const AdminBreadcrumbs = () => {
     );
 };
 
-// ── Admin Glass Sidebar ───────────────────────────────────────────────────────
+// -- Admin Glass Sidebar -------------------------------------------------------
 
 function AdminGlassSidebar({
     collapsed,
@@ -361,7 +361,7 @@ function AdminGlassSidebar({
                         })}
                     </nav>
 
-                    {/* Bottom section — user profile */}
+                    {/* Bottom section � user profile */}
                     <div className="mt-auto pt-5 space-y-3">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -425,7 +425,7 @@ function AdminGlassSidebar({
     );
 }
 
-// ── Admin Shell ───────────────────────────────────────────────────────────────
+// -- Admin Shell ---------------------------------------------------------------
 
 export default function AdminShell() {
     const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -452,7 +452,7 @@ export default function AdminShell() {
         return () => document.removeEventListener("keydown", handleKey);
     }, []);
 
-    // Language / RTL — same logic as AppShell
+    // Language / RTL � same logic as AppShell
     useEffect(() => {
         const savedLang = localStorage.getItem("language") || "en";
         const lang = languages.find((l) => l.code === savedLang);
@@ -471,7 +471,7 @@ export default function AdminShell() {
                 Skip to main content
             </a>
 
-            {/* Sidebar — hidden on mobile */}
+            {/* Sidebar � hidden on mobile */}
             <div className="hidden lg:block relative z-20">
                 <AdminGlassSidebar
                     collapsed={collapsed}
@@ -529,7 +529,7 @@ export default function AdminShell() {
                             />
                             <span className="hidden sm:inline">Search</span>
                             <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-white/30">
-                                {isMac ? "⌘K" : "Ctrl+K"}
+                                {isMac ? "?K" : "Ctrl+K"}
                             </kbd>
                         </button>
                         <button

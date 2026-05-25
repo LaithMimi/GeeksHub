@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from "react";
+﻿import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import type { Task } from "@/hooks/useTasks";
+import type { Task } from "@/features/dashboard/hooks/useTasks";
 
 const START_HOURS = Array.from({ length: 18 }, (_, i) => i + 6);
 const DURATIONS = [0.5, 1, 1.5, 2, 2.5, 3, 4];

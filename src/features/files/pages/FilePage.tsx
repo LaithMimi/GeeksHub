@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
+﻿import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import { useFile } from "@/hooks/useFiles";
-import FileViewer from "@/components/viewer/FileViewer";
-import AssistantPanel from "@/components/assistant/AssistantPanel";
+import { useFile } from "@/features/files/hooks/useFiles";
+import FileViewer from "@/features/files/components/FileViewer";
+import AssistantPanel from "@/features/assistant/components/AssistantPanel";
 
 export default function FilePage() {
     const { fileId } = useParams();

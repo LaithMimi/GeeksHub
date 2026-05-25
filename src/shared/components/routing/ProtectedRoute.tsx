@@ -1,5 +1,5 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+﻿import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import type { Role } from "@/types/domain";
 import { Loader2 } from "lucide-react";
 

@@ -1,5 +1,5 @@
-import AuthLayout from "@/components/auth/AuthLayout";
-import SlidingAuth from "@/components/auth/SlidingAuth";
+﻿import AuthLayout from "@/features/auth/components/AuthLayout";
+import SlidingAuth from "@/features/auth/components/SlidingAuth";
 
 export default function AuthPage() {
     return (

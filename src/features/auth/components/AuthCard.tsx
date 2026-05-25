@@ -1,7 +1,7 @@
-import { type ReactNode, useRef, useEffect, useState } from "react";
+﻿import { type ReactNode, useRef, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useReducedMotion } from "@/shared/hooks/useReducedMotion";
 
 interface AuthCardProps {
     children: ReactNode;

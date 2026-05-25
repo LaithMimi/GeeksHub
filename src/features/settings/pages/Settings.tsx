@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * SETTINGS PAGE – Enhanced with working theme switching
  * ============================================================================
@@ -13,8 +13,8 @@ import { useState, useEffect } from "react";
 import { Bell, Monitor, Globe, BookOpen, Brain, CheckCircle, Sun, Moon, Laptop, Palette, Sparkles } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useMajors, useYears } from "@/hooks/useCatalog";
-import { useTheme } from "@/hooks/useTheme";
+import { useMajors, useYears } from "@/features/courses/hooks/useCatalog";
+import { useTheme } from "@/shared/hooks/useTheme";
 
 // Language Options
 const languages = [

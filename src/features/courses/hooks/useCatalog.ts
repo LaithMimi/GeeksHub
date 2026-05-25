@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * CATALOG QUERY HOOKS
  * ============================================================================
@@ -50,7 +50,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { listMajors, listYears, listSemesters, listCourses, listLecturers, getCourse, listTypes } from "@/services/catalogService";
+import { listMajors, listYears, listSemesters, listCourses, listLecturers, getCourse, listTypes } from "@/features/courses/api/catalogService";
 
 /**
  * Fetches all majors. Cached indefinitely as majors rarely change.

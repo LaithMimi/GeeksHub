@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+﻿import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { format, isToday, addDays } from "date-fns";
-import type { Task } from "@/hooks/useTasks";
+import type { Task } from "@/features/dashboard/hooks/useTasks";
 import { formatHour } from "@/lib/utils";
 
 // Color palette for task blocks on the schedule

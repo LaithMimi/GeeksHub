@@ -1,4 +1,4 @@
-import {
+﻿import {
     CommandDialog,
     CommandEmpty,
     CommandGroup,
@@ -9,8 +9,8 @@ import {
 } from "@/components/ui/command"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useAuth } from "@/context/AuthContext"
-import { useRecentFiles } from "@/hooks/useFiles"
+import { useAuth } from "@/features/auth/context/AuthContext"
+import { useRecentFiles } from "@/features/files/hooks/useFiles"
 import {
     Home,
     BookOpen,

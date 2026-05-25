@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * AI ASSISTANT PANEL — v5
  * ============================================================================
@@ -22,8 +22,8 @@ import {
     Copy, Trash2, BookOpen, ChevronLeft, ChevronRight, Plus, X, Search,
 } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { sendMessage, getNotes, saveNotes } from "@/services/assistantService";
-import type { AssistantMessage } from "@/services/assistantService";
+import { sendMessage, getNotes, saveNotes } from "@/features/assistant/api/assistantService";
+import type { AssistantMessage } from "@/features/assistant/api/assistantService";
 
 // ---------------------------------------------------------------------------
 // Types

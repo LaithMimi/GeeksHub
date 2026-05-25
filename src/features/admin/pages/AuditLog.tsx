@@ -1,4 +1,4 @@
-/**
+﻿/**
  * AuditLog Page
  * 
  * Displays an immutable record of all admin decisions.
@@ -18,7 +18,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { useAuditLogs } from "@/hooks/useAudit";
+import { useAuditLogs } from "@/features/admin/hooks/useAudit";
 import type { AuditAction, AuditLogEntry } from "@/types/domain";
 
 // Action display config

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { UploadCloud, Loader2, ChevronRight, Check } from "lucide-react";
 import {
     Dialog,
@@ -12,8 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useMajors, useCourses, useLecturers, useTypes } from "@/hooks/useCatalog";
-import { useCreateRequest } from "@/hooks/useRequests";
+import { useMajors, useCourses, useLecturers, useTypes } from "@/features/courses/hooks/useCatalog";
+import { useCreateRequest } from "@/features/files/hooks/useRequests";
 
 interface RequestFileModalProps {
     open: boolean;

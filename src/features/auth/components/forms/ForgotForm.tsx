@@ -1,7 +1,7 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { authService } from "@/services/authService";
+import { authService } from "@/features/auth/api/authService";
 import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
 
 interface ForgotFormProps {

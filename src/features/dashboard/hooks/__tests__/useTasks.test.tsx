@@ -1,10 +1,10 @@
-import React from "react";
+﻿import React from "react";
 import { renderHook, waitFor } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useTasksQuery, useTasks } from "@/hooks/useTasks";
+import { useTasksQuery, useTasks } from "@/features/dashboard/hooks/useTasks";
 
 function createWrapper() {
     const queryClient = new QueryClient({

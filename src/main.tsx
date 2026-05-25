@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * APPLICATION ENTRY POINT
  * ============================================================================
@@ -16,14 +16,14 @@
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import { RouterProvider } from 'react-router-dom'
-import { router } from './lib/router'
+import { router } from './app/router'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from "@/components/ui/sonner"
-import { ThemeProvider } from "@/hooks/useTheme"
-import { AuthProvider } from "@/context/AuthContext"
-import ErrorBoundary from "@/components/ErrorBoundary"
+import { ThemeProvider } from "@/shared/hooks/useTheme"
+import { AuthProvider } from "@/features/auth/context/AuthContext"
+import ErrorBoundary from "@/shared/components/ErrorBoundary"
 import { ApiError } from "@/lib/apiClient"
-import { MouseGlow } from "@/components/layout/MouseGlow"
+import { MouseGlow } from "@/shared/components/MouseGlow"
 
 const queryClient = new QueryClient({
     defaultOptions: {

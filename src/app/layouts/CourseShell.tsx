@@ -1,8 +1,8 @@
-import { Link, Outlet, useParams, useLocation } from "react-router-dom";
+﻿import { Link, Outlet, useParams, useLocation } from "react-router-dom";
 import { BookOpen, FileText, ClipboardList, GraduationCap, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useCourse } from "@/hooks/useCatalog";
+import { useCourse } from "@/features/courses/hooks/useCatalog";
 
 const navItems = [
     { path: "materials", label: "Materials", icon: BookOpen },

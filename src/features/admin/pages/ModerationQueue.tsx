@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ModerationQueue Page
  * 
  * The primary work surface for admins to review file requests.
@@ -29,10 +29,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BulkActionBar } from "@/components/features/BulkActionBar";
-import { RejectDialog } from "@/components/features/RejectDialog";
-import { RequestDetailSheet } from "@/components/features/RequestDetailSheet";
-import { useAllRequests, useApproveRequest, useRejectRequest, useBulkApprove, useBulkReject, useRequestStats } from "@/hooks/useRequests";
+import { BulkActionBar } from "@/features/admin/components/BulkActionBar";
+import { RejectDialog } from "@/features/admin/components/RejectDialog";
+import { RequestDetailSheet } from "@/features/admin/components/RequestDetailSheet";
+import { useAllRequests, useApproveRequest, useRejectRequest, useBulkApprove, useBulkReject, useRequestStats } from "@/features/files/hooks/useRequests";
 import type { FileRequest, FileStatus, RejectReason } from "@/types/domain";
 
 export default function ModerationQueue() {

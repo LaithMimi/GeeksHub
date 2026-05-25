@@ -1,7 +1,7 @@
-import { useState } from "react";
-import SignInForm from "@/components/auth/forms/SignInForm";
-import SignUpForm from "@/components/auth/forms/SignUpForm";
-import ForgotForm from "@/components/auth/forms/ForgotForm";
+﻿import { useState } from "react";
+import SignInForm from "@/features/auth/components/forms/SignInForm";
+import SignUpForm from "@/features/auth/components/forms/SignUpForm";
+import ForgotForm from "@/features/auth/components/forms/ForgotForm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 

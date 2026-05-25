@@ -1,9 +1,9 @@
-import { useAuth } from "@/context/AuthContext";
-import { useMajors } from "@/hooks/useCatalog";
-import { useReputation } from "@/hooks/useReputation";
-import { useMyRequests } from "@/hooks/useRequests";
-import { useActivitySummary } from "@/hooks/useLearningPath";
-import { authService } from "@/services/authService";
+﻿import { useAuth } from "@/features/auth/context/AuthContext";
+import { useMajors } from "@/features/courses/hooks/useCatalog";
+import { useReputation } from "@/features/gamification/hooks/useReputation";
+import { useMyRequests } from "@/features/files/hooks/useRequests";
+import { useActivitySummary } from "@/features/gamification/hooks/useLearningPath";
+import { authService } from "@/features/auth/api/authService";
 import { formatDate } from "@/lib/formatDate";
 import { toast } from "sonner";
 import {

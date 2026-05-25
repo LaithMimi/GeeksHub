@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ChevronRight, FileText, FolderOpen, Plus, Sparkles, Loader2, AlertCircle, Star } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import RequestFileModal from "@/components/features/RequestFileModal";
+import RequestFileModal from "@/features/admin/components/RequestFileModal";
 
-import { useMajors, useCourses, useLecturers, useTypes } from "@/hooks/useCatalog";
-import { useFiles, useTopContributors } from "@/hooks/useFiles";
-import { usePinnedCourses } from "@/hooks/usePinnedCourses";
-import { useAuth } from "@/context/AuthContext";
+import { useMajors, useCourses, useLecturers, useTypes } from "@/features/courses/hooks/useCatalog";
+import { useFiles, useTopContributors } from "@/features/files/hooks/useFiles";
+import { usePinnedCourses } from "@/features/courses/hooks/usePinnedCourses";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 export default function Courses() {
     const { user } = useAuth();

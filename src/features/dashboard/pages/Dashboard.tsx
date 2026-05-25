@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
     Clock,
@@ -16,16 +16,16 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import LearningPlan from "@/components/dashboard/LearningPlan";
-import MiniCalendar from "@/components/dashboard/MiniCalendar";
-import AddTaskModal from "@/components/dashboard/AddTaskModal";
-import { useRecentFiles } from "@/hooks/useFiles";
-import { useMyRequests } from "@/hooks/useRequests";
-import { useTasks } from "@/hooks/useTasks";
-import { useAuth } from "@/context/AuthContext";
-import { useCourses, useMajors } from "@/hooks/useCatalog";
-import { useActivitySummary } from "@/hooks/useLearningPath";
-import { useDashboardData, DAY_LABELS } from "@/hooks/useDashboardData";
+import LearningPlan from "@/features/dashboard/components/LearningPlan";
+import MiniCalendar from "@/features/dashboard/components/MiniCalendar";
+import AddTaskModal from "@/features/dashboard/components/AddTaskModal";
+import { useRecentFiles } from "@/features/files/hooks/useFiles";
+import { useMyRequests } from "@/features/files/hooks/useRequests";
+import { useTasks } from "@/features/dashboard/hooks/useTasks";
+import { useAuth } from "@/features/auth/context/AuthContext";
+import { useCourses, useMajors } from "@/features/courses/hooks/useCatalog";
+import { useActivitySummary } from "@/features/gamification/hooks/useLearningPath";
+import { useDashboardData, DAY_LABELS } from "@/features/dashboard/hooks/useDashboardData";
 import { getGreeting, formatDeadline } from "@/lib/utils";
 import { formatDistanceToNow, format } from "date-fns";
 

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
-import { authService, type AuthUserDTO } from "@/services/authService";
+﻿import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { authService, type AuthUserDTO } from "@/features/auth/api/authService";
 import { SESSION_KEY } from "@/lib/constants";
 import { ApiError } from "@/lib/apiClient";
 import { logger } from "@/lib/logger";

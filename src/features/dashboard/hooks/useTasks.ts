@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     listMyTasks,
     createTask,
@@ -7,7 +7,7 @@ import {
     type Task,
     type CreateTaskPayload,
     type PatchTaskPayload,
-} from "@/services/taskService";
+} from "@/features/dashboard/api/taskService";
 
 export type { Task };
 

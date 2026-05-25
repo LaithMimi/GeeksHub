@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * AUDIT QUERY HOOKS
  * ============================================================================
@@ -8,7 +8,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { listAuditLogs, type AuditLogFilters } from "@/services/auditService";
+import { listAuditLogs, type AuditLogFilters } from "@/features/admin/api/auditService";
 
 /**
  * Fetches audit log entries with optional filters.

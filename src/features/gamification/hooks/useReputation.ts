@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * REPUTATION QUERY HOOKS
  * ============================================================================
@@ -48,7 +48,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { getMyReputation } from "@/services/reputationService";
+import { getMyReputation } from "@/features/gamification/api/reputationService";
 
 /**
  * Fetches the current user's reputation summary (points, badge, transactions).

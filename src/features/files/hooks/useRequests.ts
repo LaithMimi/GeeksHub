@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * REQUEST QUERY HOOKS
  * ============================================================================
@@ -40,7 +40,7 @@ import {
     undoApprove,
     undoReject,
     getRequestPreviewUrl,
-} from "@/services/requestService";
+} from "@/features/files/api/requestService";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/apiClient";
 import type { RejectReason, FileStatus } from "@/types/domain";

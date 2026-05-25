@@ -1,9 +1,9 @@
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
 import { ClipboardList, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRequestStats } from "@/hooks/useRequests";
+import { useRequestStats } from "@/features/files/hooks/useRequests";
 
 export default function AdminHome() {
     const { data: stats, isLoading, error } = useRequestStats();

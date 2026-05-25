@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================================
  * FILE QUERY HOOKS
  * ============================================================================
@@ -31,8 +31,8 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listFiles, getFile, listTopContributors, listRecentFiles, addRecentFile, clearRecentFiles } from "@/services/fileService";
-import type { FileFilters } from "@/services/fileService";
+import { listFiles, getFile, listTopContributors, listRecentFiles, addRecentFile, clearRecentFiles } from "@/features/files/api/fileService";
+import type { FileFilters } from "@/features/files/api/fileService";
 
 /**
  * Fetches files with filters. Only enabled when courseId is provided.

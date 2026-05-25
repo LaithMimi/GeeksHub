@@ -1,6 +1,6 @@
-import { useParams, Link } from "react-router-dom";
+﻿import { useParams, Link } from "react-router-dom";
 import { FileText, AlertCircle, FolderOpen, RefreshCw } from "lucide-react";
-import { useFiles } from "@/hooks/useFiles";
+import { useFiles } from "@/features/files/hooks/useFiles";
 
 function FileListSkeleton() {
     return (

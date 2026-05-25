@@ -14,10 +14,10 @@
  *
  * 1. User Profile Display:
  *    user.name and user.email come from AuthContext (GET /api/v1/me).
- *    Initials are derived from user.name — no avatarInitials field exists.
+ *    Initials are derived from user.name � no avatarInitials field exists.
  *
  * 2. Notification Badge:
- *    GET /api/v1/me/notifications/unread-count → { count: number }
+ *    GET /api/v1/me/notifications/unread-count ? { count: number }
  *    Poll every 30s. Wire into the Bell button when endpoint is ready.
  *
  * 3. Conditional Admin Link:
@@ -30,7 +30,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import {
     Home, History, Settings, BookOpen, Upload,
     Bell, Search, GraduationCap, Sparkles,
@@ -50,17 +50,17 @@ import {
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CommandPalette } from "../ui/command-palette";
+import { CommandPalette } from "@/components/ui/command-palette";
 import { isMac } from "@/lib/utils";
-import { useCourse } from "@/hooks/useCatalog";
-import { useFile } from "@/hooks/useFiles";
+import { useCourse } from "@/features/courses/hooks/useCatalog";
+import { useFile } from "@/features/files/hooks/useFiles";
 
-// ── Static config ─────────────────────────────────────────────────────────────
+// -- Static config -------------------------------------------------------------
 
 const languages = [
     { code: "en", name: "English", dir: "ltr" },
-    { code: "ar", name: "العربية", dir: "rtl" },
-    { code: "he", name: "עברית", dir: "rtl" },
+    { code: "ar", name: "???????", dir: "rtl" },
+    { code: "he", name: "?????", dir: "rtl" },
 ];
 
 const navItems = [
@@ -70,7 +70,7 @@ const navItems = [
     { label: "Uploads", icon: Upload, href: "/uploads" },
 ];
 
-// ── Dynamic Breadcrumbs ───────────────────────────────────────────────────────
+// -- Dynamic Breadcrumbs -------------------------------------------------------
 
 const Breadcrumbs = () => {
     const location = useLocation();
@@ -132,7 +132,7 @@ const Breadcrumbs = () => {
     );
 };
 
-// ── Glass Sidebar ─────────────────────────────────────────────────────────────
+// -- Glass Sidebar -------------------------------------------------------------
 
 function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
     const location = useLocation();
@@ -177,7 +177,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                             </Link>
                         )}
 
-                        {/* Close sidebar button — expanded state */}
+                        {/* Close sidebar button � expanded state */}
                         {!collapsed && (
                             <button
                                 onClick={onToggle}
@@ -189,7 +189,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                         )}
                     </div>
 
-                    {/* Open sidebar button — collapsed state */}
+                    {/* Open sidebar button � collapsed state */}
                     {collapsed && (
                         <button
                             onClick={onToggle}
@@ -242,7 +242,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                             return linkContent;
                         })}
 
-                        {/* Admin link — only shown to admins */}
+                        {/* Admin link � only shown to admins */}
                         {isAdmin && (() => {
                             const adminLink = (
                                 <Link
@@ -276,7 +276,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                     {/* Bottom section */}
                     <div className="mt-auto pt-5 space-y-3">
 
-                        {/* Pro card — only when expanded */}
+                        {/* Pro card � only when expanded */}
                         {!collapsed && (
                             <div className="liquid-glass-subtle rounded-xl p-4 space-y-3">
                                 <div className="flex items-center gap-2">
@@ -315,7 +315,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                     </div>
                                     {!collapsed && (
                                         <div className="flex-1 min-w-0 text-left">
-                                            {/* user.name is the correct field — displayName doesn't exist */}
+                                            {/* user.name is the correct field � displayName doesn't exist */}
                                             <p className="text-[13px] font-medium text-white truncate">{user?.displayName ?? "Guest"}</p>
                                             <p className="text-[11px] text-white/35 truncate">{user?.email ?? ""}</p>
                                         </div>
@@ -354,7 +354,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
     );
 }
 
-// ── App Shell ─────────────────────────────────────────────────────────────────
+// -- App Shell -----------------------------------------------------------------
 
 export default function AppShell() {
     // Persist collapse state across sessions
@@ -434,7 +434,7 @@ export default function AppShell() {
                             <Search className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
                             <span className="hidden sm:inline">Search</span>
                             <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-white/30">
-                                {isMac ? "⌘K" : "Ctrl+K"}
+                                {isMac ? "?K" : "Ctrl+K"}
                             </kbd>
                         </button>
                         <button
@@ -442,7 +442,7 @@ export default function AppShell() {
                             aria-label="Notifications"
                         >
                             <Bell className="h-5 w-5 sm:h-4 sm:w-4" aria-hidden="true" />
-                            {/* Notification badge — wire to GET /api/v1/me/notifications/unread-count when ready */}
+                            {/* Notification badge � wire to GET /api/v1/me/notifications/unread-count when ready */}
                         </button>
                     </div>
                 </header>

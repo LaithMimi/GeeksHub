@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/context/AuthContext";
+﻿import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { logger } from "@/lib/logger";
 import {
     useViewerSessionStart,
     useViewerHeartbeat,
     useViewerSessionEnd,
-} from "@/hooks/useGamification";
+} from "@/features/gamification/hooks/useGamification";
 
 const VIEWER_HEARTBEAT_INTERVAL_MS = 5 * 1000; // 5 seconds
 const VIEWER_IDLE_TIMEOUT_MS = 60 * 1000; // 1 minute idle within viewer

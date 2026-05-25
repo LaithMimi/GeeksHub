@@ -1,8 +1,8 @@
-import React, { Suspense } from "react";
+﻿import React, { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import RouteError from "@/components/errors/RouteError";
-import ProtectedRoute from "@/components/routing/ProtectedRoute";
+import RouteError from "@/shared/components/errors/RouteError";
+import ProtectedRoute from "@/shared/components/routing/ProtectedRoute";
 
 const PageLoader = () => (
     <div className="flex bg-background text-foreground h-full w-full items-center justify-center p-8 min-h-[50vh]">
@@ -17,30 +17,30 @@ const Loadable = <T extends object>(Component: React.ComponentType<T>) =>
         </Suspense>
     );
 
-const AppShell = Loadable(React.lazy(() => import("@/components/layout/AppShell")));
-const AdminShell = Loadable(React.lazy(() => import("@/components/layout/AdminShell")));
-const CourseShell = Loadable(React.lazy(() => import("@/components/layout/CourseShell")));
-const FileShell = Loadable(React.lazy(() => import("@/components/layout/FileShell")));
-const FilePage = Loadable(React.lazy(() => import("@/components/pages/FilePage")));
-const Dashboard = Loadable(React.lazy(() => import("@/components/pages/Dashboard")));
-const UserUploads = Loadable(React.lazy(() => import("@/components/pages/UserUploads")));
-const Recent = Loadable(React.lazy(() => import("@/components/pages/Recent")));
-const Settings = Loadable(React.lazy(() => import("@/components/pages/Settings")));
-const UserProfile = Loadable(React.lazy(() => import("@/components/pages/UserProfile")));
-const Courses = Loadable(React.lazy(() => import("@/components/pages/Courses")));
-const AuthPage = Loadable(React.lazy(() => import("@/components/pages/Auth/AuthPage")));
-const ResetPasswordPage = Loadable(React.lazy(() => import("@/components/pages/Auth/ResetPasswordPage")));
-const NotFound = Loadable(React.lazy(() => import("@/components/pages/NotFound")));
+const AppShell = Loadable(React.lazy(() => import("@/app/layouts/AppShell")));
+const AdminShell = Loadable(React.lazy(() => import("@/app/layouts/AdminShell")));
+const CourseShell = Loadable(React.lazy(() => import("@/app/layouts/CourseShell")));
+const FileShell = Loadable(React.lazy(() => import("@/app/layouts/FileShell")));
+const FilePage = Loadable(React.lazy(() => import("@/features/files/pages/FilePage")));
+const Dashboard = Loadable(React.lazy(() => import("@/features/dashboard/pages/Dashboard")));
+const UserUploads = Loadable(React.lazy(() => import("@/features/files/pages/UserUploads")));
+const Recent = Loadable(React.lazy(() => import("@/features/files/pages/Recent")));
+const Settings = Loadable(React.lazy(() => import("@/features/settings/pages/Settings")));
+const UserProfile = Loadable(React.lazy(() => import("@/features/profile/pages/UserProfile")));
+const Courses = Loadable(React.lazy(() => import("@/features/courses/pages/Courses")));
+const AuthPage = Loadable(React.lazy(() => import("@/features/auth/pages/AuthPage")));
+const ResetPasswordPage = Loadable(React.lazy(() => import("@/features/auth/pages/ResetPasswordPage")));
+const NotFound = Loadable(React.lazy(() => import("@/shared/components/NotFound")));
 
 // Course Pages
-const CourseMaterials = Loadable(React.lazy(() => import("@/components/pages/CourseMaterials")));
-const CourseNotes = Loadable(React.lazy(() => import("@/components/pages/CourseNotes")));
-const CourseExams = Loadable(React.lazy(() => import("@/components/pages/CourseExams")));
+const CourseMaterials = Loadable(React.lazy(() => import("@/features/courses/pages/CourseMaterials")));
+const CourseNotes = Loadable(React.lazy(() => import("@/features/courses/pages/CourseNotes")));
+const CourseExams = Loadable(React.lazy(() => import("@/features/courses/pages/CourseExams")));
 
 // Admin Pages
-const AdminHome = Loadable(React.lazy(() => import("@/components/pages/admin/AdminHome")));
-const ModerationQueue = Loadable(React.lazy(() => import("@/components/pages/admin/ModerationQueue")));
-const AuditLog = Loadable(React.lazy(() => import("@/components/pages/admin/AuditLog")));
+const AdminHome = Loadable(React.lazy(() => import("@/features/admin/pages/AdminHome")));
+const ModerationQueue = Loadable(React.lazy(() => import("@/features/admin/pages/ModerationQueue")));
+const AuditLog = Loadable(React.lazy(() => import("@/features/admin/pages/AuditLog")));
 
 export const router = createBrowserRouter([
     // Public auth routes

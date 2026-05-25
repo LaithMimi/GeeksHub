@@ -1,9 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
+﻿import { useMutation } from "@tanstack/react-query";
 import {
     startViewerSession,
     sendViewerHeartbeat,
     endViewerSession,
-} from "@/services/gamificationService";
+} from "@/features/gamification/api/gamificationService";
 import type { ViewerHeartbeatResponse } from "@/types/domain";
 
 /**

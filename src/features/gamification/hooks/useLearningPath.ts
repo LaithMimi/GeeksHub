@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-import { getActivitySummary } from "@/services/learningPathService";
+﻿import { useQuery } from "@tanstack/react-query";
+import { getActivitySummary } from "@/features/gamification/api/learningPathService";
 import type { ActivitySummary } from "@/types/domain";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 
 export const useActivitySummary = () => {

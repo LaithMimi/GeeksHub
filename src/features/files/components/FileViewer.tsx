@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+﻿import { useState, useCallback, useRef, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import {
     Loader2, AlertCircle, Download, FileText,
@@ -6,11 +6,11 @@ import {
     ZoomIn, ZoomOut, RotateCw, Sparkles,
 } from "lucide-react";
 import { useParams } from 'react-router-dom';
-import { useFile, useAddRecentFile } from '@/hooks/useFiles';
+import { useFile, useAddRecentFile } from '@/features/files/hooks/useFiles';
 import { Button } from '@/components/ui/button';
-import { useViewerSession } from '@/hooks/useViewerSession';
+import { useViewerSession } from '@/features/files/hooks/useViewerSession';
 import { toast } from 'sonner';
-import CourseCompletionCelebration from '@/components/ui/CourseCompletionCelebration';
+import CourseCompletionCelebration from '@/features/gamification/components/CourseCompletionCelebration';
 import { apiFetch } from '@/lib/apiClient';
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
