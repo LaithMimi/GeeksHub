@@ -13,11 +13,15 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bot, MessageCircle, StickyNote, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 
 import { AssistantChat } from "./AssistantChat";
 import { NotesBoard } from "./NotesBoard";
 import type { NotesBoardRef } from "./NotesBoard";
+
+export interface AssistantPanelRef {
+    pinToNotes: (content: string) => void;
+}
 
 interface AssistantPanelProps {
     fileId?: string;
@@ -29,20 +33,27 @@ interface AssistantPanelProps {
     onClose?: () => void;
 }
 
-export default function AssistantPanel({
+const AssistantPanel = forwardRef<AssistantPanelRef, AssistantPanelProps>(function AssistantPanel({
     fileId = "",
     fileTitle = "this file",
     selectedText = "",
     isOpen = true,
     onOpen,
     onClose,
-}: AssistantPanelProps) {
+}, ref) {
     const [activeTab, setActiveTab] = useState("chat");
     const [noteCount, setNoteCount] = useState(0);
     const notesBoardRef = useRef<NotesBoardRef>(null);
 
+    useImperativeHandle(ref, () => ({
+        pinToNotes: (content: string) => {
+            notesBoardRef.current?.pinNote(content);
+            setActiveTab("notes");
+        },
+    }));
+
     return (
-        <div className="relative h-full w-full overflow-hidden border-l border-border/20 bg-black/40 backdrop-blur-2xl">
+        <div className="relative h-full w-full overflow-hidden border-l border-border liquid-glass-heavy border-y-0 border-r-0">
             {!isOpen && (
                 <button
                     onClick={onOpen}
@@ -99,7 +110,7 @@ export default function AssistantPanel({
                         </button>
                     </div>
 
-                    <TabsContent value="chat" className="data-[state=active]:flex hidden flex-1 flex-col m-0 p-0 overflow-hidden min-h-0">
+                    <TabsContent forceMount value="chat" className="data-[state=active]:flex hidden flex-1 flex-col m-0 p-0 overflow-hidden min-h-0">
                         <AssistantChat
                             fileId={fileId}
                             fileTitle={fileTitle}
@@ -111,7 +122,7 @@ export default function AssistantPanel({
                         />
                     </TabsContent>
 
-                    <TabsContent value="notes" className="data-[state=active]:flex hidden flex-1 flex-col m-0 p-0 overflow-hidden min-h-0">
+                    <TabsContent forceMount value="notes" className="data-[state=active]:flex hidden flex-1 flex-col m-0 p-0 overflow-hidden min-h-0">
                         <NotesBoard
                             ref={notesBoardRef}
                             fileId={fileId}
@@ -123,4 +134,6 @@ export default function AssistantPanel({
             </div>
         </div>
     );
-}
+});
+
+export default AssistantPanel;

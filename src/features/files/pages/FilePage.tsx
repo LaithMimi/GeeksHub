@@ -1,8 +1,9 @@
-﻿import { useState, useCallback } from "react";
+﻿import { useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useFile } from "@/features/files/hooks/useFiles";
 import FileViewer from "@/features/files/components/FileViewer";
 import AssistantPanel from "@/features/assistant/components/AssistantPanel";
+import type { AssistantPanelRef } from "@/features/assistant/components/AssistantPanel";
 
 export default function FilePage() {
     const { fileId } = useParams();
@@ -22,18 +23,23 @@ export default function FilePage() {
     }, []);
 
     const [isAssistantOpen, setIsAssistantOpen] = useState(true);
+    const assistantRef = useRef<AssistantPanelRef>(null);
 
     return (
         <div className="flex h-full w-full overflow-hidden">
 
             {/* File viewer — takes remaining width after assistant panel */}
             <div className="flex-1 min-w-0 overflow-hidden">
-                <FileViewer onTextSelect={handleTextSelect} />
+                <FileViewer
+                    onTextSelect={handleTextSelect}
+                    onPinToNotes={(text) => assistantRef.current?.pinToNotes(text)}
+                />
             </div>
 
             {/* AI assistant — manages its own open/collapsed width internally */}
             <div className={`transition-all duration-300 ease-in-out border-l border-border/20 bg-black/40 backdrop-blur-2xl ${isAssistantOpen ? 'w-[360px]' : 'w-12'}`}>
                 <AssistantPanel
+                    ref={assistantRef}
                     fileId={fileId}
                     fileTitle={file?.title ?? "this file"}
                     selectedText={selectedText}

@@ -10,11 +10,11 @@
  */
 
 import { useState, useEffect } from "react";
-import { Bell, Monitor, Globe, BookOpen, Brain, CheckCircle, Sun, Moon, Laptop, Palette, Sparkles } from "lucide-react";
+import { Monitor, Globe, CheckCircle, Sun, Moon, Laptop, Palette, Sparkles, BookOpen, Bell } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useMajors, useYears } from "@/features/courses/hooks/useCatalog";
 import { useTheme } from "@/shared/hooks/useTheme";
+import { useMajors, useYears } from "@/features/courses/hooks/useCatalog";
 
 // Language Options
 const languages = [
@@ -25,21 +25,19 @@ const languages = [
 
 export default function Settings() {
     const { theme, setTheme } = useTheme();
-
-    const [language, setLanguage] = useState(() => localStorage.getItem("language") || "en");
-    const [textSize, setTextSize] = useState("medium");
-    const [notifications, setNotifications] = useState({
-        newMaterials: true,
-        adminUpdates: true,
-        weeklyDigest: false,
-        soundEffects: true,
-    });
     const { data: majors = [] } = useMajors();
     const { data: years = [] } = useYears();
-    const [defaultMajor, setDefaultMajor] = useState("");
-    const [defaultYear, setDefaultYear] = useState("");
-    const [aiSourceExpanded, setAiSourceExpanded] = useState(true);
-    const [aiScope, setAiScope] = useState("file");
+
+    const [language, setLanguage] = useState(() => localStorage.getItem("language") || "en");
+    const [defaultMajor, setDefaultMajor] = useState(() => localStorage.getItem("geekshub-default-major") || "none");
+    const [defaultYear, setDefaultYear] = useState(() => localStorage.getItem("geekshub-default-year") || "none");
+    const [notifications, setNotifications] = useState(() => {
+        try {
+            const saved = localStorage.getItem("geekshub-notifications");
+            if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return { newMaterials: false, adminUpdates: false };
+    });
     const [reduceMotion, setReduceMotion] = useState(() => {
         const saved = localStorage.getItem("geekshub-reduce-motion");
         return saved === "true";
@@ -54,6 +52,21 @@ export default function Settings() {
         document.body.classList.toggle("reduce-motion", reduceMotion);
         localStorage.setItem("geekshub-reduce-motion", String(reduceMotion));
     }, [reduceMotion]);
+
+    useEffect(() => {
+        localStorage.setItem("geekshub-default-major", defaultMajor);
+    }, [defaultMajor]);
+
+    useEffect(() => {
+        localStorage.setItem("geekshub-default-year", defaultYear);
+    }, [defaultYear]);
+
+    useEffect(() => {
+        localStorage.setItem("geekshub-notifications", JSON.stringify(notifications));
+        if (notifications.adminUpdates && "Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }, [notifications]);
 
     useEffect(() => {
         document.body.classList.toggle("compact", compactMode);
@@ -198,13 +211,6 @@ export default function Settings() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <GlassSelect label="Text Size" value={textSize} onValueChange={setTextSize} disabled comingSoon>
-                            <SelectItem value="small">Small</SelectItem>
-                            <SelectItem value="medium">Medium (Default)</SelectItem>
-                            <SelectItem value="large">Large</SelectItem>
-                        </GlassSelect>
-                    </div>
                     <GlassToggle
                         label="Compact Mode"
                         desc="Reduce spacing to show more content on screen."
@@ -219,64 +225,45 @@ export default function Settings() {
                     />
                 </GlassSection>
 
+
+
                 {/* 3. Study Defaults */}
                 <GlassSection icon={BookOpen} iconColor="text-blue-400" title="Study Defaults" desc="Pre-fill your search and browse filters.">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <GlassSelect label="Default Major" value={defaultMajor} onValueChange={setDefaultMajor} disabled comingSoon>
+                        <GlassSelect 
+                            label="Default Major" 
+                            value={defaultMajor} 
+                            onValueChange={setDefaultMajor}
+                            displayValue={majors.find(m => m.id === defaultMajor)?.name || (defaultMajor === "none" ? "None" : "Loading...")}
+                        >
+                            <SelectItem value="none">None</SelectItem>
                             {majors.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
                         </GlassSelect>
-                        <GlassSelect label="Default Year" value={defaultYear} onValueChange={setDefaultYear} disabled comingSoon>
-                            {years.map(y => <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>)}
+                        <GlassSelect 
+                            label="Default Year" 
+                            value={defaultYear} 
+                            onValueChange={setDefaultYear}
+                            displayValue={years.find(y => y.id.toString() === defaultYear)?.label || (defaultYear === "none" ? "None" : "Loading...")}
+                        >
+                            <SelectItem value="none">None</SelectItem>
+                            {years.map(y => <SelectItem key={y.id} value={y.id.toString()}>{y.label}</SelectItem>)}
                         </GlassSelect>
                     </div>
                 </GlassSection>
 
-                {/* 4. AI Preferences */}
-                <GlassSection icon={Brain} iconColor="text-blue-400" title="AI Preferences" desc="Customize how the AI assistant behaves.">
-                    <GlassToggle
-                        label="Explain Sources"
-                        desc="Always expand source citations in chat."
-                        checked={aiSourceExpanded}
-                        onCheckedChange={setAiSourceExpanded}
-                        disabled comingSoon
-                    />
-                    <div className="pt-2">
-                        <GlassSelect label="Default Scope" value={aiScope} onValueChange={setAiScope} disabled comingSoon>
-                            <SelectItem value="file">Current File Only</SelectItem>
-                            <SelectItem value="course">Entire Course</SelectItem>
-                        </GlassSelect>
-                    </div>
-                </GlassSection>
-
-                {/* 5. Notifications */}
+                {/* 4. Notifications */}
                 <GlassSection icon={Bell} iconColor="text-amber-400" title="Notifications" desc="Choose what you want to be alerted about.">
                     <GlassToggle
                         label="New Materials"
                         desc="Notify when files are added to my courses."
                         checked={notifications.newMaterials}
                         onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, newMaterials: v }))}
-                        disabled comingSoon
                     />
                     <GlassToggle
                         label="Request Updates"
                         desc="Notify status changes for my uploads."
                         checked={notifications.adminUpdates}
                         onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, adminUpdates: v }))}
-                        disabled comingSoon
-                    />
-                    <GlassToggle
-                        label="Weekly Digest"
-                        desc="Receive a weekly summary of new materials."
-                        checked={notifications.weeklyDigest}
-                        onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, weeklyDigest: v }))}
-                        disabled comingSoon
-                    />
-                    <GlassToggle
-                        label="Sound Effects"
-                        desc="Play sounds for notifications and actions."
-                        checked={notifications.soundEffects}
-                        onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, soundEffects: v }))}
-                        disabled comingSoon
                     />
                 </GlassSection>
 
@@ -314,13 +301,12 @@ function GlassSection({ icon: Icon, iconColor, title, desc, children }: {
     );
 }
 
-function GlassToggle({ label, desc, checked, onCheckedChange, disabled, comingSoon }: {
+function GlassToggle({ label, desc, checked, onCheckedChange, disabled }: {
     label: string;
     desc: string;
     checked: boolean;
     onCheckedChange: (v: boolean) => void;
     disabled?: boolean;
-    comingSoon?: boolean;
 }) {
     const id = label.replace(/\s+/g, '-').toLowerCase();
     return (
@@ -328,7 +314,6 @@ function GlassToggle({ label, desc, checked, onCheckedChange, disabled, comingSo
             <div className="space-y-0.5 flex-1 min-w-0 pr-2">
                 <div className="flex items-center gap-2">
                     <label htmlFor={id} className={`text-[14px] font-medium cursor-pointer select-none block truncate ${disabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{label}</label>
-                    {comingSoon && <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Coming Soon</span>}
                 </div>
                 <p className={`text-[12px] leading-snug break-words ${disabled ? 'text-muted-foreground/40' : 'text-muted-foreground'}`}>{desc}</p>
             </div>
@@ -339,24 +324,25 @@ function GlassToggle({ label, desc, checked, onCheckedChange, disabled, comingSo
     );
 }
 
-function GlassSelect({ label, value, onValueChange, children, disabled, comingSoon }: {
+function GlassSelect({ label, value, onValueChange, children, disabled, displayValue }: {
     label: string;
     value: string;
     onValueChange: (v: string) => void;
     children: React.ReactNode;
     disabled?: boolean;
-    comingSoon?: boolean;
+    displayValue?: string;
 }) {
     const defaultAriaLabel = `Select ${label}`;
     return (
         <div className="space-y-2">
             <div className="flex items-center gap-2">
                 <label className={`text-[12px] font-display font-semibold uppercase tracking-wider block ${disabled ? 'text-muted-foreground/50' : 'text-muted-foreground'}`}>{label}</label>
-                {comingSoon && <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Coming Soon</span>}
             </div>
             <Select value={value} onValueChange={onValueChange} disabled={disabled}>
                 <SelectTrigger aria-label={defaultAriaLabel} className={`liquid-glass-subtle transition-all [&>span]:text-[13px] h-10 ${disabled ? 'opacity-50 cursor-not-allowed' : 'text-foreground hover:bg-foreground/5 dark:hover:bg-foreground/5 hover:bg-black/[0.02]'}`}>
-                    <SelectValue />
+                    <SelectValue>
+                        {displayValue}
+                    </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="liquid-glass border-border/50 dark:border-border/50 border-black/[0.1]">
                     {children}

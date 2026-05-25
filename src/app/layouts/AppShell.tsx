@@ -54,6 +54,7 @@ import { CommandPalette } from "@/shared/components/CommandPalette";
 import { isMac } from "@/lib/utils";
 import { useCourse } from "@/features/courses/hooks/useCatalog";
 import { useFile } from "@/features/files/hooks/useFiles";
+import { useInAppNotifications } from "@/shared/hooks/useInAppNotifications";
 
 // -- Static config -------------------------------------------------------------
 
@@ -354,6 +355,62 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
     );
 }
 
+// -- Notifications Menu --------------------------------------------------------
+
+function NotificationsMenu() {
+    const { notifications, unreadCount, markAllAsRead, markAsRead } = useInAppNotifications();
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    className="relative w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground/70 hover:bg-foreground/5 transition-colors"
+                    aria-label="Notifications"
+                >
+                    <Bell className="h-5 w-5 sm:h-4 sm:w-4" aria-hidden="true" />
+                    {unreadCount > 0 && (
+                        <span className="absolute top-2 right-2 sm:top-1.5 sm:right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
+                    )}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-80 p-0" align="end">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                    <p className="text-sm font-semibold text-foreground">Notifications</p>
+                    {unreadCount > 0 && (
+                        <button onClick={markAllAsRead} className="text-xs text-blue-500 hover:text-blue-400">
+                            Mark all as read
+                        </button>
+                    )}
+                </div>
+                <div className="max-h-[300px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                            No new notifications
+                        </div>
+                    ) : (
+                        notifications.map(notif => (
+                            <div 
+                                key={notif.id} 
+                                className={`px-4 py-3 border-b border-border last:border-0 hover:bg-foreground/5 transition-colors cursor-pointer ${notif.read ? 'opacity-60' : 'bg-blue-500/5'}`}
+                                onClick={() => !notif.read && markAsRead(notif.id)}
+                            >
+                                <div className="flex items-start justify-between gap-2">
+                                    <p className="text-sm font-medium text-foreground">{notif.title}</p>
+                                    {!notif.read && <span className="h-2 w-2 mt-1.5 shrink-0 rounded-full bg-blue-500" />}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notif.message}</p>
+                                <p className="text-[10px] text-muted-foreground/50 mt-2">
+                                    {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
 // -- App Shell -----------------------------------------------------------------
 
 export default function AppShell() {
@@ -437,13 +494,7 @@ export default function AppShell() {
                                 {isMac ? "?K" : "Ctrl+K"}
                             </kbd>
                         </button>
-                        <button
-                            className="relative w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground/70 hover:bg-foreground/5 transition-colors"
-                            aria-label="Notifications"
-                        >
-                            <Bell className="h-5 w-5 sm:h-4 sm:w-4" aria-hidden="true" />
-                            {/* Notification badge � wire to GET /api/v1/me/notifications/unread-count when ready */}
-                        </button>
+                        <NotificationsMenu />
                     </div>
                 </header>
 

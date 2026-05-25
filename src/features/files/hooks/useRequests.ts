@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import { ApiError } from "@/lib/apiClient";
 import type { RejectReason, FileStatus } from "@/types/domain";
 import { queryKeys } from "@/lib/queryKeys";
+import { useInAppNotifications } from "@/shared/hooks/useInAppNotifications";
 
 function invalidateAdmin(qc: ReturnType<typeof useQueryClient>): void {
     qc.invalidateQueries({ queryKey: queryKeys.requests.all() });
@@ -155,6 +156,7 @@ export const useRequestStats = () =>
  */
 export const useApproveRequest = () => {
     const queryClient = useQueryClient();
+    const { addNotification } = useInAppNotifications();
 
     const invalidateAdmin = () => {
         queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
@@ -166,7 +168,7 @@ export const useApproveRequest = () => {
         mutationFn: ({ requestId }: { requestId: string }) =>
             approveRequest(requestId),
         onSuccess: (result, variables) => {
-            invalidateAdmin(queryClient);
+            invalidateAdmin();
 
             if (result) {
                 toast.success(`Approved "${result.title}"`, {
@@ -174,11 +176,12 @@ export const useApproveRequest = () => {
                         label: "Undo",
                         onClick: async () => {
                             await undoApprove(variables.requestId);
-                            invalidateAdmin(queryClient);
+                            invalidateAdmin();
                             toast.info("Approval undone");
                         },
                     },
                 });
+                addNotification("Upload Approved", `Your upload "${result.title}" has been approved and is now live.`);
             }
         },
         onError: () => {
@@ -193,7 +196,13 @@ export const useApproveRequest = () => {
  */
 export const useRejectRequest = () => {
     const queryClient = useQueryClient();
+    const { addNotification } = useInAppNotifications();
 
+    const invalidateAdmin = () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
+        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+    };
 
     return useMutation({
         mutationFn: ({
@@ -206,7 +215,7 @@ export const useRejectRequest = () => {
             note?: string;
         }) => rejectRequest(requestId, reason, note),
         onSuccess: (result, variables) => {
-            invalidateAdmin(queryClient);
+            invalidateAdmin();
 
             if (result) {
                 toast.success(`Rejected "${result.title}"`, {
@@ -214,11 +223,12 @@ export const useRejectRequest = () => {
                         label: "Undo",
                         onClick: async () => {
                             await undoReject(variables.requestId);
-                            invalidateAdmin(queryClient);
+                            invalidateAdmin();
                             toast.info("Rejection undone");
                         },
                     },
                 });
+                addNotification("Upload Rejected", `Your upload "${result.title}" was rejected: ${variables.reason}`);
             }
         },
         onError: () => {

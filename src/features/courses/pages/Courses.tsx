@@ -16,18 +16,23 @@ export default function Courses() {
     const [searchParams] = useSearchParams();
     const initialCourseId = searchParams.get("course");
 
-    const [selections, setSelections] = useState({
-        major: user?.majorId || "",
-        year: "",
-        semester: "",
-        course: initialCourseId || "",
-        lecturer: "",
-        type: ""
+    const [selections, setSelections] = useState(() => {
+        const defaultMajor = localStorage.getItem("geekshub-default-major");
+        const defaultYear = localStorage.getItem("geekshub-default-year");
+        return {
+            major: (defaultMajor && defaultMajor !== "none") ? defaultMajor : (user?.majorId || ""),
+            year: (defaultYear && defaultYear !== "none") ? defaultYear : "",
+            semester: "",
+            course: initialCourseId || "",
+            lecturer: "",
+            type: ""
+        };
     });
 
     useEffect(() => {
-        // Fallback in case user loads later
-        if (!selections.major && user?.majorId && !initialCourseId) {
+        // Fallback in case user loads later and no default major is set
+        const defaultMajor = localStorage.getItem("geekshub-default-major");
+        if (!selections.major && user?.majorId && !initialCourseId && (!defaultMajor || defaultMajor === "none")) {
             setSelections(prev => ({ ...prev, major: user.majorId as string }));
         }
     }, [user?.majorId, selections.major, initialCourseId]);
@@ -209,7 +214,7 @@ export default function Courses() {
                                 <SelectTrigger className={`liquid-glass-subtle border-border text-foreground/70 transition-all [&>span]:text-[13px] h-10 ${isDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-foreground/5"}`}>
                                     <SelectValue placeholder={field.placeholder}>
                                         {selections[field.key as keyof typeof selections] ?
-                                            (field.data?.find(d => d.id === selections[field.key as keyof typeof selections])?.label || selections[field.key as keyof typeof selections])
+                                            (field.data?.find(d => d.id === selections[field.key as keyof typeof selections])?.label)
                                             : undefined
                                         }
                                     </SelectValue>
@@ -234,7 +239,7 @@ export default function Courses() {
                         <div className="flex items-center gap-3">
                             <FolderOpen className="h-4.5 w-4.5 text-blue-400" />
                             <h3 className="text-[15px] font-display font-semibold text-foreground">
-                                {courseData?.find(c => c.id === selections.course)?.label || selections.course} / {selections.type || "All"}
+                                {courseData?.find(c => c.id === selections.course)?.label || "Loading Course..."} / {types?.find(t => t.id === selections.type)?.displayName || "All"}
                             </h3>
                             <button
                                 onClick={() => togglePin(selections.course)}

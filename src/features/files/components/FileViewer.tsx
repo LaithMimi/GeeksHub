@@ -3,8 +3,9 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import {
     Loader2, AlertCircle, Download, FileText,
     ExternalLink, ChevronLeft, ChevronRight,
-    ZoomIn, ZoomOut, RotateCw, Sparkles,
+    ZoomIn, ZoomOut, RotateCw,
 } from "lucide-react";
+import { SelectionPopup } from "@/components/ui/selection-popup";
 import { useParams } from 'react-router-dom';
 import { useFile, useAddRecentFile } from '@/features/files/hooks/useFiles';
 import { Button } from '@/components/ui/button';
@@ -39,17 +40,9 @@ function isPdf(title: string, downloadUrl?: string): boolean {
 // Types
 // ---------------------------------------------------------------------------
 
-interface TooltipPos {
-    x: number;
-    y: number;
-}
-
 interface FileViewerProps {
-    /**
-     * Called when the user selects text in the PDF and clicks "Ask AI".
-     * The parent should forward this to AssistantPanel's selectedText prop.
-     */
     onTextSelect?: (text: string) => void;
+    onPinToNotes?: (text: string) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -82,7 +75,7 @@ export function FileViewerSkeleton() {
     );
 }
 
-export default function FileViewer({ onTextSelect }: FileViewerProps) {
+export default function FileViewer({ onTextSelect, onPinToNotes }: FileViewerProps) {
     const { courseId, fileId } = useParams();
     const { data: file, isLoading, isError } = useFile(fileId || "");
     const { mutate: addToRecent } = useAddRecentFile();
@@ -109,10 +102,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
         return () => { if (objectUrl) URL.revokeObjectURL(objectUrl); };
     }, [fileId, fileTitle, fileDownloadUrl]);
 
-    // Text-selection tooltip state
-    const [tooltip, setTooltip] = useState<{ pos: TooltipPos; text: string } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const tooltipRef = useRef<HTMLDivElement>(null);
 
     // ── Recent files ──────────────────────────────────────────────────────────
     useEffect(() => {
@@ -152,65 +142,6 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
         }
     }, [courseCompleted]);
 
-    // ── Text selection — show "Ask AI" tooltip ────────────────────────────────
-    useEffect(() => {
-        if (!onTextSelect) return;
-
-        function handleMouseUp() {
-            // Small delay so the browser has time to finalise the selection
-            setTimeout(() => {
-                const selection = window.getSelection();
-                const text = selection?.toString().trim() ?? "";
-
-                if (!text || !containerRef.current) {
-                    setTooltip(null);
-                    return;
-                }
-
-                // Only show tooltip for selections inside the PDF container
-                const anchorNode = selection?.anchorNode;
-                if (!anchorNode || !containerRef.current.contains(anchorNode as Node)) {
-                    setTooltip(null);
-                    return;
-                }
-
-                // Position tooltip just above the selection end point
-                const rect = selection?.getRangeAt(0).getBoundingClientRect();
-                const containerRect = containerRef.current.getBoundingClientRect();
-
-                if (rect) {
-                    setTooltip({
-                        text,
-                        pos: {
-                            x: rect.left - containerRect.left + rect.width / 2,
-                            y: rect.top - containerRect.top - 8,
-                        },
-                    });
-                }
-            }, 10);
-        }
-
-        function handleMouseDown(e: MouseEvent) {
-            // Dismiss tooltip if user clicks outside it
-            if (tooltipRef.current && !tooltipRef.current.contains(e.target as Node)) {
-                setTooltip(null);
-            }
-        }
-
-        document.addEventListener("mouseup", handleMouseUp);
-        document.addEventListener("mousedown", handleMouseDown);
-        return () => {
-            document.removeEventListener("mouseup", handleMouseUp);
-            document.removeEventListener("mousedown", handleMouseDown);
-        };
-    }, [onTextSelect]);
-
-    function handleAskAI() {
-        if (!tooltip) return;
-        onTextSelect?.(tooltip.text);
-        window.getSelection()?.removeAllRanges();
-        setTooltip(null);
-    }
 
     // ── PDF controls ──────────────────────────────────────────────────────────
     const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
@@ -361,32 +292,14 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                 </div>
             </div>
 
-            {/* PDF canvas — position:relative so tooltip is anchored to it */}
+            {/* PDF canvas */}
             <div ref={containerRef} className="flex-1 overflow-auto flex justify-center py-6 px-4 relative">
 
-                {/* "Ask AI" tooltip — appears above any text selection */}
-                {tooltip && onTextSelect && (
-                    <div
-                        ref={tooltipRef}
-                        className="absolute z-50 -translate-x-1/2 -translate-y-full pointer-events-auto"
-                        style={{ left: tooltip.pos.x, top: tooltip.pos.y }}
-                    >
-                        <button
-                            onClick={handleAskAI}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                                       gradient-bg text-foreground text-[12px] font-medium
-                                       shadow-lg shadow-black/40 hover:opacity-90 transition-opacity
-                                       whitespace-nowrap"
-                        >
-                            <Sparkles className="h-3 w-3" />
-                            Ask AI
-                        </button>
-                        {/* Arrow */}
-                        <div className="absolute left-1/2 -translate-x-1/2 top-full
-                                        w-0 h-0 border-l-4 border-r-4 border-t-4
-                                        border-l-transparent border-r-transparent border-t-blue-600" />
-                    </div>
-                )}
+                <SelectionPopup
+                    containerRef={containerRef}
+                    onPinToNotes={(text) => onPinToNotes?.(text)}
+                    onAskAI={(text) => onTextSelect?.(text)}
+                />
 
                 <Document
                     file={pdfBlobUrl}

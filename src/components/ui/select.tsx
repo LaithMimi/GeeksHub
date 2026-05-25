@@ -13,6 +13,7 @@ const SelectContext = React.createContext<{
     onValueChange?: (value: string) => void
     open?: boolean
     setOpen?: (open: boolean) => void
+    disabled?: boolean
 }>({})
 
 interface SelectProps {
@@ -22,11 +23,17 @@ interface SelectProps {
     disabled?: boolean
 }
 
-const Select = ({ value, onValueChange, children }: SelectProps) => {
+const Select = ({ value, onValueChange, children, disabled }: SelectProps) => {
     const [open, setOpen] = React.useState(false)
 
+    React.useEffect(() => {
+        if (disabled && open) {
+            setOpen(false)
+        }
+    }, [disabled, open])
+
     return (
-        <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
+        <SelectContext.Provider value={{ value, onValueChange, open, setOpen, disabled }}>
             <DropdownMenu open={open} onOpenChange={setOpen}>
                 {/* We pass a Fragment to allow children to include the trigger directly */}
                 {children}
@@ -38,19 +45,25 @@ const Select = ({ value, onValueChange, children }: SelectProps) => {
 const SelectTrigger = React.forwardRef<
     React.ElementRef<typeof DropdownMenuTrigger>,
     React.ComponentPropsWithoutRef<typeof DropdownMenuTrigger>
->(({ className, children, ...props }, ref) => (
-    <DropdownMenuTrigger
-        ref={ref}
-        className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-            className
-        )}
-        {...props}
-    >
-        {children}
-        <ChevronDown className="h-4 w-4 opacity-50" />
-    </DropdownMenuTrigger>
-))
+>(({ className, children, disabled: propDisabled, ...props }, ref) => {
+    const { disabled: contextDisabled } = React.useContext(SelectContext)
+    const disabled = propDisabled ?? contextDisabled
+
+    return (
+        <DropdownMenuTrigger
+            ref={ref}
+            disabled={disabled}
+            className={cn(
+                "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                className
+            )}
+            {...props}
+        >
+            {children}
+            <ChevronDown className="h-4 w-4 opacity-50" />
+        </DropdownMenuTrigger>
+    )
+})
 SelectTrigger.displayName = "SelectTrigger"
 
 const SelectValue = React.forwardRef<

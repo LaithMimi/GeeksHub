@@ -46,8 +46,7 @@ function StickyCard({ note, onDelete }: { note: StickyNoteCard; onDelete: (id: s
             >
                 <X className="h-2.5 w-2.5 text-yellow-900" />
             </button>
-            <p className="mt-3 text-[12px] leading-relaxed break-words font-medium text-yellow-900 font-sans"
-            >
+            <p className="mt-3 text-[12px] leading-relaxed break-words font-medium text-yellow-900 font-sans max-h-[200px] overflow-y-auto pr-1">
                 {note.text}
             </p>
         </div>
@@ -77,7 +76,7 @@ export const NotesBoard = forwardRef<NotesBoardRef, NotesBoardProps>(
             pinNote: (content: string) => {
                 const card: StickyNoteCard = {
                     id: Date.now().toString(),
-                    text: content.length > 220 ? content.slice(0, 217) + "…" : content,
+                    text: content,
                     rotation: ROTATIONS[cards.length % ROTATIONS.length],
                     createdAt: new Date().toISOString(),
                 };
@@ -186,7 +185,7 @@ export const NotesBoard = forwardRef<NotesBoardRef, NotesBoardProps>(
                     </div>
                 </ScrollArea>
 
-                <div className="shrink-0 border-t border-border bg-black/20 p-4">
+                <div className="shrink-0 border-t border-border bg-foreground/5 p-4">
                     {saveStatus !== "idle" && (
                         <div className="flex justify-end mb-2">
                             {saveStatus === "saving" && (

@@ -26,7 +26,25 @@ export const useCreateTask = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: createTask,
-        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tasks.all() }),
+        onMutate: async (newTask) => {
+            await qc.cancelQueries({ queryKey: queryKeys.tasks.all() });
+            const previousTasks = qc.getQueryData<Task[]>(queryKeys.tasks.all());
+            qc.setQueryData<Task[]>(queryKeys.tasks.all(), (old = []) => [
+                ...old,
+                {
+                    id: Math.random().toString(36).substring(7),
+                    completed: false,
+                    ...newTask,
+                } as Task,
+            ]);
+            return { previousTasks };
+        },
+        onError: (_err, _newTodo, context) => {
+            qc.setQueryData(queryKeys.tasks.all(), context?.previousTasks);
+        },
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: queryKeys.tasks.all() });
+        },
     });
 };
 
@@ -35,7 +53,20 @@ export const useToggleTask = () => {
     return useMutation({
         mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
             updateTask(id, { completed }),
-        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tasks.all() }),
+        onMutate: async ({ id, completed }) => {
+            await qc.cancelQueries({ queryKey: queryKeys.tasks.all() });
+            const previousTasks = qc.getQueryData<Task[]>(queryKeys.tasks.all());
+            qc.setQueryData<Task[]>(queryKeys.tasks.all(), (old = []) =>
+                old.map(task => task.id === id ? { ...task, completed } : task)
+            );
+            return { previousTasks };
+        },
+        onError: (_err, _variables, context) => {
+            qc.setQueryData(queryKeys.tasks.all(), context?.previousTasks);
+        },
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: queryKeys.tasks.all() });
+        },
     });
 };
 
@@ -44,7 +75,20 @@ export const useUpdateTask = () => {
     return useMutation({
         mutationFn: ({ id, patch }: { id: string; patch: PatchTaskPayload }) =>
             updateTask(id, patch),
-        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tasks.all() }),
+        onMutate: async ({ id, patch }) => {
+            await qc.cancelQueries({ queryKey: queryKeys.tasks.all() });
+            const previousTasks = qc.getQueryData<Task[]>(queryKeys.tasks.all());
+            qc.setQueryData<Task[]>(queryKeys.tasks.all(), (old = []) =>
+                old.map(task => task.id === id ? { ...task, ...patch } : task)
+            );
+            return { previousTasks };
+        },
+        onError: (_err, _variables, context) => {
+            qc.setQueryData(queryKeys.tasks.all(), context?.previousTasks);
+        },
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: queryKeys.tasks.all() });
+        },
     });
 };
 
@@ -52,7 +96,20 @@ export const useDeleteTask = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: deleteTask,
-        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tasks.all() }),
+        onMutate: async (id) => {
+            await qc.cancelQueries({ queryKey: queryKeys.tasks.all() });
+            const previousTasks = qc.getQueryData<Task[]>(queryKeys.tasks.all());
+            qc.setQueryData<Task[]>(queryKeys.tasks.all(), (old = []) =>
+                old.filter(task => task.id !== id)
+            );
+            return { previousTasks };
+        },
+        onError: (_err, _variables, context) => {
+            qc.setQueryData(queryKeys.tasks.all(), context?.previousTasks);
+        },
+        onSettled: () => {
+            qc.invalidateQueries({ queryKey: queryKeys.tasks.all() });
+        },
     });
 };
 

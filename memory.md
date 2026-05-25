@@ -12,6 +12,25 @@ A university course materials platform where students **share, browse, and study
 
 ## 1.0 Highlights of Recent Updates (May 25, 2026 — Latest)
 
+### Settings & Notifications Refactor (May 25)
+
+A set of features focusing on user preferences and native notifications:
+- **Study Defaults (Major/Year):** Re-introduced default selections for Major and Year in the Settings page. This choice is saved locally and instantly applies as a default filter when the user opens the Course Library.
+- **In-App Notification Center:** Transformed the top-right Bell icon in `AppShell.tsx` into a fully functional `NotificationsMenu` dropdown with unread badges, timestamping, and a "Mark all as read" capability via a new `useInAppNotifications` local storage hook.
+- **Push Notification Integration:** Added preference toggles for "Request Updates" and "New Materials". Toggling these requests browser push notification permissions. Admin approval/rejection actions (`useRequests.ts`) now trigger native browser alerts alongside in-app toasts and bell menu items.
+- **UUID UI Leak Bug:** **[BUG]** Raw UUID strings were visible in the Course Library and Settings page dropdowns (e.g. `123e4567-...`) momentarily before the actual data names loaded from the backend. **[FIX]** Updated `GlassSelect` and dropdown implementations to use a safe `displayValue` prop which renders "Loading..." or placeholder text instead of exposing the raw UUID to the frontend.
+- **Privacy First:** Removed the drafted "Privacy & Cookies" section and its toggles from the Settings page. Audited the codebase and confirmed that GeeksHub employs zero third-party tracking, analytics, or marketing cookies, relying purely on essential `localStorage` configs.
+
+### Assistant Panel Polish & Bug Fixes (May 25)
+
+A series of targeted fixes to improve the AI Assistant's UX and reliability:
+- **Light Mode UI Fix:** The Assistant Panel, Chat, and Notes Board were previously hardcoded to dark colors. These were migrated to use semantic design tokens (`liquid-glass-heavy`, `bg-foreground/5`) so they properly adapt to Light Mode.
+- **Chat History Persistence:** Assistant chats are now saved to `localStorage` (keyed by `fileId`). Chat history is fully preserved across page refreshes and when navigating between different files.
+- **Notes Board Truncation Bug:** **[BUG]** Long AI responses were being artificially truncated to 220 characters when pinned to the Notes Board. **[FIX]** Removed the truncation limit entirely and added a scrollbar (`max-h-[200px] overflow-y-auto`) to the `StickyCard` component, allowing full messages to be pinned without breaking the grid layout.
+- **Pin to Notes Mounting Bug:** **[BUG]** Clicking "Pin to notes" from the chat tab did nothing because the Radix `TabsContent` unmounted the inactive Notes tab from the DOM, causing `notesBoardRef.current` to be null. **[FIX]** Added `forceMount={true}` to the `TabsContent` components in `AssistantPanel.tsx` so the Notes board stays mounted in the background and can reliably receive pinned notes.
+- **Cookie Consent Audit:** Investigated adding a Cookie Consent banner for compliance. After a full codebase audit, confirmed GeeksHub uses **zero** third-party tracking, analytics, or marketing tools. The platform is entirely privacy-first, relying only on essential mechanisms like `localStorage` for UI preferences. The drafted banner was removed to keep the codebase clean.
+
+
 ### Frontend Cleanliness & CSS Token Refactor (May 25)
 
 A comprehensive four-phase architectural and cleanliness refactor was completed to address massive monolithic files, lack of tests, and hardcoded CSS values.
@@ -37,6 +56,12 @@ A comprehensive four-phase architectural and cleanliness refactor was completed 
 - Migrated all hardcoded `text-white/xx` and `bg-white/xx` tailwind classes across 37 files to semantic design tokens (`text-foreground/80`, `bg-foreground/5`).
 - Deleted the 200+ line manual `.light` override block from `index.css`, fully enforcing native CSS variable theme inversion.
 - Standardized interactive cards to use `hover:glow-*` utilities instead of manual border opacities.
+
+### Learning Plan Drag-and-Drop UX & Performance Fixes (May 25)
+
+Fixed critical bugs in the Learning Plan component related to task interactions and responsiveness:
+- **Click vs. Dragging Reliability Bug:** Clicking a task to open the details modal was failing intermittently because a `pointer-events-none` CSS class was applied immediately on `mousedown`. If the React render batched before `mouseup`, the click event was dropped. The fix shifted the click-to-open logic into the row-level global `mouseup` handler (`handleMouseUp` in `LearningPlan.tsx`) so it robustly handles quick clicks without any drag movement.
+- **Missing Optimistic Updates:** Dragging a task or adding a new one caused a noticeable delay because the UI was waiting for the server roundtrip to complete before updating. Added full `onMutate` optimistic update handlers to all four mutations in `useTasks.ts` (`useCreateTask`, `useUpdateTask`, `useToggleTask`, `useDeleteTask`) to provide instant UI feedback and vastly improve perceived performance.
 
 ---
 

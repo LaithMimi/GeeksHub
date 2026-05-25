@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { format, isToday, addDays } from "date-fns";
 import type { Task } from "@/features/dashboard/hooks/useTasks";
 import { formatHour } from "@/lib/utils";
+import TaskDetailsDialog from "@/features/dashboard/components/TaskDetailsDialog";
 
 // Color palette for task blocks on the schedule
 const BLOCK_COLORS = [
@@ -41,6 +42,8 @@ interface DragState {
     duration?: number;
     /** For "move" drags: distance (in hours) between mouse and the block's leading edge at grab time. */
     grabOffsetHours?: number;
+    startX: number;
+    startY: number;
 }
 
 interface MoveGhostBlockProps {
@@ -88,6 +91,7 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
 
     const [dragState, setDragState] = useState<DragState | null>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [activeTask, setActiveTask] = useState<Task | null>(null);
     const didMoveRef = useRef(false);
 
     // Auto-update every 60 seconds so the "now" line moves
@@ -160,6 +164,8 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
             dateStr,
             startHour: hour,
             endHour: hour + 0.5,
+            startX: e.clientX,
+            startY: e.clientY,
         });
         setIsDragging(true);
         didMoveRef.current = false;
@@ -181,16 +187,36 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
             taskId: task.id,
             duration: task.duration,
             grabOffsetHours: cursorHour - task.startHour,
+            startX: e.clientX,
+            startY: e.clientY,
         });
         setIsDragging(true);
         didMoveRef.current = false;
-        e.preventDefault();
         e.stopPropagation();
     }, [xToHour]);
+
+    const handleTaskClick = useCallback((task: Task) => {
+        if (didMoveRef.current) return;
+        setActiveTask(task);
+    }, []);
+
+    const handleTaskMouseUp = useCallback((task: Task) => {
+        if (dragState?.mode === "move" && dragState.taskId === task.id && !didMoveRef.current) {
+            setActiveTask(task);
+        }
+    }, [dragState]);
 
     const handleMouseMove = useCallback((e: React.MouseEvent, dateStr: string) => {
         if (!isDragging || !dragState) return;
         const row = e.currentTarget as HTMLElement;
+        const deltaX = e.clientX - dragState.startX;
+        const deltaY = e.clientY - dragState.startY;
+        const distance = Math.hypot(deltaX, deltaY);
+
+        if (!didMoveRef.current && distance < 8) {
+            return;
+        }
+
         const hour = xToHour(e.clientX, row);
         didMoveRef.current = true;
 
@@ -225,13 +251,18 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
             const end = Math.max(dragState.startHour, dragState.endHour);
             const duration = Math.max(0.5, end - start);
             onOpenAddModal(dragState.dateStr, start, duration);
-        } else if (dragState.mode === "move" && dragState.taskId && didMoveRef.current) {
-            onMoveTask(dragState.taskId, dragState.dateStr, dragState.startHour);
+        } else if (dragState.mode === "move" && dragState.taskId) {
+            if (didMoveRef.current) {
+                onMoveTask(dragState.taskId, dragState.dateStr, dragState.startHour);
+            } else {
+                const task = tasks.find(t => t.id === dragState.taskId);
+                if (task) setActiveTask(task);
+            }
         }
 
         setDragState(null);
         setIsDragging(false);
-    }, [isDragging, dragState, onOpenAddModal, onMoveTask]);
+    }, [isDragging, dragState, onOpenAddModal, onMoveTask, tasks]);
 
     // Global mouseup to handle release outside the row
     useEffect(() => {
@@ -367,6 +398,8 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
                                                 style={{ '--task-left': `${leftPercent}%`, '--task-width': `${widthPercent}%`, left: 'var(--task-left)', width: 'var(--task-width)' } as React.CSSProperties}
                                                 title={`${task.title} — ${formatHour(task.startHour)} to ${formatHour(endHour)}`}
                                                 onMouseDown={(e) => handleTaskMouseDown(e, task)}
+                                                onMouseUp={(e) => { e.stopPropagation(); handleTaskMouseUp(task); }}
+                                                onClick={() => handleTaskClick(task)}
                                             >
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); onToggleTask(task.id); }}
@@ -406,6 +439,9 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
                     })}
                 </div>
             </div>
+            {activeTask && (
+                <TaskDetailsDialog task={activeTask} onClose={() => setActiveTask(null)} />
+            )}
         </div>
     );
 }

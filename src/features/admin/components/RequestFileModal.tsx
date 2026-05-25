@@ -81,8 +81,8 @@ function StepperBar({ current }: { current: number }) {
                                     height: 0,
                                     borderTop: "20px solid transparent",
                                     borderBottom: "20px solid transparent",
-                                    borderLeft: `12px solid ${done ? "#9333ea" :
-                                        active ? "#a855f7" :
+                                    borderLeft: `12px solid ${done ? "#2563eb" :
+                                        active ? "#3b82f6" :
                                             "rgba(255,255,255,0.05)"
                                         }`,
                                     transform: "translateX(100%)",

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { SelectionPopup } from "@/components/ui/selection-popup";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -59,22 +60,49 @@ interface AssistantChatProps {
 }
 
 export function AssistantChat({ fileId, fileTitle, selectedText, pinToNotes }: AssistantChatProps) {
-    const [messages, setMessages] = useState<AssistantMessage[]>([makeWelcome(fileTitle)]);
+    const [messages, setMessages] = useState<AssistantMessage[]>(() => {
+        try {
+            const saved = localStorage.getItem(`geekshub_chat_${fileId}`);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            }
+        } catch (e) {}
+        return [makeWelcome(fileTitle)];
+    });
     const [inputValue, setInputValue] = useState("");
     const [isTyping, setIsTyping] = useState(false);
-    const [showChips, setShowChips] = useState(true);
+    const [showChips, setShowChips] = useState(() => messages.length <= 1);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isTyping]);
 
     useEffect(() => {
-        setMessages(prev => [
-            { ...prev[0], content: makeWelcome(fileTitle).content },
-            ...prev.slice(1),
-        ]);
-    }, [fileTitle]);
+        localStorage.setItem(`geekshub_chat_${fileId}`, JSON.stringify(messages));
+    }, [messages, fileId]);
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(`geekshub_chat_${fileId}`);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    setMessages([
+                        { ...parsed[0], content: makeWelcome(fileTitle).content },
+                        ...parsed.slice(1),
+                    ]);
+                    setShowChips(parsed.length <= 1);
+                    return;
+                }
+            }
+        } catch (e) {}
+        
+        setMessages([makeWelcome(fileTitle)]);
+        setShowChips(true);
+    }, [fileId, fileTitle]);
 
     useEffect(() => {
         if (!selectedText) return;
@@ -115,7 +143,7 @@ export function AssistantChat({ fileId, fileTitle, selectedText, pinToNotes }: A
     }
 
     return (
-        <div className="flex flex-1 flex-col overflow-hidden min-h-0">
+        <div ref={containerRef} className="flex flex-1 flex-col overflow-hidden min-h-0">
             {messages.length > 1 && (
                 <div className="flex justify-end px-4 pt-3 shrink-0">
                     <button onClick={clearChat}
@@ -207,7 +235,7 @@ export function AssistantChat({ fileId, fileTitle, selectedText, pinToNotes }: A
                 </div>
             </ScrollArea>
 
-            <div className="p-4 border-t border-border bg-black/20 shrink-0">
+            <div className="p-4 border-t border-border bg-foreground/5 shrink-0">
                 <div className="relative">
                     <Textarea
                         placeholder="Ask about this file..."
@@ -241,6 +269,12 @@ export function AssistantChat({ fileId, fileTitle, selectedText, pinToNotes }: A
                     </p>
                 </div>
             </div>
+
+            <SelectionPopup
+                containerRef={containerRef}
+                onPinToNotes={pinToNotes}
+                onAskAI={(text) => setInputValue(`Explain this: "${text}"`)}
+            />
         </div>
     );
 }
