@@ -10,7 +10,39 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.1 Highlights of Recent Updates (Late May 2026)
+## 1.1 Highlights of Recent Updates (Late May 2026 — May 25)
+
+- **Frontend Refactored to Feature-First Architecture (May 25):** Full structural reorganization of `src/` from a type-first layout (flat `hooks/`, `services/`, `components/pages/`) to a feature-sliced / feature-first layout. Build (`✓ 4.28s`), tests (18/18), and behavior are identical — pure structural move.
+
+  **Key changes:**
+  - **`src/features/`** introduced with 9 domain slices: `auth`, `dashboard`, `courses`, `files`, `admin`, `gamification`, `assistant`, `profile`, `settings`. Each slice owns its `api/`, `components/`, `hooks/`, and `pages/`.
+  - **`src/app/`** now holds bootstrap concerns: `layouts/` (AppShell, AdminShell, CourseShell, FileShell) and `router/index.tsx` (was `lib/router.tsx`).
+  - **`src/shared/`** introduced for cross-feature code: `components/` (ErrorBoundary, RouteError, ProtectedRoute, MouseGlow, NotFound) and `hooks/` (useTheme, use-mobile, useReducedMotion).
+  - **`src/components/ui/`** and **`src/lib/`** stayed in place — shadcn CLI targets `@/components/ui` and every generated component imports `@/lib/utils`, so moving them would require touching 20+ generated files.
+  - **`src/hooks/`**, **`src/services/`**, **`src/context/`**, and **`src/components/` sub-folders** (except `ui/`) are all deleted — everything colocated inside the relevant feature slice.
+  - **`components.json`** updated: `"hooks"` alias changed from `@/hooks` to `@/shared/hooks` (the old path no longer exists).
+  - **57 files moved** via `git mv` (history preserved), **47 files had import paths updated** automatically.
+  - **All imports use `@/` alias** throughout; no relative `../` cross-boundary imports remain.
+
+  **Import path reference (old → new):**
+  | Old | New |
+  |-----|-----|
+  | `@/context/AuthContext` | `@/features/auth/context/AuthContext` |
+  | `@/services/authService` | `@/features/auth/api/authService` |
+  | `@/hooks/useTasks` | `@/features/dashboard/hooks/useTasks` |
+  | `@/hooks/useCatalog` | `@/features/courses/hooks/useCatalog` |
+  | `@/hooks/useFiles` | `@/features/files/hooks/useFiles` |
+  | `@/hooks/useRequests` | `@/features/files/hooks/useRequests` |
+  | `@/hooks/useAudit` | `@/features/admin/hooks/useAudit` |
+  | `@/hooks/useLearningPath` | `@/features/gamification/hooks/useLearningPath` |
+  | `@/hooks/useTheme` | `@/shared/hooks/useTheme` |
+  | `@/components/layout/AppShell` | `@/app/layouts/AppShell` |
+  | `@/components/ErrorBoundary` | `@/shared/components/ErrorBoundary` |
+  | `@/lib/router` | `@/app/router` |
+
+---
+
+## 1.1.1 Highlights of Recent Updates (Late May 2026)
 
 - **Frontend Cleanliness Audit + 3-Phase Cleanup (May 22):** Full senior-engineer code review producing a 6.1/10 baseline score, followed by a four-phase incremental refactor. All changes verified via `tsc --noEmit`, `vitest run` (18/18 passing), `eslint .` (45 issues — down from 58 baseline), and `vite build`. No behavior changes intended; pure cleanup.
 
@@ -111,89 +143,109 @@ A university course materials platform where students **share, browse, and study
 
 ## 3. Project Structure
 
+> **Refactored to feature-first on May 25 2026.** Code is now colocated by domain, not by file type.
+> Rule: `shared/` → cross-feature only. `features/<name>/` → everything that belongs to one domain. `app/` → bootstrap only. `components/ui/` and `lib/` stay put (shadcn convention).
+
 ```
 src/
 ├── main.tsx                    # Entry point: ErrorBoundary → AuthProvider → ThemeProvider → QueryClientProvider → Router
 ├── index.css                   # Global styles + Liquid Glass design system tokens
 ├── types/domain.ts             # All TypeScript domain interfaces (User, Course, File, FileRequest, etc.)
-├── services/                   # Service layer — ALL migrated to live API calls
-│   ├── authService.ts          # Real fetch calls to /api/v1/signin, /api/v1/signup. Fully typed (AuthUserDTO, etc.)
-│   ├── taskService.ts          # ✅ calls /me/tasks (list, create, update, delete). Typed Task, CreateTaskPayload, PatchTaskPayload.
-│   ├── fileService.ts          # ✅ calls /files, /reputation/leaderboard, /me/recent-files
-│   ├── catalogService.ts       # ✅ calls /majors, /types, /years, /semesters, /courses, /lecturers
-│   ├── requestService.ts       # ✅ calls /courses/{id}/upload, /me/requests, /admin/requests/*
-│   ├── reputationService.ts    # ✅ calls /me/reputation
-│   ├── assistantService.ts     # ✅ calls /assistant/chat, /me/notes
-│   └── auditService.ts         # ✅ calls /admin/audit-logs
-├── queries/                    # TanStack Query hooks (thin wrappers over services)
-│   ├── useFiles.ts             # useFiles, useFile, useTopContributors, useRecentFiles
-│   ├── useCatalog.ts           # useMajors, useYears, useSemesters, useCourses, useLecturers
-│   ├── useRequests.ts          # useMyRequests, useAllRequests, useApproveRequest, etc.
-│   ├── useReputation.ts        # useReputation
-│   └── useAudit.ts             # useAuditLogs
-├── hooks/                      # React hooks
-│   ├── useTasks.ts             # Learning plan tasks via TanStack Query (list, create, toggle, update, delete). Wrapper exposes { tasks, taskDates, addTask, toggleTask, moveTask, deleteTask }.
-│   ├── useDashboardData.ts     # Memoized dashboard derivations (recentCourses, weeklyActivity). Exports DAY_LABELS.
-│   ├── useViewerSession.ts     # PDF viewer heartbeat + completion tracking (uses isCompletedRef to avoid stale-closure re-renders).
-│   ├── usePinnedCourses.ts     # Pinned course IDs (localStorage) — backend migration still pending.
-│   ├── useTheme.tsx            # Theme provider + useTheme hook (light/dark/system)
-│   ├── useReducedMotion.ts     # Accessibility: prefers-reduced-motion
-│   ├── use-mobile.tsx          # Breakpoint detection (768px)
-│   └── __tests__/              # Hook tests (useTasks.test.tsx — 4 tests using MSW)
-├── context/
-│   └── AuthContext.tsx          # Auth state (user, signIn, signUp, signOut). Persists to localStorage via SESSION_KEY.
-├── lib/
-│   ├── apiClient.ts            # Centralized fetch wrapper. Exports api, apiFetch, ApiError, snakeToCamel.
-│   ├── router.tsx              # All route definitions. Loadable<T> generic typed (no more (props: any)).
-│   ├── constants.ts            # Shared constants. SESSION_KEY = "gh_user_session".
-│   ├── utils.ts                # cn (Tailwind merge), isMac, getGreeting, formatDeadline, formatHour.
-│   └── __tests__/              # Utility tests (utils.test.ts — 14 tests).
-├── test/                       # Test infrastructure
-│   ├── setup.ts                # Vitest setup — wires up MSW server lifecycle + jest-dom matchers.
-│   └── mocks/                  # MSW handlers + server (handlers.ts, server.ts).
+│
+├── app/
+│   ├── layouts/
+│   │   ├── AppShell.tsx        # Main app shell — collapsible glass sidebar, breadcrumbs, command palette
+│   │   ├── AdminShell.tsx      # Admin area shell with admin sidebar
+│   │   ├── CourseShell.tsx     # Course detail shell (materials / notes / exams tabs)
+│   │   └── FileShell.tsx       # File viewer shell
+│   └── router/
+│       └── index.tsx           # All route definitions. Loadable<T> lazy wrapper.
+│
+├── features/
+│   ├── auth/
+│   │   ├── api/authService.ts          # /signin, /signup, /signout, /me, /forgot-password, /reset-password. Fully typed.
+│   │   ├── context/AuthContext.tsx     # Auth state (user, signIn, signUp, signOut). Persists via SESSION_KEY.
+│   │   ├── hooks/useAuthMode.ts        # Sign-in vs sign-up panel toggle state
+│   │   ├── components/                 # AuthCard, AuthLayout, SlidingAuth, forms/
+│   │   └── pages/                      # AuthPage, ResetPasswordPage
+│   │
+│   ├── dashboard/
+│   │   ├── api/taskService.ts          # /me/tasks CRUD. Exports Task, CreateTaskPayload, PatchTaskPayload.
+│   │   ├── hooks/useTasks.ts           # TanStack Query wrapper. Exposes { tasks, taskDates, addTask, toggleTask, moveTask, deleteTask }.
+│   │   ├── hooks/useDashboardData.ts   # Memoized recentCourses + weeklyActivity derivations. Exports DAY_LABELS.
+│   │   ├── hooks/__tests__/            # useTasks.test.tsx — 4 tests (MSW)
+│   │   ├── components/
+│   │   │   ├── LearningPlan.tsx        # 7-day schedule, drag-to-create, drag-to-move, H:MM labels
+│   │   │   ├── MiniCalendar.tsx        # Month calendar with task-date dots
+│   │   │   └── AddTaskModal.tsx        # New-task dialog; accepts arbitrary durations from drag
+│   │   └── pages/Dashboard.tsx         # Composition root (~580 lines). Wires all hooks + sub-components.
+│   │
+│   ├── courses/
+│   │   ├── api/catalogService.ts       # /majors, /types, /years, /semesters, /courses, /lecturers
+│   │   ├── hooks/useCatalog.ts         # useMajors, useYears, useSemesters, useCourses, useCourse, useLecturers
+│   │   ├── hooks/usePinnedCourses.ts   # Pinned course IDs (localStorage — backend sync pending)
+│   │   └── pages/                      # Courses, CourseMaterials, CourseNotes, CourseExams
+│   │
+│   ├── files/
+│   │   ├── api/fileService.ts          # /files, /files/{id}, /me/recent-files, /reputation/leaderboard
+│   │   ├── api/requestService.ts       # /courses/{id}/upload, /me/requests, /admin/requests/*
+│   │   ├── hooks/useFiles.ts           # useFiles, useFile, useTopContributors, useRecentFiles
+│   │   ├── hooks/useRequests.ts        # useMyRequests, useAllRequests, useApproveRequest, etc.
+│   │   ├── hooks/useViewerSession.ts   # PDF heartbeat + completion tracking (isCompletedRef guards stale closure)
+│   │   ├── components/FileViewer.tsx   # react-pdf viewer with text selection tooltip ("Ask AI")
+│   │   └── pages/                      # FilePage, Recent, UserUploads
+│   │
+│   ├── admin/
+│   │   ├── api/auditService.ts         # /admin/audit-logs
+│   │   ├── hooks/useAudit.ts           # useAuditLogs
+│   │   ├── components/                 # BulkActionBar, RejectDialog, RequestDetailSheet, RequestFileModal
+│   │   └── pages/                      # AdminHome, ModerationQueue, AuditLog
+│   │
+│   ├── gamification/
+│   │   ├── api/gamificationService.ts  # /me/gamification
+│   │   ├── api/learningPathService.ts  # /me/activity/summary, /me/session/start
+│   │   ├── api/reputationService.ts    # /me/reputation
+│   │   ├── hooks/useGamification.ts
+│   │   ├── hooks/useLearningPath.ts    # useActivitySummary
+│   │   ├── hooks/useReputation.ts
+│   │   └── components/CourseCompletionCelebration.tsx
+│   │
+│   ├── assistant/
+│   │   ├── api/assistantService.ts     # /assistant/chat, /me/notes
+│   │   └── components/AssistantPanel.tsx
+│   │
+│   ├── profile/
+│   │   └── pages/UserProfile.tsx
+│   │
+│   └── settings/
+│       └── pages/Settings.tsx
+│
+├── shared/
+│   ├── components/
+│   │   ├── ErrorBoundary.tsx           # Top-level crash boundary
+│   │   ├── MouseGlow.tsx               # Ambient cursor glow decoration
+│   │   ├── NotFound.tsx                # 404 page
+│   │   ├── errors/RouteError.tsx       # Route-level error boundary
+│   │   └── routing/ProtectedRoute.tsx  # Auth + role guard (requiredRole prop)
+│   └── hooks/
+│       ├── useTheme.tsx                # ThemeProvider + useTheme (light/dark/system)
+│       ├── useReducedMotion.ts         # prefers-reduced-motion
+│       └── use-mobile.tsx              # Breakpoint detection (768px)
+│
 ├── components/
-│   ├── dashboard/              # Dashboard sub-components extracted from Dashboard.tsx (May 22 refactor)
-│   │   ├── LearningPlan.tsx    # 7-day schedule, drag-to-create, drag-to-move with shadow/ghost UX, H:MM time labels
-│   │   ├── MiniCalendar.tsx    # Month-view calendar with task-date dots
-│   │   └── AddTaskModal.tsx    # New-task dialog. Accepts arbitrary durations injected from drag.
-│   ├── pages/                  # Route-level page components
-│   │   ├── Dashboard.tsx       # Composition root only (~580 lines, down from 1,127). Wires hooks and sub-components.
-│   │   ├── Courses.tsx         # Course browser with cascading filters
-│   │   ├── CourseMaterials.tsx # File listing for a course (materials tab)
-│   │   ├── CourseNotes.tsx     # File listing for a course (notes tab)
-│   │   ├── CourseExams.tsx     # File listing for a course (exams tab)
-│   │   ├── UserUploads.tsx     # User's file requests + upload form
-│   │   ├── Recent.tsx          # Recently viewed files page
-│   │   ├── Settings.tsx        # User settings (theme, language, notifications)
-│   │   ├── MyPath.tsx          # Placeholder learning path page
-│   │   ├── NotFound.tsx        # 404 page
-│   │   └── admin/
-│   │       ├── AdminHome.tsx   # Admin dashboard with request stats
-│   │       ├── ModerationQueue.tsx  # Approve/reject file requests
-│   │       └── AuditLog.tsx    # Audit trail viewer
-│   ├── layout/                 # Shell layouts (sidebar, header, content)
-│   │   ├── AppShell.tsx        # Main app shell with sidebar
-│   │   ├── AdminShell.tsx      # Admin area shell
-│   │   ├── CourseShell.tsx     # Course detail shell (tabs: materials/notes/exams)
-│   │   └── FileShell.tsx       # File viewer shell (simplified passthrough layout)
-│   ├── pages/
-│   │   └── FilePage.tsx        # Bridges FileViewer + AssistantPanel + selectedText state
-│   ├── viewer/
-│   │   └── FileViewer.tsx      # react-pdf viewer with text selection tooltip ("Ask AI")
-│   ├── auth/                   # Auth UI components
-│   │   ├── SlidingAuth.tsx     # Sign-in / sign-up sliding panel
-│   │   ├── AuthCard.tsx        # Auth card wrapper
-│   │   ├── AuthLayout.tsx      # Auth page layout
-│   │   ├── useAuthMode.ts      # Auth mode state (sign-in vs sign-up)
-│   │   └── forms/              # SignInForm, SignUpForm, ForgotPasswordForm, ResetPasswordForm
-│   ├── features/
-│   │   └── RequestFileModal.tsx # Upload file request modal
-│   ├── routing/
-│   │   └── ProtectedRoute.tsx  # Auth + role guard
-│   ├── errors/
-│   │   └── RouteError.tsx      # Error boundary for routes
-│   ├── ErrorBoundary.tsx       # Top-level error boundary
-│   └── ui/                     # Shadcn/ui primitives (27 files — do not modify)
+│   └── ui/                     # Shadcn/ui primitives — do NOT move or modify manually (CLI target)
+│
+├── lib/                        # Shared utilities — do NOT move (shadcn imports @/lib/utils)
+│   ├── apiClient.ts            # Centralized fetch wrapper. Exports api, apiFetch, ApiError, snakeToCamel.
+│   ├── constants.ts            # SESSION_KEY = "gh_user_session"
+│   ├── formatDate.ts           # Date formatting helpers
+│   ├── logger.ts               # Thin console logger
+│   ├── utils.ts                # cn, isMac, getGreeting, formatDeadline, formatHour
+│   └── __tests__/utils.test.ts # 14 utility tests
+│
+└── test/
+    ├── setup.ts                # Vitest + MSW + jest-dom bootstrap
+    └── mocks/                  # handlers.ts, server.ts
 
 server/
 ├── main.py                     # FastAPI app entry point. Registers all routers.
