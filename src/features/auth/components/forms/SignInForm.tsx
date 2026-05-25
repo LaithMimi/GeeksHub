@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -48,6 +48,7 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
                     className="h-10"
                     required
                     autoFocus
+                    disabled={isLoading}
                 />
                 <div className="relative">
                     <Input
@@ -56,11 +57,13 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
                         placeholder="Password"
                         className="h-10 pr-10"
                         required
+                        disabled={isLoading}
                     />
                     <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        disabled={isLoading}
                     >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -69,14 +72,15 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
 
             <div className="w-full flex items-center justify-between mt-4 text-sm">
                 <div className="flex items-center space-x-2">
-                    <Checkbox id="rememberMe" name="rememberMe" checked={rememberMe} onCheckedChange={(val) => setRememberMe(val === true)} />
+                    <Checkbox id="rememberMe" name="rememberMe" checked={rememberMe} onCheckedChange={(val) => setRememberMe(val === true)} disabled={isLoading} />
                     <label htmlFor="rememberMe" className="text-muted-foreground cursor-pointer select-none">Remember me</label>
                 </div>
                 {/* Forgot Password Link */}
                 <button
                     type="button"
                     onClick={onForgotPassword}
-                    className="text-muted-foreground hover:text-foreground hover:underline bg-transparent border-none cursor-pointer transition-colors"
+                    className="text-muted-foreground hover:text-foreground hover:underline bg-transparent border-none cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isLoading}
                 >
                     Forgot your password?
                 </button>

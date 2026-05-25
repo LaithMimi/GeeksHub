@@ -48,7 +48,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate, initialStart
 
     return (
         <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="w-full max-w-md bg-background/80 backdrop-blur-xl border-white/[0.08] sm:rounded-[24px] p-8 shadow-[0_0_60px_-15px_rgba(76,201,216,0.15)] text-foreground sm:max-w-md">
+            <DialogContent className="w-full max-w-md bg-background/80 backdrop-blur-xl border-border sm:rounded-[24px] p-8 shadow-[0_0_60px_-15px_rgba(76,201,216,0.15)] text-foreground sm:max-w-md">
                 <DialogHeader className="mb-2">
                     <DialogTitle className="text-xl font-display font-semibold tracking-tight text-foreground">New Task</DialogTitle>
                     <DialogDescription className="sr-only">Add a new task to your schedule</DialogDescription>
@@ -64,7 +64,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate, initialStart
                             value={title}
                             onChange={e => setTitle(e.target.value)}
                             placeholder="Current objective..."
-                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground placeholder:text-muted-foreground/50 border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
+                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground placeholder:text-muted-foreground/50 border border-border hover:border-border/50 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                         />
                     </div>
 
@@ -76,7 +76,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate, initialStart
                             type="date"
                             value={date}
                             onChange={e => setDate(e.target.value)}
-                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
+                            className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-border hover:border-border/50 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                         />
                     </div>
 
@@ -88,7 +88,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate, initialStart
                                 id="task-start"
                                 value={startHour}
                                 onChange={e => setStartHour(Number(e.target.value))}
-                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
+                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-border hover:border-border/50 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                             >
                                 {START_HOURS.map(h => (
                                     <option key={h} value={h} className="bg-background text-foreground">
@@ -103,7 +103,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate, initialStart
                                 id="task-duration"
                                 value={duration}
                                 onChange={e => setDuration(Number(e.target.value))}
-                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-white/[0.06] hover:border-white/[0.1] focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
+                                className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground border border-border hover:border-border/50 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                             >
                                 {durationOptions.map(d => (
                                     <option key={d} value={d} className="bg-background text-foreground">
@@ -131,7 +131,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate, initialStart
                                             : p === "high"
                                                 ? "bg-amber-500/20 text-amber-500 border-amber-500/30"
                                                 : "bg-primary/20 text-primary border-primary/30"
-                                        : "border-white/[0.08] text-white/40 hover:bg-white/[0.04]"
+                                        : "border-border text-muted-foreground hover:bg-foreground/5"
                                         }`}
                                 >
                                     {p}

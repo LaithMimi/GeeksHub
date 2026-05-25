@@ -247,8 +247,8 @@ export default function ModerationQueue() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-display font-bold tracking-tight text-white">Moderation Queue</h1>
-                <p className="text-white/60">
+                <h1 className="text-2xl font-display font-bold tracking-tight text-foreground">Moderation Queue</h1>
+                <p className="text-foreground/60">
                     Review and approve file requests from students.
                 </p>
             </div>

@@ -32,7 +32,7 @@ import {
 import {
     Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CommandPalette } from "@/components/ui/command-palette";
+import { CommandPalette } from "@/shared/components/CommandPalette";
 import { isMac } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
@@ -73,7 +73,7 @@ const AdminBreadcrumbs = () => {
                 <BreadcrumbItem>
                     <BreadcrumbLink
                         href="/"
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-all text-xs sm:text-sm font-medium"
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-all text-xs sm:text-sm font-medium"
                     >
                         <Home className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">Home</span>
@@ -81,7 +81,7 @@ const AdminBreadcrumbs = () => {
                 </BreadcrumbItem>
 
                 {pathnames.length > 0 && (
-                    <BreadcrumbSeparator className="text-white/20 rtl:rotate-180" />
+                    <BreadcrumbSeparator className="text-muted-foreground/30 rtl:rotate-180" />
                 )}
 
                 {pathnames.map((value, index) => {
@@ -98,20 +98,20 @@ const AdminBreadcrumbs = () => {
                         >
                             <BreadcrumbItem>
                                 {isLast ? (
-                                    <BreadcrumbPage className="px-2 py-1 rounded-md text-xs sm:text-sm text-white font-semibold bg-white/10">
+                                    <BreadcrumbPage className="px-2 py-1 rounded-md text-xs sm:text-sm text-foreground font-semibold bg-foreground/10">
                                         {label}
                                     </BreadcrumbPage>
                                 ) : (
                                     <BreadcrumbLink
                                         href={to}
-                                        className="px-2 py-1 rounded-md text-white/50 hover:text-white hover:bg-white/5 transition-all text-xs sm:text-sm font-medium"
+                                        className="px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-all text-xs sm:text-sm font-medium"
                                     >
                                         {label}
                                     </BreadcrumbLink>
                                 )}
                             </BreadcrumbItem>
                             {!isLast && (
-                                <BreadcrumbSeparator className="text-white/20 rtl:rotate-180" />
+                                <BreadcrumbSeparator className="text-muted-foreground/30 rtl:rotate-180" />
                             )}
                         </div>
                     );
@@ -151,7 +151,7 @@ function AdminGlassSidebar({
         <TooltipProvider delayDuration={0}>
             <aside
                 className={`
-                    min-h-screen liquid-glass-heavy flex flex-col border-r border-white/[0.06]
+                    min-h-screen liquid-glass-heavy flex flex-col border-r border-border
                     relative z-20 transition-[width,background-color] duration-300 ease-in-out
                     ${collapsed ? "w-[68px]" : "w-[260px]"}
                 `}
@@ -166,10 +166,10 @@ function AdminGlassSidebar({
                         {!collapsed && (
                             <Link to="/" className="flex items-center gap-3 group">
                                 <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft group-hover:scale-105 transition-transform shrink-0">
-                                    <GraduationCap className="h-4 w-4 text-white" />
+                                    <GraduationCap className="h-4 w-4 text-foreground" />
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-display text-[14px] font-bold text-white tracking-[0.15em] uppercase">
+                                    <span className="font-display text-[14px] font-bold text-foreground tracking-[0.15em] uppercase">
                                         GeeksHub
                                     </span>
                                     <Badge
@@ -187,7 +187,7 @@ function AdminGlassSidebar({
                                 to="/"
                                 className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft hover:scale-105 transition-transform relative"
                             >
-                                <GraduationCap className="h-4 w-4 text-white" />
+                                <GraduationCap className="h-4 w-4 text-foreground" />
                                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border border-[hsl(225,30%,5%)]" />
                             </Link>
                         )}
@@ -195,7 +195,7 @@ function AdminGlassSidebar({
                         {!collapsed && (
                             <button
                                 onClick={onToggle}
-                                className="w-11 h-11 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-colors -mr-2"
+                                className="w-11 h-11 rounded-lg flex items-center justify-center text-muted-foreground/50 hover:text-foreground/70 hover:bg-foreground/5 transition-colors -mr-2"
                                 aria-label="Close sidebar"
                             >
                                 <PanelLeftClose className="h-5 w-5" />
@@ -206,7 +206,7 @@ function AdminGlassSidebar({
                     {collapsed && (
                         <button
                             onClick={onToggle}
-                            className="w-11 h-11 mx-auto rounded-lg flex items-center justify-center text-white/20 hover:text-white/60 hover:bg-white/[0.06] transition-all mb-4"
+                            className="w-11 h-11 mx-auto rounded-lg flex items-center justify-center text-muted-foreground/30 hover:text-foreground/60 hover:bg-foreground/5 transition-all mb-4"
                             aria-label="Open sidebar"
                         >
                             <PanelLeftOpen className="h-5 w-5" />
@@ -221,7 +221,7 @@ function AdminGlassSidebar({
                                 className={`
                                     flex items-center rounded-xl text-[14px] transition-all group relative mb-4
                                     ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
-                                    text-white/45 hover:text-white/75 hover:bg-white/[0.04]
+                                    text-muted-foreground hover:text-foreground/75 hover:bg-foreground/5
                                 `}
                             >
                                 <ArrowLeft className="h-[18px] w-[18px] shrink-0" />
@@ -246,7 +246,7 @@ function AdminGlassSidebar({
                     {/* Moderation section label */}
                     {!collapsed && (
                         <div className="px-3 mb-2">
-                            <span className="text-[11px] font-display font-semibold text-white/30 uppercase tracking-[0.15em]">
+                            <span className="text-[11px] font-display font-semibold text-muted-foreground/50 uppercase tracking-[0.15em]">
                                 Moderation
                             </span>
                         </div>
@@ -268,7 +268,7 @@ function AdminGlassSidebar({
                                         ${
                                             active
                                                 ? "text-blue-300 bg-blue-500/[0.08] border border-blue-500/[0.12]"
-                                                : "text-white/45 hover:text-white/75 hover:bg-white/[0.04]"
+                                                : "text-muted-foreground hover:text-foreground/75 hover:bg-foreground/5"
                                         }
                                     `}
                                 >
@@ -310,7 +310,7 @@ function AdminGlassSidebar({
                         {/* Management section */}
                         {!collapsed && (
                             <div className="px-3 mt-6 mb-2">
-                                <span className="text-[11px] font-display font-semibold text-white/30 uppercase tracking-[0.15em]">
+                                <span className="text-[11px] font-display font-semibold text-muted-foreground/50 uppercase tracking-[0.15em]">
                                     Management
                                 </span>
                             </div>
@@ -325,7 +325,7 @@ function AdminGlassSidebar({
                                     className={`
                                         flex items-center rounded-xl text-[14px] transition-all opacity-40 cursor-not-allowed
                                         ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
-                                        text-white/30
+                                        text-muted-foreground/50
                                     `}
                                 >
                                     <Icon className="h-[18px] w-[18px] shrink-0" />
@@ -337,7 +337,7 @@ function AdminGlassSidebar({
                                     {!collapsed && (
                                         <Badge
                                             variant="outline"
-                                            className="text-[9px] px-1.5 py-0 border-white/10 text-white/30 font-medium"
+                                            className="text-[9px] px-1.5 py-0 border-border/50 text-muted-foreground/50 font-medium"
                                         >
                                             Soon
                                         </Badge>
@@ -361,25 +361,25 @@ function AdminGlassSidebar({
                         })}
                     </nav>
 
-                    {/* Bottom section — user profile */}
+                    {/* Bottom section ï¿½ user profile */}
                     <div className="mt-auto pt-5 space-y-3">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <button
                                     className={`
-                                        flex items-center hover:bg-white/[0.04] rounded-xl transition-colors outline-none w-full
+                                        flex items-center hover:bg-foreground/5 rounded-xl transition-colors outline-none w-full
                                         ${collapsed ? "justify-center p-1" : "gap-3 px-2 py-2"}
                                     `}
                                 >
-                                    <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-white text-[12px] font-display font-semibold shrink-0">
+                                    <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center text-foreground text-[12px] font-display font-semibold shrink-0">
                                         {initials}
                                     </div>
                                     {!collapsed && (
                                         <div className="flex-1 min-w-0 text-left">
-                                            <p className="text-[13px] font-medium text-white truncate">
+                                            <p className="text-[13px] font-medium text-foreground truncate">
                                                 {user?.displayName ?? "Admin"}
                                             </p>
-                                            <p className="text-[11px] text-white/35 truncate">
+                                            <p className="text-[11px] text-muted-foreground/70 truncate">
                                                 {user?.email ?? ""}
                                             </p>
                                         </div>
@@ -452,7 +452,7 @@ export default function AdminShell() {
         return () => document.removeEventListener("keydown", handleKey);
     }, []);
 
-    // Language / RTL — same logic as AppShell
+    // Language / RTL ï¿½ same logic as AppShell
     useEffect(() => {
         const savedLang = localStorage.getItem("language") || "en";
         const lang = languages.find((l) => l.code === savedLang);
@@ -466,12 +466,12 @@ export default function AdminShell() {
         <div className="flex h-screen overflow-hidden relative">
             <a
                 href="#admin-main-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:font-semibold focus:outline-none focus:ring-2 focus:ring-white"
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-foreground focus:rounded-lg focus:font-semibold focus:outline-none focus:ring-2 focus:ring-white"
             >
                 Skip to main content
             </a>
 
-            {/* Sidebar — hidden on mobile */}
+            {/* Sidebar ï¿½ hidden on mobile */}
             <div className="hidden lg:block relative z-20">
                 <AdminGlassSidebar
                     collapsed={collapsed}
@@ -482,12 +482,12 @@ export default function AdminShell() {
             {/* Main area */}
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden w-full relative z-10">
                 {/* Glass header */}
-                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 px-4 lg:px-8 liquid-glass border-b border-white/[0.06] border-t-0 border-x-0">
+                <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 px-4 lg:px-8 liquid-glass border-b border-border border-t-0 border-x-0">
                     <div className="lg:hidden">
                         <Sheet>
                             <SheetTrigger asChild>
                                 <button
-                                    className="w-11 h-11 flex items-center justify-center rounded-lg text-white/50 hover:bg-white/[0.06] hover:text-white transition-all -ml-2"
+                                    className="w-11 h-11 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-foreground/5 hover:text-foreground transition-all -ml-2"
                                     aria-label="Open admin menu"
                                 >
                                     <Menu className="h-5 w-5" />
@@ -495,7 +495,7 @@ export default function AdminShell() {
                             </SheetTrigger>
                             <SheetContent
                                 side="left"
-                                className="w-[260px] p-0 border-r border-white/[0.06] liquid-glass-heavy text-white"
+                                className="w-[260px] p-0 border-r border-border liquid-glass-heavy text-foreground"
                             >
                                 <SheetTitle className="sr-only">
                                     Admin Navigation
@@ -512,7 +512,7 @@ export default function AdminShell() {
 
                     <div className="ms-auto flex items-center gap-2">
                         <button
-                            className="flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all text-[13px] min-h-[44px] sm:min-h-0"
+                            className="flex flex-1 items-center gap-2 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground/70 hover:bg-foreground/5 transition-all text-[13px] min-h-[44px] sm:min-h-0"
                             onClick={() =>
                                 document.dispatchEvent(
                                     new KeyboardEvent("keydown", {
@@ -528,12 +528,12 @@ export default function AdminShell() {
                                 aria-hidden="true"
                             />
                             <span className="hidden sm:inline">Search</span>
-                            <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-white/30">
+                            <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-border/50 bg-foreground/5 px-1.5 font-mono text-[10px] text-muted-foreground/50">
                                 {isMac ? "?K" : "Ctrl+K"}
                             </kbd>
                         </button>
                         <button
-                            className="relative w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-colors"
+                            className="relative w-11 h-11 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground/70 hover:bg-foreground/5 transition-colors"
                             aria-label="Notifications"
                         >
                             <Bell

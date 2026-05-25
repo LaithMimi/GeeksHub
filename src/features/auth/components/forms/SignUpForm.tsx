@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -75,6 +75,7 @@ export default function SignUpForm() {
                     className="h-10"
                     required
                     autoFocus
+                    disabled={isLoading}
                 />
                 <Input
                     name="email"
@@ -82,9 +83,10 @@ export default function SignUpForm() {
                     placeholder="University email"
                     className="h-10"
                     required
+                    disabled={isLoading}
                 />
 
-                <Select value={majorId} onValueChange={setMajorId} disabled={isMajorsLoading || isMajorsError}>
+                <Select value={majorId} onValueChange={setMajorId} disabled={isMajorsLoading || isMajorsError || isLoading}>
                     <SelectTrigger className="h-10">
                         <SelectValue placeholder={isMajorsLoading ? "Loading majors..." : isMajorsError ? "Failed to load majors" : "Select Major"}>
                             {majors?.find((m) => m.id === majorId)?.name}
@@ -107,11 +109,13 @@ export default function SignUpForm() {
                         className="h-10 pr-10"
                         required
                         minLength={8}
+                        disabled={isLoading}
                     />
                     <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        disabled={isLoading}
                     >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -125,11 +129,13 @@ export default function SignUpForm() {
                         className="h-10 pr-10"
                         required
                         minLength={8}
+                        disabled={isLoading}
                     />
                     <button
                         type="button"
                         onClick={() => setShowConfirmPassword((prev) => !prev)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        disabled={isLoading}
                     >
                         {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>

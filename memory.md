@@ -10,7 +10,97 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.1 Highlights of Recent Updates (Late May 2026 — May 25)
+## 1.0 Highlights of Recent Updates (May 25, 2026 — Latest)
+
+### Frontend Cleanliness & CSS Token Refactor (May 25)
+
+A comprehensive four-phase architectural and cleanliness refactor was completed to address massive monolithic files, lack of tests, and hardcoded CSS values.
+
+**Phase 1 — Quick Wins & Infrastructure:**
+- Extracted shared components (`CommandPalette`, `EmptyState`, `PriorityBadge`) to `@/shared/components/`.
+- Created `queryKeys.ts` to centralize TanStack Query cache keys.
+- Fixed SSR hydration mismatches by extracting `isMac` to `constants.ts`.
+
+**Phase 2 — Test Safety Net:**
+- Configured Vitest + MSW with comprehensive handlers in `src/test/mocks/handlers.ts`.
+- Wrote pure logic tests (`useDashboardData.test.ts`, `authService.test.ts`) and critical component integration tests (`Dashboard.test.tsx`, `RequestFileModal.test.tsx`).
+
+**Phase 3 — Structural Refactors:**
+- **Dashboard Hooks:** Optimized `useDashboardData` from O(n²) array filtering to an O(n) `Map` lookup.
+- **LearningPlan Instability:** Fixed a major re-render bug with `colorMap` by shifting to `useRef`.
+- **RequestFileModal:** Broke down the ~600-line monolith into a central `useRequestForm` hook and 4 step subcomponents (`StepMajor`, `StepCourse`, `StepDetails`, `StepUpload`).
+- **AssistantPanel:** Split into `AssistantChat.tsx` and `NotesBoard.tsx`, extracting shared logic to `useDebounce.ts`.
+- **Auth Hardening:** Replaced `any` catch blocks with strict `instanceof Error` checks and created `useIsAdmin()`/`useIsSuperAdmin()` session helpers.
+- **Viewer Telemetry:** Extracted window event listeners out of `useViewerSession` into `useActivityTracker`.
+
+**Phase 4 — CSS Token Migration:**
+- Migrated all hardcoded `text-white/xx` and `bg-white/xx` tailwind classes across 37 files to semantic design tokens (`text-foreground/80`, `bg-foreground/5`).
+- Deleted the 200+ line manual `.light` override block from `index.css`, fully enforcing native CSS variable theme inversion.
+- Standardized interactive cards to use `hover:glow-*` utilities instead of manual border opacities.
+
+---
+
+## 1.1 Highlights of Past Updates (May 25, 2026)
+
+### Frontend QA & Security Audit + Remediation (May 25)
+
+A full security and quality audit was run against all frontend source files (see [`frontend_qa_security_report.md`](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/frontend_qa_security_report.md)). The audit found 10 vulnerabilities (1 CRITICAL, 2 HIGH, 5 MEDIUM, 2 LOW) and 11 QA issues. A remediation pass was completed the same day. All 18 existing unit tests pass and `tsc --noEmit` is clean after the pass.
+
+**Vulnerabilities fixed:**
+
+| ID | Issue | Severity | Status |
+|----|-------|----------|--------|
+| VULN-01 | Client-side role check controls admin access | CRITICAL | ✅ Fixed |
+| VULN-02 | Full user object in plain-text localStorage | HIGH | 🟡 Mitigated (backend-gated) |
+| VULN-03 | No try/catch around `JSON.parse` of session | HIGH | ✅ Fixed |
+| VULN-04 | Reset token exposed in URL query param | MEDIUM | 🟡 Partial (backend link change needed) |
+| VULN-05 | No file size validation on upload | MEDIUM | ✅ Fixed |
+| VULN-06 | `fileId` interpolated into URLs unencoded | MEDIUM | ✅ Fixed |
+| VULN-07 | XSS risk in `RichContent` renderer | MEDIUM | ✅ Hardened |
+| VULN-08 | CSRF gap during cookie migration | MEDIUM | 🔧 Backend-only |
+| VULN-09 | Full chat history sent every AI message | LOW | ✅ Fixed |
+| VULN-10 | `console.error` leaks errors in production | LOW | ✅ Fixed |
+
+**Key code changes made during remediation:**
+
+- **`AuthContext.tsx`**: Added `readStoredSession()` — wraps `JSON.parse` in try/catch, validates `id` and `role` fields, clears corrupted entries. Added boot `/me` call via `authService.getMe()` to overwrite the cached `role` with the server-authoritative value before protected routes are trusted (fixes VULN-01 + VULN-03).
+- **`apiClient.ts`**: Added `handleUnauthorized(path)` — on any `401` response from `api()` or `apiFetch()`, clears session from both storages and redirects to `/auth`. Auth endpoints (`/signin`, `/signup`, `/me`, etc.) are excluded to avoid a redirect loop on failed logins (fixes QA-04).
+- **`logger.ts`** (new file at `src/lib/logger.ts`): Thin prod-safe logger — `logger.error`/`logger.warn` only forward to console when `import.meta.env.DEV` is true; stub comment for Sentry wiring in prod (fixes VULN-10). Used in `authService.ts` and `useViewerSession.ts`.
+- **`assistantService.ts`**: History truncated to last 10 messages (`history.slice(-MAX_HISTORY_MESSAGES)`) before sending. `fileId` / `fileTitle` interpolated via `URLSearchParams` (fixes VULN-09 + VULN-06).
+- **`FileViewer.tsx`**: Stream path `fileId` wrapped in `encodeURIComponent` (fixes VULN-06).
+- **`RequestFileModal.tsx`**: Added `validateFile()` helper with `MAX_FILE_SIZE` (25 MB) and `ALLOWED_EXTENSIONS` constants. File validated on selection and on submit. Added `fileError` state rendered inline. `handleCascadeSelect` now resets `form.file` when upstream fields change. Upload `onError` surfaces the actual `ApiError.message` (fixes VULN-05, QA-01, QA-02, QA-07).
+- **`AssistantPanel.tsx`**: Added `maxLength={2000}` to chat textarea, `maxLength={500}` to notes textarea. Explicit security comment on `RichContent` warning it must never use `dangerouslySetInnerHTML` (fixes QA-05, QA-06, VULN-07).
+- **`ResetPasswordForm.tsx`**: Now reads token from URL fragment (`#token=`) first, falls back to `?token=`. Non-breaking; full fix needs backend email template update (partial fix for VULN-04).
+- **`authService.ts` / `SignUpForm.tsx` / `AuthContext.tsx`**: Threaded real `confirmPassword` through the `signUp()` call chain — was sending `password` as both fields (fixes QA-10).
+- **`useRequests.ts`**: Upload `onError` now surfaces the real backend error message.
+- **`useViewerSession.ts`**: `console.error` replaced with `logger.error`.
+
+**Still pending (backend / deferred):**
+- VULN-08 (CSRF): Backend uses `samesite="none"` in prod — needs switching to `lax`/`strict`.
+- VULN-04 (full): Auth0 reset email template must emit `#token=` fragment links.
+- VULN-02 (full): Fully resolved only when HttpOnly-cookie migration removes the need for localStorage identity caching.
+- QA-09: Confirm with backend whether `activeSeconds` is cumulative or per-heartbeat.
+- QA-03 / QA-11 (viewer race conditions): Deferred to avoid destabilizing the PDF viewer without manual testing.
+
+---
+
+### Moderator Dashboard Plan (May 23)
+
+A detailed implementation plan for a `/moderator` route was created at [`moderator_dashboard_plan.md`](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/moderator_dashboard_plan.md). This is a **plan only** — not yet implemented.
+
+**Planned scope:**
+- New `MODERATOR` role gating: `ProtectedRoute` extended from `requiredRole?: Role` → `requiredRoles?: Role[]`
+- New `/moderator` route tree with `ModeratorShell` (mirrors `AdminShell`, amber badge instead of red)
+- Pages: `ModeratorHome` (KPI stats), `UsersPage` (CRUD users + role assignment), `LecturersPage` (two-panel: lecturer list + course assignment combobox), `CoursesPage` (CRUD courses)
+- New backend router: `server/routers/moderator.py` at `/api/v1/moderator/*`, gated by new `get_moderator_user` dependency
+- New DB table: `LecturerCourse` many-to-many junction (lecturer ↔ course assignment)
+- New frontend service: `src/features/moderator/api/moderatorService.ts` + `hooks/useModerator.ts`
+
+**Status: Not yet implemented. Tracked in `moderator_dashboard_plan.md`.**
+
+---
+
+## 1.2 Highlights of Past Updates (Late May 2026 — May 25)
 
 - **Frontend Refactored to Feature-First Architecture (May 25):** Full structural reorganization of `src/` from a type-first layout (flat `hooks/`, `services/`, `components/pages/`) to a feature-sliced / feature-first layout. Build (`✓ 4.28s`), tests (18/18), and behavior are identical — pure structural move.
 
@@ -42,7 +132,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.1.1 Highlights of Recent Updates (Late May 2026)
+## 1.2.1 Highlights of Past Updates (Late May 2026)
 
 - **Frontend Cleanliness Audit + 3-Phase Cleanup (May 22):** Full senior-engineer code review producing a 6.1/10 baseline score, followed by a four-phase incremental refactor. All changes verified via `tsc --noEmit`, `vitest run` (18/18 passing), `eslint .` (45 issues — down from 58 baseline), and `vite build`. No behavior changes intended; pure cleanup.
 
@@ -81,7 +171,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.2 Highlights of Recent Updates (Mid May 2026 — May 18)
+## 1.3 Highlights of Past Updates (Mid May 2026 — May 18)
 
 - **Tasks Backend Fully Implemented (May 18):** Full CRUD API for user learning-plan tasks brought live.
   - **`server/models.py`**: Added `UserTask` SQLModel table with fields: `id` (UUID PK), `user_id` (FK → users), `title`, `date` (`"YYYY-MM-DD"` string — avoids TZ issues), `start_hour` (float, 0.5-step resolution), `duration` (float hours), `priority` (`"normal"` | `"high"` | `"urgent"`), `completed` (bool), `created_at`. Composite index on `(user_id, date)` for fast per-user day queries.
@@ -100,7 +190,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.3 Highlights of Recent Updates (Late March 2026)
+## 1.4 Highlights of Past Updates (Late March 2026)
 - **Cyber-Neon UI Overhaul:** Rebranded the entire application to a high-contrast Deep Teal and Cyan global aesthetic, deprecating local hardcoded properties and archaic light-mode hacks. 
 - **UUID Exposure Fixes:** Refactored `Dashboard.tsx` and `Recent.tsx` to stop exposing raw Postgres UUIDs to the end user. Implemented a "resolve-on-render" pattern utilizing existing highly-cached TanStack catalog queries (`useMajors`, `useCourses`) to dynamically map UUIDs to human-readable names.
 - **Accessibility & Modal Polish:** Repaired massive breakage on the Dashboard "New Task" modal, stripping legacy `liquid-glass-heavy` hacks destroying Tailwind transform matrices. Achieved full a11y compliance and React render loop optimizations on the modal.
@@ -335,33 +425,54 @@ Centralized HTTP client used by all service files.
 1. **Backend approval flow bug**: `POST /api/v1/admin/requests/{id}/approve` deletes file metadata instead of persisting it to a `files` table. Approved files are lost.
 2. **Many P0 backend endpoints missing**: See `BACKEND_TASKS.md` §14. Frontend calls are wired up but the backend doesn't serve them yet (years, semesters, files, requests, etc.).
 
+### Security (Partially Mitigated — May 25)
+3. **VULN-08 — CSRF in production**: Backend sets `samesite="none"` in production (`server/routers/auth.py`). Frontend sends `credentials: "include"`. This disables SameSite CSRF protection. Backend must switch to `samesite="lax"` or `"strict"`, or add CSRF tokens on state-changing admin endpoints.
+4. **VULN-04 (full fix pending)** — Backend / Auth0 reset email still emits `?token=` query links. Frontend now prefers `#token=` fragment (non-breaking) but the backend email template must be updated to fully remove the token from logs/Referer headers.
+5. **VULN-02 (partial)** — Full user object (incl. role) still cached in `localStorage` for optimistic render. Role tamperability is neutralized by the boot `/me` reconciliation, but full resolution requires the HttpOnly-cookie migration so client-side identity caching is no longer needed.
+6. **QA-09 — `activeSeconds` semantics unclear**: `useViewerSession.ts` sends cumulative active seconds; backend may expect per-heartbeat. Needs confirmation with backend team.
+
 ### Medium
-3. **`MyPath.tsx` is a placeholder**: The learning path page has no real content.
-4. **Course metadata hardcoded in Dashboard**: `COURSE_META` map in `Dashboard.tsx` duplicates data.
-5. ~~**`requestPasswordReset` is mock-only**~~: ✅ RESOLVED (May 22) — both `requestPasswordReset` and `confirmPasswordReset` now hit real `/forgot-password` and `/reset-password` endpoints.
-6. **`usePinnedCourses` still localStorage-only**: No backend sync. Pins are device-local. Migration plan is in the file's header comment but the endpoint hasn't landed.
-7. **Pre-existing `any` types in services**: `fileService.ts`, `requestService.ts`, `gamificationService.ts`, `learningPathService.ts` still use `any` in places. `authService.ts` is fully typed as of May 22.
+7. **`MyPath.tsx` is a placeholder**: The learning path page has no real content.
+8. **Course metadata hardcoded in Dashboard**: `COURSE_META` map in `Dashboard.tsx` duplicates data.
+9. ~~**`requestPasswordReset` is mock-only**~~: ✅ RESOLVED (May 22) — both `requestPasswordReset` and `confirmPasswordReset` now hit real `/forgot-password` and `/reset-password` endpoints.
+10. **`usePinnedCourses` still localStorage-only**: No backend sync. Pins are device-local. Migration plan is in the file's header comment but the endpoint hasn't landed.
+11. **Pre-existing `any` types in services**: `fileService.ts`, `requestService.ts`, `gamificationService.ts`, `learningPathService.ts` still use `any` in places. `authService.ts` is fully typed as of May 22.
+12. **Viewer race conditions (QA-03 / QA-11)**: `useViewerSession.ts` session-start and `FileViewer.tsx` PDF blob cleanup have minor race-condition edge cases. Deferred due to risk of destabilizing viewer without manual browser testing. `isMounted` guards cover the common paths.
 
 ### Low / Polish
-8. ~~**`listTopContributors` calls `/reputation/leaderboard`**~~: ✅ RESOLVED — endpoint now live (Phase 2).
-9. ~~**Adobe PDF Embed API key hardcoded**~~: FileViewer now uses `react-pdf` instead.
-10. ~~**Mock data remnants**~~: ✅ RESOLVED — `mock-db.ts` deleted, all services and components fully migrated.
-11. ~~**Tasks were localStorage-only**~~: ✅ RESOLVED (May 18) — tasks fully backed by `/me/tasks` backend API.
+13. ~~**`listTopContributors` calls `/reputation/leaderboard`**~~: ✅ RESOLVED — endpoint now live (Phase 2).
+14. ~~**Adobe PDF Embed API key hardcoded**~~: FileViewer now uses `react-pdf` instead.
+15. ~~**Mock data remnants**~~: ✅ RESOLVED — `mock-db.ts` deleted, all services and components fully migrated.
+16. ~~**Tasks were localStorage-only**~~: ✅ RESOLVED (May 18) — tasks fully backed by `/me/tasks` backend API.
+17. ~~**Admin role check client-side only (VULN-01)**~~: ✅ RESOLVED (May 25) — `AuthContext` now calls `/me` on boot and overwrites cached role with server-authoritative value.
+18. ~~**`JSON.parse` session data unguarded (VULN-03)**~~: ✅ RESOLVED (May 25) — `readStoredSession()` in `AuthContext` wraps parse in try/catch.
+19. ~~**No 401/session-expiry handling (QA-04)**~~: ✅ RESOLVED (May 25) — `apiClient` intercepts 401s and redirects to `/auth`.
 
 ---
 
 ## 7.1 Frontend Next Steps (For Frontend Engineer)
 
+### Security Follow-ups (High Priority)
+1. **VULN-08 (CSRF)**: Coordinate with backend to change prod cookie to `samesite="lax"` or add CSRF token on state-changing admin endpoints.
+2. **VULN-04 (full)**: Update Auth0 reset email template to emit `#token=` fragment links instead of `?token=` query links.
+3. **QA-09**: Confirm backend `activeSeconds` semantics (cumulative vs per-heartbeat) and rename/adjust `useViewerSession.ts` accordingly.
+
 ### After Backend P0 Endpoints Land
-1. **Test the full course browsing flow** — verify the cascading dropdowns work with real `/years`, `/semesters`, `/lecturers` data.
-2. **Test the file listing** — verify `GET /files?course_id=...` returns real approved files for course material pages.
-3. **Test the PDF viewer** — verify `GET /files/{id}` returns `downloadUrl` and the `react-pdf` viewer loads it.
-4. **Test the upload flow end-to-end** — upload → pending → admin approve → file appears in library.
+4. **Test the full course browsing flow** — verify the cascading dropdowns work with real `/years`, `/semesters`, `/lecturers` data.
+5. **Test the file listing** — verify `GET /files?course_id=...` returns real approved files for course material pages.
+6. **Test the PDF viewer** — verify `GET /files/{id}` returns `downloadUrl` and the `react-pdf` viewer loads it.
+7. **Test the upload flow end-to-end** — upload → pending → admin approve → file appears in library.
 
 ### After Backend P1–P2 Endpoints Land
-5. **Wire up the admin moderation dashboard** — test bulk approve/reject, undo, stats.
-6. **Wire up the reputation / leaderboard display** — verify points awarded on approval.
-7. **Wire up the audit log viewer** — verify admin actions are logged and displayed.
+8. **Wire up the admin moderation dashboard** — test bulk approve/reject, undo, stats.
+9. **Wire up the reputation / leaderboard display** — verify points awarded on approval.
+10. **Wire up the audit log viewer** — verify admin actions are logged and displayed.
+
+### Moderator Dashboard (Planned — not yet started)
+11. **Implement Moderator Dashboard** — follow [`moderator_dashboard_plan.md`](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/moderator_dashboard_plan.md) (4 phases: backend router, route shell, service+hooks, pages).
+    - Extends `ProtectedRoute` from `requiredRole` → `requiredRoles` array
+    - New backend: `server/routers/moderator.py` + `LecturerCourse` junction table
+    - New frontend: `ModeratorShell`, `ModeratorHome`, `UsersPage`, `LecturersPage`, `CoursesPage`
 
 ---
 

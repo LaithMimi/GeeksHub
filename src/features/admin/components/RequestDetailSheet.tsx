@@ -288,12 +288,12 @@ export function RequestDetailSheet({
             {/* Fullscreen PDF Preview */}
             {previewData?.url && (
                 <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
-                    <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] p-0 flex flex-col bg-[#1a1a2e] border-white/10">
+                    <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] p-0 flex flex-col bg-[#1a1a2e] border-border/50">
                         {/* Toolbar */}
-                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06] bg-white/[0.02] shrink-0">
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-foreground/5 shrink-0">
                             <div className="flex items-center gap-3">
-                                <FileText className="h-4 w-4 text-white/40" />
-                                <span className="text-sm font-medium text-white/80 truncate max-w-[300px]">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium text-foreground/80 truncate max-w-[300px]">
                                     {request.title}
                                 </span>
                             </div>
@@ -303,48 +303,48 @@ export function RequestDetailSheet({
                                 <button
                                     onClick={() => setPageNumber(p => Math.max(1, p - 1))}
                                     disabled={pageNumber <= 1}
-                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                 </button>
-                                <span className="text-[13px] text-white/60 min-w-[80px] text-center tabular-nums">
+                                <span className="text-[13px] text-foreground/60 min-w-[80px] text-center tabular-nums">
                                     {pageNumber} / {numPages ?? '—'}
                                 </span>
                                 <button
                                     onClick={() => setPageNumber(p => Math.min(numPages ?? 1, p + 1))}
                                     disabled={pageNumber >= (numPages ?? 1)}
-                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                 >
                                     <ChevronRight className="h-4 w-4" />
                                 </button>
 
-                                <div className="w-px h-4 bg-white/[0.08] mx-1" />
+                                <div className="w-px h-4 bg-foreground/10 mx-1" />
 
                                 {/* Zoom */}
                                 <button
                                     onClick={() => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1)))}
                                     disabled={scale <= 0.5}
-                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                 >
                                     <ZoomOut className="h-4 w-4" />
                                 </button>
-                                <span className="text-[13px] text-white/60 min-w-[44px] text-center tabular-nums">
+                                <span className="text-[13px] text-foreground/60 min-w-[44px] text-center tabular-nums">
                                     {Math.round(scale * 100)}%
                                 </span>
                                 <button
                                     onClick={() => setScale(s => Math.min(2.5, +(s + 0.2).toFixed(1)))}
                                     disabled={scale >= 2.5}
-                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                 >
                                     <ZoomIn className="h-4 w-4" />
                                 </button>
 
-                                <div className="w-px h-4 bg-white/[0.08] mx-1" />
+                                <div className="w-px h-4 bg-foreground/10 mx-1" />
 
                                 {/* Rotate */}
                                 <button
                                     onClick={() => setRotation(r => (r + 90) % 360)}
-                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] transition-all"
+                                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-all"
                                 >
                                     <RotateCw className="h-4 w-4" />
                                 </button>
@@ -357,7 +357,7 @@ export function RequestDetailSheet({
                                 file={previewData.url}
                                 onLoadSuccess={({ numPages: n }) => { setNumPages(n); }}
                                 loading={
-                                    <div className="flex items-center gap-3 text-white/40 mt-20">
+                                    <div className="flex items-center gap-3 text-muted-foreground mt-20">
                                         <span className="text-[14px]">Loading PDF...</span>
                                     </div>
                                 }
@@ -377,7 +377,7 @@ export function RequestDetailSheet({
                                     className="shadow-2xl shadow-black/50 rounded-sm"
                                     loading={
                                         <div className="flex items-center justify-center h-96 w-full">
-                                            <span className="text-sm text-white/40">Rendering page...</span>
+                                            <span className="text-sm text-muted-foreground">Rendering page...</span>
                                         </div>
                                     }
                                 />

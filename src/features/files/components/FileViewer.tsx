@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import {
     Loader2, AlertCircle, Download, FileText,
@@ -12,6 +12,7 @@ import { useViewerSession } from '@/features/files/hooks/useViewerSession';
 import { toast } from 'sonner';
 import CourseCompletionCelebration from '@/features/gamification/components/CourseCompletionCelebration';
 import { apiFetch } from '@/lib/apiClient';
+import { Skeleton } from "@/components/ui/skeleton";
 
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -54,6 +55,32 @@ interface FileViewerProps {
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
+
+export function FileViewerSkeleton() {
+    return (
+        <div className="h-full flex flex-col bg-background">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-foreground/5 backdrop-blur-sm shrink-0">
+                <div className="flex items-center gap-2">
+                    <Skeleton className="h-7 w-7 rounded-lg bg-foreground/5" />
+                    <Skeleton className="h-4 w-16 bg-foreground/5" />
+                    <Skeleton className="h-7 w-7 rounded-lg bg-foreground/5" />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Skeleton className="h-7 w-7 rounded-lg bg-foreground/5" />
+                    <Skeleton className="h-4 w-8 bg-foreground/5" />
+                    <Skeleton className="h-7 w-7 rounded-lg bg-foreground/5" />
+                    <div className="w-px h-4 bg-foreground/10 mx-1" />
+                    <Skeleton className="h-7 w-7 rounded-lg bg-foreground/5" />
+                    <div className="w-px h-4 bg-foreground/10 mx-1" />
+                    <Skeleton className="h-7 w-7 rounded-lg bg-foreground/5" />
+                </div>
+            </div>
+            <div className="flex-1 flex justify-center py-6 px-4 overflow-hidden">
+                <Skeleton className="h-full w-full max-w-3xl rounded-sm bg-foreground/5 shadow-2xl" />
+            </div>
+        </div>
+    );
+}
 
 export default function FileViewer({ onTextSelect }: FileViewerProps) {
     const { courseId, fileId } = useParams();
@@ -202,12 +229,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
 
     // ── Loading ───────────────────────────────────────────────────────────────
     if (isLoading) {
-        return (
-            <div className="h-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-                <span className="sr-only">Loading file...</span>
-            </div>
-        );
+        return <FileViewerSkeleton />;
     }
 
     // ── Query error ───────────────────────────────────────────────────────────
@@ -217,8 +239,8 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                 <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
                     <AlertCircle className="h-7 w-7 text-red-400" />
                 </div>
-                <h2 className="text-xl font-display font-bold text-white">File not found</h2>
-                <p className="text-white/40 mt-2 text-[14px]">The requested file could not be loaded.</p>
+                <h2 className="text-xl font-display font-bold text-foreground">File not found</h2>
+                <p className="text-muted-foreground mt-2 text-[14px]">The requested file could not be loaded.</p>
                 <Button variant="link" onClick={() => window.history.back()} className="mt-4 text-blue-400 hover:text-blue-300">
                     Go Back
                 </Button>
@@ -230,23 +252,23 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
     if (!isPdf(file.title, file.downloadUrl)) {
         return (
             <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-4">
-                    <FileText className="h-7 w-7 text-white/30" />
+                <div className="w-16 h-16 rounded-2xl bg-foreground/5 flex items-center justify-center mb-4">
+                    <FileText className="h-7 w-7 text-muted-foreground/50" />
                 </div>
-                <h2 className="text-lg font-display font-bold text-white">Preview not available for this file type</h2>
-                <p className="text-white/40 mt-2 text-[14px] max-w-sm">
+                <h2 className="text-lg font-display font-bold text-foreground">Preview not available for this file type</h2>
+                <p className="text-muted-foreground mt-2 text-[14px] max-w-sm">
                     This file ({file.type}) cannot be previewed. You can download it to view locally.
                 </p>
                 {file.downloadUrl ? (
                     <a href={file.downloadUrl} target="_blank" rel="noopener noreferrer"
-                        className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
+                        className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-foreground text-[14px] font-medium hover:opacity-90 transition-opacity"
                     >
                         <Download className="h-4 w-4" />
                         Download File
                         <ExternalLink className="h-3 w-3 opacity-50" />
                     </a>
                 ) : (
-                    <p className="mt-4 text-[13px] text-white/30">Download link not available.</p>
+                    <p className="mt-4 text-[13px] text-muted-foreground/50">Download link not available.</p>
                 )}
             </div>
         );
@@ -254,11 +276,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
 
     // ── Waiting for blob URL (PDF is being fetched via proxy) ─────────────────
     if (!pdfBlobUrl) {
-        return (
-            <div className="h-full flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-            </div>
-        );
+        return <FileViewerSkeleton />;
     }
 
     // ── PDF render error ──────────────────────────────────────────────────────
@@ -268,12 +286,12 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                 <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-4">
                     <AlertCircle className="h-7 w-7 text-red-400" />
                 </div>
-                <h2 className="text-lg font-display font-bold text-white">Could not render PDF</h2>
-                <p className="text-white/40 mt-2 text-[14px] max-w-sm">
+                <h2 className="text-lg font-display font-bold text-foreground">Could not render PDF</h2>
+                <p className="text-muted-foreground mt-2 text-[14px] max-w-sm">
                     The file may be corrupted or inaccessible. Try downloading it directly.
                 </p>
                 <a href={file.downloadUrl} target="_blank" rel="noopener noreferrer"
-                    className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-white text-[14px] font-medium hover:opacity-90 transition-opacity"
+                    className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-foreground text-[14px] font-medium hover:opacity-90 transition-opacity"
                 >
                     <Download className="h-4 w-4" />
                     Download Instead
@@ -293,20 +311,20 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
             />
 
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-sm shrink-0">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-foreground/5 backdrop-blur-sm shrink-0">
 
                 {/* Page navigation */}
                 <div className="flex items-center gap-1">
                     <button onClick={goToPrevPage} disabled={pageNumber <= 1}
-                        className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     >
                         <ChevronLeft className="h-4 w-4" />
                     </button>
-                    <span className="text-[13px] text-white/60 min-w-[80px] text-center tabular-nums">
+                    <span className="text-[13px] text-foreground/60 min-w-[80px] text-center tabular-nums">
                         {pageNumber} / {numPages ?? '—'}
                     </span>
                     <button onClick={goToNextPage} disabled={pageNumber >= (numPages ?? 1)}
-                        className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     >
                         <ChevronRight className="h-4 w-4" />
                     </button>
@@ -315,27 +333,27 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                 {/* Zoom + rotate + download */}
                 <div className="flex items-center gap-1">
                     <button onClick={zoomOut} disabled={scale <= 0.5}
-                        className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     >
                         <ZoomOut className="h-4 w-4" />
                     </button>
-                    <span className="text-[13px] text-white/60 min-w-[44px] text-center tabular-nums">
+                    <span className="text-[13px] text-foreground/60 min-w-[44px] text-center tabular-nums">
                         {Math.round(scale * 100)}%
                     </span>
                     <button onClick={zoomIn} disabled={scale >= 2.5}
-                        className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                     >
                         <ZoomIn className="h-4 w-4" />
                     </button>
-                    <div className="w-px h-4 bg-white/[0.08] mx-1" />
+                    <div className="w-px h-4 bg-foreground/10 mx-1" />
                     <button onClick={rotate}
-                        className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] transition-all"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-all"
                     >
                         <RotateCw className="h-4 w-4" />
                     </button>
-                    <div className="w-px h-4 bg-white/[0.08] mx-1" />
+                    <div className="w-px h-4 bg-foreground/10 mx-1" />
                     <a href={file.downloadUrl} target="_blank" rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.08] transition-all"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-all"
                         title="Download PDF"
                     >
                         <Download className="h-4 w-4" />
@@ -356,7 +374,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                         <button
                             onClick={handleAskAI}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                                       gradient-bg text-white text-[12px] font-medium
+                                       gradient-bg text-foreground text-[12px] font-medium
                                        shadow-lg shadow-black/40 hover:opacity-90 transition-opacity
                                        whitespace-nowrap"
                         >
@@ -375,7 +393,7 @@ export default function FileViewer({ onTextSelect }: FileViewerProps) {
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
                     loading={
-                        <div className="flex items-center gap-3 text-white/40 mt-20">
+                        <div className="flex items-center gap-3 text-muted-foreground mt-20">
                             <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
                             <span className="text-[14px]">Loading PDF…</span>
                         </div>

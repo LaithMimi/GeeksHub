@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * SETTINGS PAGE – Enhanced with working theme switching
  * ============================================================================
@@ -90,12 +90,12 @@ export default function Settings() {
             label: "Dark",
             icon: Moon,
             preview: (
-                <div className="w-full h-20 rounded-lg bg-gradient-to-br from-[#0c0014] to-[#0d0030] relative overflow-hidden border border-white/[0.08]">
-                    <div className="absolute top-2 left-2 right-2 h-3 rounded bg-white/[0.08] border border-white/[0.06]" />
-                    <div className="absolute bottom-2 left-2 w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.06]" />
+                <div className="w-full h-20 rounded-lg bg-gradient-to-br from-[#0c0014] to-[#0d0030] relative overflow-hidden border border-border">
+                    <div className="absolute top-2 left-2 right-2 h-3 rounded bg-foreground/10 border border-border" />
+                    <div className="absolute bottom-2 left-2 w-8 h-8 rounded-lg bg-foreground/10 border border-border" />
                     <div className="absolute bottom-2 left-12 right-2 space-y-1">
-                        <div className="h-2 rounded bg-white/[0.1] w-3/4" />
-                        <div className="h-2 rounded bg-white/[0.06] w-1/2" />
+                        <div className="h-2 rounded bg-foreground/10 w-3/4" />
+                        <div className="h-2 rounded bg-foreground/5 w-1/2" />
                     </div>
                 </div>
             ),
@@ -105,7 +105,7 @@ export default function Settings() {
             label: "System",
             icon: Laptop,
             preview: (
-                <div className="w-full h-20 rounded-lg relative overflow-hidden border border-white/[0.08]">
+                <div className="w-full h-20 rounded-lg relative overflow-hidden border border-border">
                     <div className="absolute inset-0 w-1/2 bg-gradient-to-br from-[#f8f6ff] to-[#ebe5ff]" />
                     <div className="absolute inset-0 left-1/2 bg-gradient-to-br from-[#0c0014] to-[#0d0030]" />
                     <div className="absolute top-2 left-2 right-2 h-3 rounded bg-white/40 border border-black/[0.04]" />
@@ -141,8 +141,8 @@ export default function Settings() {
                                     onClick={() => setTheme(option.value)}
                                     aria-label={`Select ${option.label} theme`}
                                     className={`relative rounded-xl p-3 text-left transition-all duration-200 border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${isActive
-                                        ? "border-blue-500 bg-blue-500/[0.08] shadow-[0_0_20px_rgba(37, 99, 235,0.15)]"
-                                        : "border-transparent liquid-glass-subtle hover:border-white/[0.12] dark:hover:border-white/[0.12] hover:border-black/[0.12]"
+                                        ? "border-blue-500 bg-blue-500/[0.08] shadow-[0_0_20px_rgba(37,99,235,0.15)]"
+                                        : "border-transparent liquid-glass-subtle hover:border-border/50 dark:hover:border-border/50 hover:border-black/[0.12]"
                                         }`}
                                 >
                                     {/* Preview */}
@@ -159,7 +159,7 @@ export default function Settings() {
                                     {/* Active indicator */}
                                     {isActive && (
                                         <div className="absolute top-2 right-2 h-5 w-5 rounded-full gradient-bg flex items-center justify-center">
-                                            <CheckCircle className="h-3 w-3 text-white" />
+                                            <CheckCircle className="h-3 w-3 text-foreground" />
                                         </div>
                                     )}
                                 </button>
@@ -171,7 +171,7 @@ export default function Settings() {
                 {/* 2. Display */}
                 <GlassSection icon={Monitor} iconColor="text-blue-400" title="Display" desc="Customize text size and visual density.">
                     {/* Language */}
-                    <div className="space-y-3 pb-4 border-b border-white/[0.06]">
+                    <div className="space-y-3 pb-4 border-b border-border">
                         <div>
                             <span className="text-[14px] font-medium text-foreground">Language</span>
                             <p className="text-[12px] text-muted-foreground mt-0.5">Changes the interface language. Course files stay in their original language.</p>
@@ -182,13 +182,13 @@ export default function Settings() {
                                 <SelectTrigger aria-label="Language selection" className="w-[180px] liquid-glass-subtle text-foreground h-10 [&>span]:text-[13px]">
                                     <SelectValue placeholder="Select Language" />
                                 </SelectTrigger>
-                                <SelectContent className="liquid-glass border-white/[0.1]">
+                                <SelectContent className="liquid-glass border-border/50">
                                     {languages.map(lang => (
-                                        <SelectItem key={lang.code} value={lang.code} className="text-foreground focus:bg-white/[0.08] focus:text-foreground">
+                                        <SelectItem key={lang.code} value={lang.code} className="text-foreground focus:bg-foreground/10 focus:text-foreground">
                                             <div className="flex items-center justify-between w-full gap-4">
                                                 <span>{lang.name}</span>
                                                 {lang.dir === 'rtl' && (
-                                                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/[0.1] text-muted-foreground">RTL</span>
+                                                    <span className="text-[10px] px-1.5 py-0.5 rounded border border-border/50 text-muted-foreground">RTL</span>
                                                 )}
                                             </div>
                                         </SelectItem>
@@ -199,7 +199,7 @@ export default function Settings() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <GlassSelect label="Text Size" value={textSize} onValueChange={setTextSize}>
+                        <GlassSelect label="Text Size" value={textSize} onValueChange={setTextSize} disabled comingSoon>
                             <SelectItem value="small">Small</SelectItem>
                             <SelectItem value="medium">Medium (Default)</SelectItem>
                             <SelectItem value="large">Large</SelectItem>
@@ -222,10 +222,10 @@ export default function Settings() {
                 {/* 3. Study Defaults */}
                 <GlassSection icon={BookOpen} iconColor="text-blue-400" title="Study Defaults" desc="Pre-fill your search and browse filters.">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <GlassSelect label="Default Major" value={defaultMajor} onValueChange={setDefaultMajor}>
+                        <GlassSelect label="Default Major" value={defaultMajor} onValueChange={setDefaultMajor} disabled comingSoon>
                             {majors.map(m => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
                         </GlassSelect>
-                        <GlassSelect label="Default Year" value={defaultYear} onValueChange={setDefaultYear}>
+                        <GlassSelect label="Default Year" value={defaultYear} onValueChange={setDefaultYear} disabled comingSoon>
                             {years.map(y => <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>)}
                         </GlassSelect>
                     </div>
@@ -238,9 +238,10 @@ export default function Settings() {
                         desc="Always expand source citations in chat."
                         checked={aiSourceExpanded}
                         onCheckedChange={setAiSourceExpanded}
+                        disabled comingSoon
                     />
                     <div className="pt-2">
-                        <GlassSelect label="Default Scope" value={aiScope} onValueChange={setAiScope}>
+                        <GlassSelect label="Default Scope" value={aiScope} onValueChange={setAiScope} disabled comingSoon>
                             <SelectItem value="file">Current File Only</SelectItem>
                             <SelectItem value="course">Entire Course</SelectItem>
                         </GlassSelect>
@@ -254,24 +255,28 @@ export default function Settings() {
                         desc="Notify when files are added to my courses."
                         checked={notifications.newMaterials}
                         onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, newMaterials: v }))}
+                        disabled comingSoon
                     />
                     <GlassToggle
                         label="Request Updates"
                         desc="Notify status changes for my uploads."
                         checked={notifications.adminUpdates}
                         onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, adminUpdates: v }))}
+                        disabled comingSoon
                     />
                     <GlassToggle
                         label="Weekly Digest"
                         desc="Receive a weekly summary of new materials."
                         checked={notifications.weeklyDigest}
                         onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, weeklyDigest: v }))}
+                        disabled comingSoon
                     />
                     <GlassToggle
                         label="Sound Effects"
                         desc="Play sounds for notifications and actions."
                         checked={notifications.soundEffects}
                         onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, soundEffects: v }))}
+                        disabled comingSoon
                     />
                 </GlassSection>
 
@@ -295,7 +300,7 @@ function GlassSection({ icon: Icon, iconColor, title, desc, children }: {
 }) {
     return (
         <section className="liquid-glass rounded-2xl overflow-hidden">
-            <div className="px-6 py-5 border-b border-white/[0.06] dark:border-white/[0.06] border-black/[0.06]">
+            <div className="px-6 py-5 border-b border-border dark:border-border border-black/[0.06]">
                 <div className="flex items-center gap-2.5 mb-1">
                     <Icon className={`h-[18px] w-[18px] ${iconColor}`} />
                     <h2 className="text-[16px] font-display font-bold text-foreground">{title}</h2>
@@ -309,41 +314,51 @@ function GlassSection({ icon: Icon, iconColor, title, desc, children }: {
     );
 }
 
-function GlassToggle({ label, desc, checked, onCheckedChange }: {
+function GlassToggle({ label, desc, checked, onCheckedChange, disabled, comingSoon }: {
     label: string;
     desc: string;
     checked: boolean;
     onCheckedChange: (v: boolean) => void;
+    disabled?: boolean;
+    comingSoon?: boolean;
 }) {
     const id = label.replace(/\s+/g, '-').toLowerCase();
     return (
         <div className="flex flex-row items-center justify-between min-h-[44px] py-1.5 gap-3">
             <div className="space-y-0.5 flex-1 min-w-0 pr-2">
-                <label htmlFor={id} className="text-[14px] font-medium text-foreground cursor-pointer select-none block truncate">{label}</label>
-                <p className="text-[12px] text-muted-foreground leading-snug break-words">{desc}</p>
+                <div className="flex items-center gap-2">
+                    <label htmlFor={id} className={`text-[14px] font-medium cursor-pointer select-none block truncate ${disabled ? 'text-muted-foreground/50' : 'text-foreground'}`}>{label}</label>
+                    {comingSoon && <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Coming Soon</span>}
+                </div>
+                <p className={`text-[12px] leading-snug break-words ${disabled ? 'text-muted-foreground/40' : 'text-muted-foreground'}`}>{desc}</p>
             </div>
             <div className="shrink-0 flex items-center">
-                <Switch id={id} aria-label={label} checked={checked} onCheckedChange={onCheckedChange} />
+                <Switch id={id} aria-label={label} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
             </div>
         </div>
     );
 }
 
-function GlassSelect({ label, value, onValueChange, children }: {
+function GlassSelect({ label, value, onValueChange, children, disabled, comingSoon }: {
     label: string;
     value: string;
     onValueChange: (v: string) => void;
     children: React.ReactNode;
+    disabled?: boolean;
+    comingSoon?: boolean;
 }) {
     const defaultAriaLabel = `Select ${label}`;
     return (
         <div className="space-y-2">
-            <label className="text-[12px] font-display font-semibold text-muted-foreground uppercase tracking-wider block">{label}</label>
-            <Select value={value} onValueChange={onValueChange}>
-                <SelectTrigger aria-label={defaultAriaLabel} className="liquid-glass-subtle text-foreground hover:bg-white/[0.06] dark:hover:bg-white/[0.06] hover:bg-black/[0.02] transition-all [&>span]:text-[13px] h-10">
+            <div className="flex items-center gap-2">
+                <label className={`text-[12px] font-display font-semibold uppercase tracking-wider block ${disabled ? 'text-muted-foreground/50' : 'text-muted-foreground'}`}>{label}</label>
+                {comingSoon && <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400">Coming Soon</span>}
+            </div>
+            <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+                <SelectTrigger aria-label={defaultAriaLabel} className={`liquid-glass-subtle transition-all [&>span]:text-[13px] h-10 ${disabled ? 'opacity-50 cursor-not-allowed' : 'text-foreground hover:bg-foreground/5 dark:hover:bg-foreground/5 hover:bg-black/[0.02]'}`}>
                     <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="liquid-glass border-white/[0.1] dark:border-white/[0.1] border-black/[0.1]">
+                <SelectContent className="liquid-glass border-border/50 dark:border-border/50 border-black/[0.1]">
                     {children}
                 </SelectContent>
             </Select>

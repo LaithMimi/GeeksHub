@@ -32,7 +32,7 @@ export default function FilePage() {
             </div>
 
             {/* AI assistant — manages its own open/collapsed width internally */}
-            <div className={`transition-all duration-300 ease-in-out border-l border-white/5 bg-black/40 backdrop-blur-2xl ${isAssistantOpen ? 'w-[360px]' : 'w-12'}`}>
+            <div className={`transition-all duration-300 ease-in-out border-l border-border/20 bg-black/40 backdrop-blur-2xl ${isAssistantOpen ? 'w-[360px]' : 'w-12'}`}>
                 <AssistantPanel
                     fileId={fileId}
                     fileTitle={file?.title ?? "this file"}

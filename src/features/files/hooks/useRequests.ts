@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * REQUEST QUERY HOOKS
  * ============================================================================
@@ -44,6 +44,13 @@ import {
 import { toast } from "sonner";
 import { ApiError } from "@/lib/apiClient";
 import type { RejectReason, FileStatus } from "@/types/domain";
+import { queryKeys } from "@/lib/queryKeys";
+
+function invalidateAdmin(qc: ReturnType<typeof useQueryClient>): void {
+    qc.invalidateQueries({ queryKey: queryKeys.requests.all() });
+    qc.invalidateQueries({ queryKey: queryKeys.requests.stats() });
+    qc.invalidateQueries({ queryKey: queryKeys.audit.all() });
+}
 
 // ============================================================================
 // USER HOOKS
@@ -55,7 +62,7 @@ import type { RejectReason, FileStatus } from "@/types/domain";
  */
 export const useMyRequests = () =>
     useQuery({
-        queryKey: ["my-requests"],
+        queryKey: queryKeys.requests.mine(),
         queryFn: listMyRequests,
     });
 
@@ -107,7 +114,7 @@ export const useWithdrawRequest = () => {
  */
 export const useRequestPreviewUrl = (requestId?: string) =>
     useQuery({
-        queryKey: ["admin-request-preview-url", requestId],
+        queryKey: queryKeys.requests.preview(requestId),
         queryFn: () => getRequestPreviewUrl(requestId!),
         enabled: !!requestId,
         staleTime: 1000 * 60 * 5, // 5 minutes
@@ -118,7 +125,7 @@ export const useRequestPreviewUrl = (requestId?: string) =>
  */
 export const useAllRequests = (filters?: { status?: FileStatus }) =>
     useQuery({
-        queryKey: ["admin-requests", filters],
+        queryKey: queryKeys.requests.filtered(filters),
         queryFn: () => listAllRequests(filters),
     });
 
@@ -127,7 +134,7 @@ export const useAllRequests = (filters?: { status?: FileStatus }) =>
  */
 export const usePendingRequests = () =>
     useQuery({
-        queryKey: ["admin-requests", { status: "pending" }],
+        queryKey: queryKeys.requests.filtered({ status: "pending" }),
         queryFn: listPendingRequests,
     });
 
@@ -137,7 +144,7 @@ export const usePendingRequests = () =>
  */
 export const useRequestStats = () =>
     useQuery({
-        queryKey: ["admin-request-stats"],
+        queryKey: queryKeys.requests.stats(),
         queryFn: getRequestStats,
         refetchInterval: 30_000,
     });
@@ -159,7 +166,7 @@ export const useApproveRequest = () => {
         mutationFn: ({ requestId }: { requestId: string }) =>
             approveRequest(requestId),
         onSuccess: (result, variables) => {
-            invalidateAdmin();
+            invalidateAdmin(queryClient);
 
             if (result) {
                 toast.success(`Approved "${result.title}"`, {
@@ -167,7 +174,7 @@ export const useApproveRequest = () => {
                         label: "Undo",
                         onClick: async () => {
                             await undoApprove(variables.requestId);
-                            invalidateAdmin();
+                            invalidateAdmin(queryClient);
                             toast.info("Approval undone");
                         },
                     },
@@ -187,11 +194,6 @@ export const useApproveRequest = () => {
 export const useRejectRequest = () => {
     const queryClient = useQueryClient();
 
-    const invalidateAdmin = () => {
-        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
-        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
-        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
-    };
 
     return useMutation({
         mutationFn: ({
@@ -204,7 +206,7 @@ export const useRejectRequest = () => {
             note?: string;
         }) => rejectRequest(requestId, reason, note),
         onSuccess: (result, variables) => {
-            invalidateAdmin();
+            invalidateAdmin(queryClient);
 
             if (result) {
                 toast.success(`Rejected "${result.title}"`, {
@@ -212,7 +214,7 @@ export const useRejectRequest = () => {
                         label: "Undo",
                         onClick: async () => {
                             await undoReject(variables.requestId);
-                            invalidateAdmin();
+                            invalidateAdmin(queryClient);
                             toast.info("Rejection undone");
                         },
                     },
@@ -232,16 +234,11 @@ export const useRejectRequest = () => {
 export const useBulkApprove = () => {
     const queryClient = useQueryClient();
 
-    const invalidateAdmin = () => {
-        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
-        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
-        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
-    };
 
     return useMutation({
         mutationFn: (requestIds: string[]) => bulkApprove(requestIds),
         onSuccess: (result) => {
-            invalidateAdmin();
+            invalidateAdmin(queryClient);
             toast.success(
                 `Approved ${result.approved} request(s)` +
                 (result.skipped > 0 ? ` (${result.skipped} skipped)` : "")
@@ -260,11 +257,6 @@ export const useBulkApprove = () => {
 export const useBulkReject = () => {
     const queryClient = useQueryClient();
 
-    const invalidateAdmin = () => {
-        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
-        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
-        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
-    };
 
     return useMutation({
         mutationFn: ({
@@ -275,7 +267,7 @@ export const useBulkReject = () => {
             reason: RejectReason;
         }) => bulkReject(requestIds, reason),
         onSuccess: (result) => {
-            invalidateAdmin();
+            invalidateAdmin(queryClient);
             toast.success(
                 `Rejected ${result.rejected} request(s)` +
                 (result.skipped > 0 ? ` (${result.skipped} skipped)` : "")

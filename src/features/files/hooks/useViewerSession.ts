@@ -1,5 +1,6 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useActivityTracker } from "@/shared/hooks/useActivityTracker";
 import { logger } from "@/lib/logger";
 import {
     useViewerSessionStart,
@@ -26,7 +27,7 @@ export const useViewerSession = (fileId: string, currentPage: number) => {
 
     const visitedPagesRef = useRef<Set<number>>(new Set([currentPage]));
     const activeSecondsRef = useRef<number>(0);
-    const lastActivityRef = useRef<number>(Date.now());
+    const lastActivityRef = useActivityTracker(!!user);
     const intervalRef = useRef<number | null>(null);
     const isCompletedRef = useRef(false);
 
@@ -36,28 +37,7 @@ export const useViewerSession = (fileId: string, currentPage: number) => {
             visitedPagesRef.current.add(currentPage);
             lastActivityRef.current = Date.now(); // Page change is activity
         }
-    }, [currentPage]);
-
-    // Track user activity in window
-    useEffect(() => {
-        if (!user) return;
-
-        const handleActivity = () => {
-            lastActivityRef.current = Date.now();
-        };
-
-        window.addEventListener("mousemove", handleActivity);
-        window.addEventListener("keydown", handleActivity);
-        window.addEventListener("click", handleActivity);
-        window.addEventListener("scroll", handleActivity);
-
-        return () => {
-            window.removeEventListener("mousemove", handleActivity);
-            window.removeEventListener("keydown", handleActivity);
-            window.removeEventListener("click", handleActivity);
-            window.removeEventListener("scroll", handleActivity);
-        };
-    }, [user]);
+    }, [currentPage, lastActivityRef]);
 
     // Session lifecycle
     useEffect(() => {

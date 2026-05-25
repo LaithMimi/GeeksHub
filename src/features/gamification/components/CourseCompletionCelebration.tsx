@@ -47,7 +47,7 @@ export default function CourseCompletionCelebration({
                         setShow(false);
                         setTimeout(onClose, 300);
                     }}
-                    className="absolute top-4 right-4 p-2 rounded-full text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                    className="absolute top-4 right-4 p-2 rounded-full text-muted-foreground hover:bg-foreground/10 hover:text-foreground transition-colors"
                 >
                     <X className="h-5 w-5" />
                 </button>
@@ -67,8 +67,8 @@ export default function CourseCompletionCelebration({
                         Course Conquered!
                     </h2>
                     
-                    <p className="text-[16px] text-white/80 font-medium">
-                        You have completed all materials for <strong className="text-white">{courseName}</strong>.
+                    <p className="text-[16px] text-foreground/80 font-medium">
+                        You have completed all materials for <strong className="text-foreground">{courseName}</strong>.
                     </p>
 
                     {pointsAwarded > 0 && (
@@ -80,9 +80,9 @@ export default function CourseCompletionCelebration({
 
                     {/* Motivational Quote */}
                     {quote && (
-                        <div className="mt-8 p-6 rounded-2xl bg-white/5 border border-white/10 relative">
+                        <div className="mt-8 p-6 rounded-2xl bg-foreground/5 border border-border/50 relative">
                             <div className="absolute -top-3 left-6 text-4xl text-blue-500/40 leading-none">"</div>
-                            <p className="text-[15px] italic text-white/70 font-display text-left relative z-10 pl-2">
+                            <p className="text-[15px] italic text-foreground/70 font-display text-left relative z-10 pl-2">
                                 {quote}
                             </p>
                         </div>
@@ -95,7 +95,7 @@ export default function CourseCompletionCelebration({
                             setShow(false);
                             setTimeout(onClose, 300);
                         }}
-                        className="w-full sm:w-auto px-8 py-6 rounded-2xl gradient-bg text-white font-display font-bold text-[16px] glow-blue-soft hover:-translate-y-1 transition-transform"
+                        className="w-full sm:w-auto px-8 py-6 rounded-2xl gradient-bg text-foreground font-display font-bold text-[16px] glow-blue-soft hover:-translate-y-1 transition-transform"
                     >
                         Keep Growing
                     </Button>

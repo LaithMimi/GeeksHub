@@ -68,7 +68,7 @@ export default function UserUploads() {
             <div className="h-[50vh] flex flex-col items-center justify-center">
                 <div className="glass-card p-8 text-center">
                     <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
-                    <p className="text-white/60 mb-3">Failed to load your uploads.</p>
+                    <p className="text-foreground/60 mb-3">Failed to load your uploads.</p>
                     <Button variant="link" onClick={() => window.location.reload()} className="text-blue-400">
                         Retry
                     </Button>
@@ -102,23 +102,23 @@ export default function UserUploads() {
             <div className="space-y-4">
                 <Link
                     to="/"
-                    className="text-white/40 hover:text-white/70 flex items-center gap-2 text-[13px] w-fit transition-colors"
+                    className="text-muted-foreground hover:text-foreground/70 flex items-center gap-2 text-[13px] w-fit transition-colors"
                 >
                     <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
                     Back to Dashboard
                 </Link>
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-[32px] font-display font-bold text-white tracking-[-0.03em]">
+                        <h1 className="text-[32px] font-display font-bold text-foreground tracking-[-0.03em]">
                             Your Contributions
                         </h1>
-                        <p className="text-white/40 mt-1 text-[14px]">
+                        <p className="text-muted-foreground mt-1 text-[14px]">
                             Track your impact and file request status.
                         </p>
                     </div>
                     <button
                         onClick={() => setIsRequestOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[13px] font-display font-semibold transition-all"
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-foreground text-[13px] font-display font-semibold transition-all"
                         aria-label="Submit a new file"
                     >
                         <Plus className="h-4 w-4" />
@@ -136,8 +136,8 @@ export default function UserUploads() {
                         <span className="text-[12px] text-blue-300 font-medium">Community Score</span>
                         <Zap className="h-4 w-4 text-blue-400" />
                     </div>
-                    <div className="text-[28px] font-display font-bold text-white">{totalPoints}</div>
-                    <p className="text-[11px] text-white/35 mt-0.5">Total impact points</p>
+                    <div className="text-[28px] font-display font-bold text-foreground">{totalPoints}</div>
+                    <p className="text-[11px] text-muted-foreground/70 mt-0.5">Total impact points</p>
                 </div>
 
                 {/* Status breakdown — normalizeStatus guards against uppercase from backend */}
@@ -148,10 +148,10 @@ export default function UserUploads() {
                 ].map(({ label, status, icon: Icon, iconColor }) => (
                     <div key={label} className="liquid-glass rounded-2xl p-5">
                         <div className="flex items-center justify-between mb-3">
-                            <span className="text-[12px] text-white/45 font-medium">{label}</span>
+                            <span className="text-[12px] text-muted-foreground font-medium">{label}</span>
                             <Icon className={`h-4 w-4 ${iconColor}`} />
                         </div>
-                        <div className="text-[28px] font-display font-bold text-white">
+                        <div className="text-[28px] font-display font-bold text-foreground">
                             {userRequests.filter((r) => normalizeStatus(r.status) === status).length}
                         </div>
                     </div>
@@ -161,12 +161,12 @@ export default function UserUploads() {
             {/* Search */}
             <div className="flex items-center gap-3">
                 <div className="relative flex-1 max-w-sm">
-                    <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                    <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                     <input
                         placeholder="Search by title, course, or lecturer..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full h-10 rounded-xl liquid-glass-subtle ps-10 pe-4 text-[14px] text-white placeholder:text-white/30 outline-none focus:border-blue-500/40 transition-colors"
+                        className="w-full h-10 rounded-xl liquid-glass-subtle ps-10 pe-4 text-[14px] text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-blue-500/40 transition-colors"
                     />
                 </div>
             </div>
@@ -174,20 +174,20 @@ export default function UserUploads() {
             {/* List */}
             <div className="liquid-glass rounded-2xl overflow-hidden">
                 {filteredRequests.length === 0 ? (
-                    <div className="text-center py-16 text-white/30">
+                    <div className="text-center py-16 text-muted-foreground/50">
                         <FileText className="mx-auto h-10 w-10 opacity-30 mb-3" />
                         <p className="text-[14px]">
                             {searchQuery.trim() ? "No uploads match your search." : "No uploads yet."}
                         </p>
                     </div>
                 ) : (
-                    <div className="divide-y divide-white/[0.06]">
+                    <div className="divide-y divide-border">
                         {filteredRequests.map((file) => {
                             const status = normalizeStatus(file.status);
                             return (
                                 <div
                                     key={file.id}
-                                    className="flex items-center justify-between px-6 py-5 hover:bg-white/[0.03] transition-colors gap-4"
+                                    className="flex items-center justify-between px-6 py-5 hover:bg-foreground/5 transition-colors gap-4"
                                 >
                                     {/* Left: icon + info */}
                                     <div className="flex items-start gap-4">
@@ -197,7 +197,7 @@ export default function UserUploads() {
                                         <div className="space-y-1.5 min-w-0">
                                             {/* Title + status badge + points badge */}
                                             <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="font-display font-semibold text-white text-[14px]">
+                                                <span className="font-display font-semibold text-foreground text-[14px]">
                                                     {file.title}
                                                 </span>
                                                 <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md border ${getStatusBg(status)}`}>
@@ -214,7 +214,7 @@ export default function UserUploads() {
                                             </div>
 
                                             {/* Subtitle: course name (falls back to ID if backend hasn't enriched yet) + timestamp */}
-                                            <p className="text-[12px] text-white/35">
+                                            <p className="text-[12px] text-muted-foreground/70">
                                                 {file.courseName
                                                     ? file.courseName
                                                     : file.courseId
@@ -254,7 +254,7 @@ export default function UserUploads() {
                                                     </button>
                                                     <button
                                                         onClick={() => setDeleteConfirmId(null)}
-                                                        className="text-[12px] px-3 py-1.5 rounded-lg border border-white/[0.08] text-white/50 hover:text-white/80 transition-colors"
+                                                        className="text-[12px] px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground/80 transition-colors"
                                                     >
                                                         Cancel
                                                     </button>
@@ -272,12 +272,12 @@ export default function UserUploads() {
                                             // backend must return this on the enriched FileRequest response
                                             <Link
                                                 to={`/courses/${file.courseId}/files/${file.materialId}`}
-                                                className="text-[12px] px-3 py-1.5 rounded-lg border border-white/[0.1] text-white/50 hover:text-white/80 hover:bg-white/[0.04] transition-colors"
+                                                className="text-[12px] px-3 py-1.5 rounded-lg border border-border/50 text-muted-foreground hover:text-foreground/80 hover:bg-foreground/5 transition-colors"
                                             >
                                                 View
                                             </Link>
                                         ) : (
-                                            <span className="text-[12px] px-3 py-1.5 rounded-lg border border-white/[0.06] text-white/20 cursor-not-allowed">
+                                            <span className="text-[12px] px-3 py-1.5 rounded-lg border border-border text-muted-foreground/30 cursor-not-allowed">
                                                 {status === "pending" ? "Pending" : "View"}
                                             </span>
                                         )}

@@ -1,5 +1,4 @@
-﻿import { useState, useEffect } from "react";
-import { UploadCloud, Loader2, ChevronRight, Check } from "lucide-react";
+import { Loader2, ChevronRight, Check } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -7,13 +6,15 @@ import {
     DialogTitle,
     DialogDescription,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 
 import { useMajors, useCourses, useLecturers, useTypes } from "@/features/courses/hooks/useCatalog";
 import { useCreateRequest } from "@/features/files/hooks/useRequests";
+
+import { useRequestForm, validateFile } from "./request-modal/useRequestForm";
+import { StepMajor } from "./request-modal/StepMajor";
+import { StepCourse } from "./request-modal/StepCourse";
+import { StepDetails } from "./request-modal/StepDetails";
+import { StepUpload } from "./request-modal/StepUpload";
 
 interface RequestFileModalProps {
     open: boolean;
@@ -26,46 +27,12 @@ interface RequestFileModalProps {
     };
 }
 
-// ── Static data ───────────────────────────────────────────────────────────────
-
-const PROGRAM_YEARS = [
-    { id: "1", label: "1st Year" },
-    { id: "2", label: "2nd Year" },
-    { id: "3", label: "3rd Year" },
-    { id: "4", label: "4th Year" },
-];
-
-const currentYear = new Date().getFullYear();
-const MATERIAL_YEARS = Array.from({ length: currentYear - 2016 + 1 }, (_, i) => {
-    const y = (currentYear - i).toString();
-    return { id: y, label: y };
-});
-
-// Frontend guardrails matching the UI copy ("PDF, PPTX, DOCX, JPG or PNG — max 25 MB").
-// The `accept` attribute is only a hint; these checks are the real client-side gate.
-// (The backend remains the authoritative enforcement layer.)
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
-const ALLOWED_EXTENSIONS = [".pdf", ".pptx", ".ppt", ".docx", ".jpg", ".jpeg", ".png"];
-
-function validateFile(file: File): string | null {
-    const name = file.name.toLowerCase();
-    if (!ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext))) {
-        return "Unsupported file type. Use PDF, PPTX, DOCX, JPG, or PNG.";
-    }
-    if (file.size > MAX_FILE_SIZE) {
-        return `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 25 MB.`;
-    }
-    return null;
-}
-
 const STEPS = [
     { id: 1, label: "Major" },
     { id: 2, label: "Course" },
     { id: 3, label: "Details" },
     { id: 4, label: "Upload" },
 ];
-
-// ── Stepper bar ───────────────────────────────────────────────────────────────
 
 function StepperBar({ current }: { current: number }) {
     return (
@@ -76,7 +43,7 @@ function StepperBar({ current }: { current: number }) {
                 const isLast = idx === STEPS.length - 1;
 
                 const bg = done ? "bg-blue-600" : active ? "bg-blue-500" : "bg-white/[0.05]";
-                const textColor = done || active ? "text-white" : "text-white/30";
+                const textColor = done || active ? "text-foreground" : "text-muted-foreground/50";
 
                 return (
                     <div key={step.id} className="relative flex-1 flex items-center">
@@ -95,7 +62,7 @@ function StepperBar({ current }: { current: number }) {
                         >
                             <span className={`
                                 w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0
-                                ${done || active ? "bg-white/20" : "bg-white/[0.08]"}
+                                ${done || active ? "bg-foreground/20" : "bg-foreground/10"}
                             `}>
                                 {done
                                     ? <Check className="h-2.5 w-2.5" />
@@ -129,38 +96,19 @@ function StepperBar({ current }: { current: number }) {
     );
 }
 
-// ── Summary chip ──────────────────────────────────────────────────────────────
-
-function SummaryChip({ label, value }: { label: string; value?: string }) {
-    if (!value) return null;
-    return (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20">
-            <span className="text-[10px] text-white/30">{label}</span>
-            <span className="text-[11px] text-blue-300 font-medium">{value}</span>
-        </div>
-    );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
-
-const defaultForm = {
-    major: "",
-    program_year: "",   // 1–4, required — sent as `academic_year` to backend
-    semester: "",   // optional filter
-    course: "",
-    lecturer: "",
-    type_id: "",
-    title: "",
-    description: "",
-    material_year: "",   // 2016–current, sent as `material_year` to backend
-    file: null as File | null,
-};
-
 export default function RequestFileModal({ open, onOpenChange, initialData }: RequestFileModalProps) {
-    const [step, setStep] = useState(1);
-
-    const [form, setForm] = useState(defaultForm);
-    const [fileError, setFileError] = useState("");
+    const {
+        form,
+        setForm,
+        step,
+        setStep,
+        fileError,
+        setFileError,
+        handleCascadeSelect,
+        set,
+        canProceed,
+        buildPayload,
+    } = useRequestForm(open, initialData);
 
     // ── Queries ───────────────────────────────────────────────────────────────
 
@@ -189,71 +137,18 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
     const selectedLecturer = lecturers?.find((l) => l.id === form.lecturer);
     const selectedType = types?.find((t) => t.id === form.type_id);
 
-    // ── Reset on open ─────────────────────────────────────────────────────────
-
-    useEffect(() => {
-        if (open) {
-            setStep(1);
-            setFileError("");
-            setForm(
-                initialData
-                    ? { ...defaultForm, major: initialData.major || "", course: initialData.course || "", lecturer: initialData.lecturer || "", type_id: initialData.type || "" }
-                    : defaultForm
-            );
-        }
-    }, [open, initialData]);
-
-    // ── Cascade ───────────────────────────────────────────────────────────────
-
-    const handleCascadeSelect = (key: string, value: string) => {
-        setForm((prev) => {
-            const updated = { ...prev, [key]: value };
-            const cascade = ["major", "program_year", "semester", "course", "lecturer"];
-            const idx = cascade.indexOf(key);
-            if (idx >= 0) {
-                for (let i = idx + 1; i < cascade.length; i++) (updated as any)[cascade[i]] = "";
-                // A changed upstream selection invalidates the already-chosen file
-                // so it can't be submitted against the wrong course/lecturer.
-                updated.file = null;
-            }
-            return updated;
-        });
-        setFileError("");
-    };
-
-    const set = (key: string, value: string) =>
-        setForm((prev) => ({ ...prev, [key]: value }));
-
-    // ── Validation per step ───────────────────────────────────────────────────
-
-    const canProceed = () => {
-        if (step === 1) return !!form.major && !!form.program_year;
-        if (step === 2) return !!form.course;
-        if (step === 3) return !!form.lecturer && !!form.type_id && !!form.title && !!form.material_year;
-        if (step === 4) return !!form.file && !fileError;
-        return false;
-    };
-
     // ── Submit ────────────────────────────────────────────────────────────────
 
     const handleSubmit = () => {
-        if (!form.file) return;
-        const err = validateFile(form.file);
+        const payload = buildPayload();
+        if (!payload) return;
+        const err = validateFile(payload.file);
         if (err) {
             setFileError(err);
             return;
         }
         submitRequest(
-            {
-                courseId: form.course,
-                lecturerId: form.lecturer,
-                type_id: form.type_id,
-                title: form.title,
-                academic_year: parseInt(form.program_year),
-                material_year: parseInt(form.material_year),
-                notes: form.description || undefined,
-                file: form.file!,
-            },
+            payload,
             { onSuccess: () => onOpenChange(false) }
         );
     };
@@ -262,283 +157,29 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
 
     const renderStep = () => {
         switch (step) {
-
             case 1:
-                return (
-                    <div className="space-y-5">
-                        <div className="space-y-1">
-                            <p className="text-white text-[15px] font-semibold">Which major is this file for?</p>
-                            <p className="text-white/35 text-[12px]">Select the academic major this material belongs to.</p>
-                        </div>
-                        <div className="space-y-3">
-                            <div className="space-y-2">
-                                <Label className="text-white/60 text-[12px]">Major</Label>
-                                <Select value={form.major} onValueChange={(v) => handleCascadeSelect("major", v)}>
-                                    <SelectTrigger className="liquid-glass-subtle h-11">
-                                        <SelectValue placeholder="Select a major...">
-                                            {form.major ? selectedMajor?.name ?? form.major : undefined}
-                                        </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-[220px] overflow-y-auto">
-                                        {majors?.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-white/60 text-[12px]">
-                                    Program Year <span className="text-red-400">*</span>
-                                </Label>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {PROGRAM_YEARS.map((y) => (
-                                        <button
-                                            key={y.id}
-                                            type="button"
-                                            disabled={!form.major}
-                                            onClick={() => handleCascadeSelect("program_year", form.program_year === y.id ? "" : y.id)}
-                                            className={`
-                                                py-2.5 rounded-xl text-[13px] font-medium border transition-all duration-200
-                                                disabled:opacity-30 disabled:pointer-events-none
-                                                ${form.program_year === y.id
-                                                    ? "bg-blue-500/20 border-blue-500/50 text-blue-300"
-                                                    : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.07]"
-                                                }
-                                            `}
-                                        >
-                                            {y.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-
+                return <StepMajor form={form} handleCascadeSelect={handleCascadeSelect} majors={majors} selectedMajor={selectedMajor} />;
             case 2:
-                return (
-                    <div className="space-y-5">
-                        <div className="space-y-1">
-                            <p className="text-white text-[15px] font-semibold">Select the course</p>
-                            <p className="text-white/35 text-[12px]">Optionally filter by semester first.</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <SummaryChip label="Major" value={selectedMajor?.name} />
-                            <SummaryChip label="Year" value={PROGRAM_YEARS.find(y => y.id === form.program_year)?.label} />
-                        </div>
-                        <div className="space-y-3">
-                            {semesterData.length > 0 && (
-                                <div className="space-y-2">
-                                    <Label className="text-white/60 text-[12px]">Semester <span className="text-white/25 font-normal">(optional)</span></Label>
-                                    <div className="flex gap-2">
-                                        {semesterData.map((s) => (
-                                            <button
-                                                key={s.id}
-                                                type="button"
-                                                onClick={() => handleCascadeSelect("semester", form.semester === s.id ? "" : s.id)}
-                                                className={`
-                                                    flex-1 py-2 rounded-xl text-[13px] font-medium border transition-all duration-200
-                                                    ${form.semester === s.id
-                                                        ? "bg-blue-500/20 border-blue-500/50 text-blue-300"
-                                                        : "bg-white/[0.04] border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.07]"
-                                                    }
-                                                `}
-                                            >
-                                                {s.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            <div className="space-y-2">
-                                <Label className="text-white/60 text-[12px]">
-                                    Course {loadingCourses && <Loader2 className="h-3 w-3 animate-spin inline ms-1" />}
-                                </Label>
-                                <Select value={form.course} onValueChange={(v) => handleCascadeSelect("course", v)} disabled={loadingCourses}>
-                                    <SelectTrigger className="liquid-glass-subtle h-11">
-                                        <SelectValue placeholder="Select a course...">
-                                            {selectedCourse ? `${selectedCourse.code} — ${selectedCourse.name}` : undefined}
-                                        </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-[240px] overflow-y-auto">
-                                        {filteredCourses?.map((c) => (
-                                            <SelectItem key={c.id} value={c.id}>{c.code} — {c.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </div>
-                );
-
+                return <StepCourse form={form} handleCascadeSelect={handleCascadeSelect} semesterData={semesterData} filteredCourses={filteredCourses} selectedMajor={selectedMajor} selectedCourse={selectedCourse} loadingCourses={loadingCourses} />;
             case 3:
-                return (
-                    <div className="space-y-5">
-                        <div className="space-y-1">
-                            <p className="text-white text-[15px] font-semibold">File details</p>
-                            <p className="text-white/35 text-[12px]">Tell us what this file is and who it's from.</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                            <SummaryChip label="Major" value={selectedMajor?.name} />
-                            <SummaryChip label="Course" value={selectedCourse ? `${selectedCourse.code} — ${selectedCourse.name}` : undefined} />
-                        </div>
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-2">
-                                    <Label className="text-white/60 text-[12px]">
-                                        Lecturer {loadingLecturers && <Loader2 className="h-3 w-3 animate-spin inline" />}
-                                    </Label>
-                                    <Select value={form.lecturer} onValueChange={(v) => set("lecturer", v)} disabled={loadingLecturers}>
-                                        <SelectTrigger className="liquid-glass-subtle h-11">
-                                            <SelectValue placeholder="Select...">
-                                                {form.lecturer ? selectedLecturer?.name ?? form.lecturer : undefined}
-                                            </SelectValue>
-                                        </SelectTrigger>
-                                        <SelectContent className="max-h-[200px] overflow-y-auto">
-                                            {lecturers?.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-white/60 text-[12px]">
-                                        Type {loadingTypes && <Loader2 className="h-3 w-3 animate-spin inline" />}
-                                    </Label>
-                                    <Select value={form.type_id} onValueChange={(v) => set("type_id", v)}>
-                                        <SelectTrigger className="liquid-glass-subtle h-11">
-                                            <SelectValue placeholder="Select...">
-                                                {form.type_id ? selectedType?.displayName ?? form.type_id : undefined}
-                                            </SelectValue>
-                                        </SelectTrigger>
-                                        <SelectContent className="max-h-[200px] overflow-y-auto">
-                                            {types?.map((t) => <SelectItem key={t.id} value={t.id}>{t.displayName}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div className="space-y-2">
-                                    <Label className="text-white/60 text-[12px]">Title</Label>
-                                    <Input
-                                        placeholder="e.g. Midterm Solutions"
-                                        value={form.title}
-                                        onChange={(e) => set("title", e.target.value)}
-                                        className="liquid-glass-subtle h-11"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-white/60 text-[12px]">
-                                        File Year <span className="text-red-400">*</span>
-                                        <span className="text-white/25 ms-1 font-normal">e.g. 2023</span>
-                                    </Label>
-                                    <Select value={form.material_year} onValueChange={(v) => set("material_year", v)}>
-                                        <SelectTrigger className="liquid-glass-subtle h-11">
-                                            <SelectValue placeholder="Year" />
-                                        </SelectTrigger>
-                                        <SelectContent className="max-h-[200px] overflow-y-auto">
-                                            {MATERIAL_YEARS.map((y) => <SelectItem key={y.id} value={y.id}>{y.label}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-white/60 text-[12px]">
-                                    Description <span className="text-white/25 font-normal">(optional)</span>
-                                </Label>
-                                <Textarea
-                                    placeholder="e.g. Week 5 Lecture Slides — covers chapters 3 and 4"
-                                    value={form.description}
-                                    onChange={(e) => set("description", e.target.value)}
-                                    className="liquid-glass-subtle resize-none h-20"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                );
-
+                return <StepDetails form={form} set={set} lecturers={lecturers} loadingLecturers={loadingLecturers} selectedLecturer={selectedLecturer} types={types} loadingTypes={loadingTypes} selectedType={selectedType} selectedMajor={selectedMajor} selectedCourse={selectedCourse} />;
             case 4:
-                return (
-                    <div className="space-y-5">
-                        <div className="space-y-1">
-                            <p className="text-white text-[15px] font-semibold">Upload your file</p>
-                            <p className="text-white/35 text-[12px]">PDF, PPTX, DOCX, JPG or PNG — max 25 MB.</p>
-                        </div>
-                        {/* Full summary before committing */}
-                        <div className="flex flex-wrap gap-2">
-                            <SummaryChip label="Major" value={selectedMajor?.name} />
-                            <SummaryChip label="Course" value={selectedCourse?.code} />
-                            <SummaryChip label="Lecturer" value={selectedLecturer?.name} />
-                            <SummaryChip label="Type" value={selectedType?.displayName} />
-                            <SummaryChip label="Year" value={form.material_year} />
-                            <SummaryChip label="Title" value={form.title} />
-                        </div>
-                        {/* Drop zone */}
-                        <label className={`
-                            relative flex flex-col items-center justify-center gap-3
-                            border-2 border-dashed rounded-2xl p-8 cursor-pointer transition-all duration-200
-                            ${form.file
-                                ? "border-blue-500/50 bg-blue-500/10"
-                                : "border-white/[0.1] bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
-                            }
-                        `}>
-                            <input
-                                type="file"
-                                accept=".pdf,.pptx,.ppt,.docx,.jpg,.jpeg,.png"
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                onChange={(e) => {
-                                    const f = e.target.files?.[0];
-                                    if (!f) return;
-                                    const err = validateFile(f);
-                                    if (err) {
-                                        setFileError(err);
-                                        setForm((prev) => ({ ...prev, file: null }));
-                                        return;
-                                    }
-                                    setFileError("");
-                                    setForm((prev) => ({ ...prev, file: f }));
-                                }}
-                            />
-                            {form.file ? (
-                                <>
-                                    <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
-                                        <Check className="h-5 w-5 text-blue-400" />
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-[13px] text-white font-medium">{form.file.name}</p>
-                                        <p className="text-[11px] text-white/30 mt-0.5">
-                                            {(form.file.size / 1024 / 1024).toFixed(2)} MB — click to change
-                                        </p>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center">
-                                        <UploadCloud className="h-5 w-5 text-white/30" />
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-[13px] text-white/60">Drag & drop or click to browse</p>
-                                        <p className="text-[11px] text-white/25 mt-0.5">PDF, PPTX, DOCX, JPG, PNG</p>
-                                    </div>
-                                </>
-                            )}
-                        </label>
-                        {fileError && (
-                            <p className="text-red-400 text-[12px] mt-1">{fileError}</p>
-                        )}
-                    </div>
-                );
-
-            default: return null;
+                return <StepUpload form={form} setForm={setForm} fileError={fileError} setFileError={setFileError} selectedMajor={selectedMajor} selectedCourse={selectedCourse} selectedLecturer={selectedLecturer} selectedType={selectedType} />;
+            default:
+                return null;
         }
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-transparent border-0 shadow-none">
-                <div className="liquid-glass rounded-2xl border border-white/[0.08] p-6">
+                <div className="liquid-glass rounded-2xl border border-border p-6">
 
                     <DialogHeader className="mb-5">
-                        <DialogTitle className="text-white text-[18px] font-display font-bold">
+                        <DialogTitle className="text-foreground text-[18px] font-display font-bold">
                             Submit a File
                         </DialogTitle>
-                        <DialogDescription className="text-white/35 text-[13px]">
+                        <DialogDescription className="text-muted-foreground/70 text-[13px]">
                             Step {step} of {STEPS.length}
                         </DialogDescription>
                     </DialogHeader>
@@ -547,17 +188,17 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                     <StepperBar current={step} />
 
                     {/* Step content — fixed min-height prevents modal resize between steps */}
-                    <div className="min-h-[260px]">
+                    <div className={`min-h-[260px] transition-opacity ${isSubmitting ? "pointer-events-none opacity-60" : ""}`}>
                         {renderStep()}
                     </div>
 
                     {/* Navigation */}
-                    <div className="flex items-center justify-between pt-5 mt-5 border-t border-white/[0.06]">
+                    <div className="flex items-center justify-between pt-5 mt-5 border-t border-border">
                         <button
                             type="button"
                             onClick={() => setStep((s) => Math.max(1, s - 1))}
-                            disabled={step === 1}
-                            className="text-[13px] px-4 py-2 rounded-xl border border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-colors disabled:opacity-0 disabled:pointer-events-none"
+                            disabled={step === 1 || isSubmitting}
+                            className={`text-[13px] px-4 py-2 rounded-xl border border-border text-muted-foreground hover:text-foreground/70 hover:bg-foreground/5 transition-colors disabled:pointer-events-none ${step === 1 ? "opacity-0" : isSubmitting ? "opacity-50" : ""}`}
                         >
                             Back
                         </button>
@@ -566,7 +207,8 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                             <button
                                 type="button"
                                 onClick={handleSubmit}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                                disabled={!canProceed() || isSubmitting}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-foreground text-[13px] font-semibold hover:bg-blue-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
                                 {isSubmitting
                                     ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Submitting...</>
@@ -578,7 +220,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
                                 type="button"
                                 onClick={() => setStep((s) => s + 1)}
                                 disabled={!canProceed()}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-foreground text-[13px] font-semibold hover:bg-blue-500 transition-colors disabled:opacity-40 disabled:pointer-events-none"
                             >
                                 Next
                                 <ChevronRight className="h-3.5 w-3.5" />

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { format, isToday, addDays } from "date-fns";
 import type { Task } from "@/features/dashboard/hooks/useTasks";
@@ -41,6 +41,38 @@ interface DragState {
     duration?: number;
     /** For "move" drags: distance (in hours) between mouse and the block's leading edge at grab time. */
     grabOffsetHours?: number;
+}
+
+interface MoveGhostBlockProps {
+    task: Task;
+    dragState: DragState;
+    colorMap: Map<string, number>;
+    totalSlots: number;
+    MIN_HOUR: number;
+}
+
+function MoveGhostBlock({ task, dragState, colorMap, totalSlots, MIN_HOUR }: MoveGhostBlockProps) {
+    const color = getBlockColor(task.title, colorMap);
+    const ghostStart = dragState.startHour;
+    const ghostEnd = ghostStart + task.duration;
+    const leftPercent = ((ghostStart - MIN_HOUR) / totalSlots) * 100;
+    const widthPercent = (task.duration / totalSlots) * 100;
+    return (
+        <div
+            className={`absolute top-1.5 bottom-1.5 rounded-lg ${color.bg} ${color.border} border flex items-center px-2 gap-1.5 overflow-hidden pointer-events-none z-30 ring-2 ring-foreground/20 shadow-2xl shadow-black/40 scale-[1.02]`}
+            style={{ '--ghost-left': `${leftPercent}%`, '--ghost-width': `${widthPercent}%`, left: 'var(--ghost-left)', width: 'var(--ghost-width)' } as React.CSSProperties}
+        >
+            <div className="flex-shrink-0 w-4 h-4 rounded-full border-2 border-border/200" />
+            <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[12px] font-display font-semibold text-foreground truncate leading-tight">
+                    {task.title}
+                </span>
+                <span className="text-[10px] text-foreground/80 truncate">
+                    {formatHour(ghostStart)}–{formatHour(ghostEnd)}
+                </span>
+            </div>
+        </div>
+    );
 }
 
 export interface LearningPlanProps {
@@ -91,7 +123,9 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
     const nowFraction = (currentHour + currentMinutes / 60 - MIN_HOUR) / totalSlots;
     const showNowLine = dayOffset === 0 && nowFraction >= 0 && nowFraction <= 1;
 
-    const colorMap = new Map<string, number>();
+    const colorMapRef = useRef(new Map<string, number>());
+    colorMapRef.current.clear();
+    const colorMap = colorMapRef.current;
 
     const tasksByDate = new Map<string, Task[]>();
     for (const task of incompleteTasks) {
@@ -210,30 +244,30 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
     return (
         <div className="liquid-glass rounded-2xl overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <div>
-                    <h3 className="text-[18px] font-display font-bold text-white">
+                    <h3 className="text-[18px] font-display font-bold text-foreground">
                         Learning Plan
                     </h3>
-                    <p className="text-[11px] text-white/25 mt-0.5">Drag on a row to add a task — drag a block to move it</p>
+                    <p className="text-[11px] text-muted-foreground/50 mt-0.5">Drag on a row to add a task — drag a block to move it</p>
                 </div>
                 <div className="flex items-center gap-1">
                     <button
                         onClick={() => setDayOffset(p => p - DAYS_VISIBLE)}
-                        className="w-11 h-11 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                        className="w-11 h-11 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground/70 hover:bg-foreground/5 transition-all"
                         aria-label="Previous days"
                     >
                         <ChevronLeft className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
                     </button>
                     <button
                         onClick={() => setDayOffset(0)}
-                        className="text-[12px] text-white/40 hover:text-white/70 px-4 py-2 sm:px-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-md hover:bg-white/[0.06] transition-all"
+                        className="text-[12px] text-muted-foreground hover:text-foreground/70 px-4 py-2 sm:px-2 sm:py-1 min-h-[44px] sm:min-h-0 rounded-md hover:bg-foreground/5 transition-all"
                     >
                         Today
                     </button>
                     <button
                         onClick={() => setDayOffset(p => p + DAYS_VISIBLE)}
-                        className="w-11 h-11 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
+                        className="w-11 h-11 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground/70 hover:bg-foreground/5 transition-all"
                         aria-label="Next days"
                     >
                         <ChevronRight className="h-5 w-5 sm:h-3.5 sm:w-3.5" />
@@ -248,7 +282,7 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
                     <div className="grid gap-0 [grid-template-columns:60px_repeat(15,1fr)]">
                         <div /> {/* Spacer for day label column */}
                         {hours.map(h => (
-                            <div key={h} className="text-[11px] text-white/30 text-center pb-3 font-medium">
+                            <div key={h} className="text-[11px] text-muted-foreground/50 text-center pb-3 font-medium">
                                 {h === 0 ? "12:00 am" : h < 12 ? `${h}:00 am` : h === 12 ? "12:00 pm" : `${h - 12}:00 pm`}
                             </div>
                         ))}
@@ -273,10 +307,10 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
                         return (
                             <div
                                 key={dateStr}
-                                className="grid gap-0 border-t border-white/[0.04] min-h-[52px] [grid-template-columns:60px_repeat(15,1fr)]"
+                                className="grid gap-0 border-t border-border min-h-[52px] [grid-template-columns:60px_repeat(15,1fr)]"
                             >
                                 {/* Day Label */}
-                                <div className={`flex items-center text-[13px] font-medium pr-3 ${isTodayRow ? "text-blue-400" : "text-white/40"
+                                <div className={`flex items-center text-[13px] font-medium pr-3 ${isTodayRow ? "text-blue-400" : "text-muted-foreground"
                                     }`}>
                                     {dayLabel}
                                 </div>
@@ -292,7 +326,7 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
                                     {/* Grid lines */}
                                     <div className="absolute inset-0 grid pointer-events-none [grid-template-columns:repeat(15,1fr)]">
                                         {hours.map(h => (
-                                            <div key={h} className="border-l border-white/[0.04] h-full" />
+                                            <div key={h} className="border-l border-border h-full" />
                                         ))}
                                     </div>
 
@@ -339,7 +373,7 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${task.completed
                                                             ? 'bg-white/90 border-white/90'
-                                                            : 'border-white/50 hover:border-white/80 hover:bg-white/10'
+                                                            : 'border-border/200 hover:border-white/80 hover:bg-foreground/10'
                                                         }`}
                                                     aria-label={task.completed ? 'Mark incomplete' : 'Mark complete'}
                                                 >
@@ -348,11 +382,11 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
                                                     )}
                                                 </button>
                                                 <div className="flex flex-col justify-center min-w-0">
-                                                    <span className={`text-[12px] font-display font-semibold text-white truncate leading-tight ${task.completed ? 'line-through' : ''}`}>
+                                                    <span className={`text-[12px] font-display font-semibold text-foreground truncate leading-tight ${task.completed ? 'line-through' : ''}`}>
                                                         {task.title}
                                                     </span>
                                                     {task.duration >= 1.5 && (
-                                                        <span className="text-[10px] text-white/60 truncate">
+                                                        <span className="text-[10px] text-foreground/60 truncate">
                                                             {formatHour(task.startHour)}–{formatHour(endHour)}
                                                         </span>
                                                     )}
@@ -363,29 +397,9 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
 
                                     {/* Drag Ghost Preview (for "move"): shows where the task will land.
                                         Rendered only in the destination row at the cursor's snap point. */}
-                                    {movingTask && dragState?.mode === "move" && dragState.dateStr === dateStr && (() => {
-                                        const color = getBlockColor(movingTask.title, colorMap);
-                                        const ghostStart = dragState.startHour;
-                                        const ghostEnd = ghostStart + movingTask.duration;
-                                        const leftPercent = ((ghostStart - MIN_HOUR) / totalSlots) * 100;
-                                        const widthPercent = (movingTask.duration / totalSlots) * 100;
-                                        return (
-                                            <div
-                                                className={`absolute top-1.5 bottom-1.5 rounded-lg ${color.bg} ${color.border} border flex items-center px-2 gap-1.5 overflow-hidden pointer-events-none z-30 ring-2 ring-white/60 shadow-2xl shadow-black/40 scale-[1.02]`}
-                                                style={{ '--ghost-left': `${leftPercent}%`, '--ghost-width': `${widthPercent}%`, left: 'var(--ghost-left)', width: 'var(--ghost-width)' } as React.CSSProperties}
-                                            >
-                                                <div className="flex-shrink-0 w-4 h-4 rounded-full border-2 border-white/50" />
-                                                <div className="flex flex-col justify-center min-w-0">
-                                                    <span className="text-[12px] font-display font-semibold text-white truncate leading-tight">
-                                                        {movingTask.title}
-                                                    </span>
-                                                    <span className="text-[10px] text-white/80 truncate">
-                                                        {formatHour(ghostStart)}–{formatHour(ghostEnd)}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })()}
+                                    {movingTask && dragState?.mode === "move" && dragState.dateStr === dateStr && (
+                                        <MoveGhostBlock task={movingTask} dragState={dragState} colorMap={colorMap} totalSlots={totalSlots} MIN_HOUR={MIN_HOUR} />
+                                    )}
                                 </div>
                             </div>
                         );

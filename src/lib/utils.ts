@@ -6,8 +6,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const isMac = navigator.platform.toUpperCase().includes("MAC") ||
-  navigator.userAgent.includes("Mac")
+export const isMac = typeof window !== 'undefined' && typeof navigator !== 'undefined'
+  ? navigator.platform.toUpperCase().includes("MAC") || navigator.userAgent.includes("Mac")
+  : false;
 
 /** Returns a time-of-day greeting. Accepts an optional hour for testability. */
 export function getGreeting(hour: number = new Date().getHours()): string {

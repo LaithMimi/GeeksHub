@@ -121,13 +121,13 @@ export function DataTable<TData, TValue>({
         <div className="space-y-4">
             {/* Selection info */}
             {selectedCount > 0 && (
-                <div className="text-sm text-white/60">
+                <div className="text-sm text-foreground/60">
                     {selectedCount} of {table.getFilteredRowModel().rows.length} row(s) selected.
                 </div>
             )}
 
             {/* Table */}
-            <div className="rounded-md border border-white/[0.06] bg-black/20">
+            <div className="rounded-md border border-border bg-black/20">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -152,7 +152,7 @@ export function DataTable<TData, TValue>({
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
                                     onClick={() => onRowClick?.(row.original)}
-                                    className={onRowClick ? "cursor-pointer hover:bg-white/[0.06]" : ""}
+                                    className={onRowClick ? "cursor-pointer hover:bg-foreground/5" : ""}
                                 >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id}>
@@ -180,7 +180,7 @@ export function DataTable<TData, TValue>({
 
             {/* Pagination */}
             <div className="flex items-center justify-between px-2">
-                <div className="text-sm text-white/60">
+                <div className="text-sm text-foreground/60">
                     Page {table.getState().pagination.pageIndex + 1} of{" "}
                     {table.getPageCount()}
                 </div>

@@ -36,7 +36,7 @@ interface ValidationErrorItem {
  * Handles FastAPI's `{ detail: string | { msg } | [{ msg }] }` envelope plus
  * Auth0's `{ error_description }` payload. No string parsing.
  */
-function extractAuthErrorMessage(err: unknown, fallback: string): string {
+export function extractAuthErrorMessage(err: unknown, fallback: string): string {
     if (!(err instanceof ApiError)) {
         return err instanceof Error ? err.message : fallback;
     }

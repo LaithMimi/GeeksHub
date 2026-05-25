@@ -45,21 +45,21 @@ export default function CourseShell() {
     return (
         <div className="animate-fade-in">
             {/* Course Header */}
-            <div className={`relative overflow-hidden rounded-xl bg-gradient-to-r ${course.color || "from-gray-500 to-gray-600"} p-6 mb-6 text-white`}>
+            <div className={`relative overflow-hidden rounded-xl bg-gradient-to-r ${course.color || "from-gray-500 to-gray-600"} p-6 mb-6 text-foreground`}>
                 <div className="absolute inset-0 bg-black/10" />
                 <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                        <Badge variant="secondary" className="bg-foreground/20 text-foreground border-0">
                             <GraduationCap className="h-3 w-3 mr-1" />
                             {course.code}
                         </Badge>
-                        <span className="text-white/80 text-sm">{course.term}</span>
+                        <span className="text-foreground/80 text-sm">{course.term}</span>
                     </div>
                     <h1 className="text-2xl font-bold">{course.name}</h1>
                 </div>
 
                 {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
+                <div className="absolute top-0 right-0 w-48 h-48 bg-foreground/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
             </div>
 
             {/* Course Navigation */}

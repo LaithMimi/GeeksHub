@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,6 +111,7 @@ export default function ResetPasswordForm() {
                         className="h-10"
                         required
                         autoFocus
+                        disabled={isLoading}
                     />
                 </div>
                 <div className="space-y-2">
@@ -121,6 +122,7 @@ export default function ResetPasswordForm() {
                         type="password"
                         className="h-10"
                         required
+                        disabled={isLoading}
                     />
                 </div>
             </div>

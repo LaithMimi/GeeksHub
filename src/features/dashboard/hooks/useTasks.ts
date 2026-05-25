@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     listMyTasks,
     createTask,
@@ -8,6 +8,7 @@ import {
     type CreateTaskPayload,
     type PatchTaskPayload,
 } from "@/features/dashboard/api/taskService";
+import { queryKeys } from "@/lib/queryKeys";
 
 export type { Task };
 
@@ -15,7 +16,7 @@ export type { Task };
 
 export const useTasksQuery = () =>
     useQuery({
-        queryKey: ["my-tasks"],
+        queryKey: queryKeys.tasks.all(),
         queryFn: listMyTasks,
         staleTime: 0,
         refetchOnWindowFocus: true,
@@ -25,7 +26,7 @@ export const useCreateTask = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: createTask,
-        onSuccess: () => qc.invalidateQueries({ queryKey: ["my-tasks"] }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tasks.all() }),
     });
 };
 
@@ -34,7 +35,7 @@ export const useToggleTask = () => {
     return useMutation({
         mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
             updateTask(id, { completed }),
-        onSuccess: () => qc.invalidateQueries({ queryKey: ["my-tasks"] }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tasks.all() }),
     });
 };
 
@@ -43,7 +44,7 @@ export const useUpdateTask = () => {
     return useMutation({
         mutationFn: ({ id, patch }: { id: string; patch: PatchTaskPayload }) =>
             updateTask(id, patch),
-        onSuccess: () => qc.invalidateQueries({ queryKey: ["my-tasks"] }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tasks.all() }),
     });
 };
 
@@ -51,7 +52,7 @@ export const useDeleteTask = () => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: deleteTask,
-        onSuccess: () => qc.invalidateQueries({ queryKey: ["my-tasks"] }),
+        onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.tasks.all() }),
     });
 };
 

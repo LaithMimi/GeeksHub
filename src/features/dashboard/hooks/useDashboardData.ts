@@ -31,6 +31,17 @@ export function useDashboardData(
     allCourses: Course[] | undefined,
     allMajors: Major[] | undefined,
 ) {
+    const requestsByCourseId = useMemo(() => {
+        const m = new Map<string, { total: number; approved: number }>();
+        for (const r of requests ?? []) {
+            const entry = m.get(r.courseId) ?? { total: 0, approved: 0 };
+            entry.total++;
+            if (r.status === "approved") entry.approved++;
+            m.set(r.courseId, entry);
+        }
+        return m;
+    }, [requests]);
+
     const recentCourses = useMemo<RecentCourseSummary[]>(() => {
         const out: RecentCourseSummary[] = [];
         const seen = new Set<string>();
@@ -42,14 +53,9 @@ export function useDashboardData(
 
             const course = allCourses?.find(c => c.id === file.courseId);
 
-            const approvedForCourse = (requests ?? []).filter(
-                r => r.courseId === file.courseId && r.status === "approved"
-            ).length;
-            const totalForCourse = (requests ?? []).filter(
-                r => r.courseId === file.courseId
-            ).length;
-            const progress = totalForCourse > 0
-                ? Math.round((approvedForCourse / totalForCourse) * 100)
+            const stats = requestsByCourseId.get(file.courseId) ?? { total: 0, approved: 0 };
+            const progress = stats.total > 0
+                ? Math.round((stats.approved / stats.total) * 100)
                 : 0;
 
             const majorName = allMajors?.find(m => m.id === course?.majorId)?.name ?? course?.majorId;
@@ -65,7 +71,7 @@ export function useDashboardData(
             if (out.length >= 3) break;
         }
         return out;
-    }, [recentFiles, requests, allCourses, allMajors]);
+    }, [recentFiles, requestsByCourseId, allCourses, allMajors]);
 
     const weeklyActivity = useMemo<WeeklyActivityBar[]>(() => {
         const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });

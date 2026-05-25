@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import { authService, type AuthUserDTO } from "@/features/auth/api/authService";
 import { SESSION_KEY } from "@/lib/constants";
 import { ApiError } from "@/lib/apiClient";
@@ -115,8 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 isLoading: false,
                 error: null,
             });
-        } catch (err: any) {
-            setState((s) => ({ ...s, isLoading: false, error: err.message || "An error occurred" }));
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "An error occurred";
+            setState((s) => ({ ...s, isLoading: false, error: message }));
             throw err;
         }
     }, []);
@@ -128,8 +129,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // email verification is required first.
             await authService.signUp({ name, email, password, passwordConfirm: confirmPassword, majorId });
             setState((s) => ({ ...s, isLoading: false }));
-        } catch (err: any) {
-            setState((s) => ({ ...s, isLoading: false, error: err.message || "An error occurred" }));
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "An error occurred";
+            setState((s) => ({ ...s, isLoading: false, error: message }));
             throw err;
         }
     }, []);
@@ -159,4 +161,14 @@ export function useAuth(): AuthContextValue {
     const ctx = useContext(AuthContext);
     if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
     return ctx;
+}
+
+export function useIsAdmin(): boolean {
+    const { user } = useAuth();
+    return user?.role === "admin" || user?.role === "super_admin";
+}
+
+export function useIsSuperAdmin(): boolean {
+    const { user } = useAuth();
+    return user?.role === "super_admin";
 }

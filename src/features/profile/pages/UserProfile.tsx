@@ -162,7 +162,7 @@ export default function UserProfile() {
                                                 </span>
                                             </div>
                                         </TooltipTrigger>
-                                        <TooltipContent side="bottom" className="text-xs bg-amber-500 border-amber-500 text-white font-medium">
+                                        <TooltipContent side="bottom" className="text-xs bg-amber-500 border-amber-500 text-foreground font-medium">
                                             Earn XP by completing courses and contributing files!
                                         </TooltipContent>
                                     </Tooltip>
@@ -179,7 +179,7 @@ export default function UserProfile() {
                                                 <span className="text-3xl font-light font-display text-foreground capitalize tracking-tight group-hover:text-violet-500 transition-colors">{reputation?.badge || activity?.badgeTier || "Newcomer"}</span>
                                             </div>
                                         </TooltipTrigger>
-                                        <TooltipContent side="bottom" className="text-xs bg-violet-500 border-violet-500 text-white font-medium">
+                                        <TooltipContent side="bottom" className="text-xs bg-violet-500 border-violet-500 text-foreground font-medium">
                                             Keep uploading to unlock Silver and Gold ranks.
                                         </TooltipContent>
                                     </Tooltip>
@@ -236,7 +236,7 @@ export default function UserProfile() {
                             {uploads && uploads.length > 0 ? (
                                 <div className="flex flex-col -mx-4">
                                     {uploads.slice(0, 5).map(req => (
-                                        <div key={req.id} className="px-4 py-3 flex items-center justify-between border-b border-border/50 last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                                        <div key={req.id} className="px-4 py-3 flex items-center justify-between border-b border-border/50 last:border-0 hover:bg-black/[0.02] dark:hover:bg-foreground/5 transition-colors">
                                             <div className="flex flex-col gap-0.5 truncate pr-4">
                                                 <span className="text-sm font-medium text-foreground truncate">{req.title}</span>
                                                 <span className="text-xs text-muted-foreground truncate">{req.courseName || req.courseId}</span>
@@ -312,7 +312,7 @@ export default function UserProfile() {
                                         </DialogTrigger>
                                         <button
                                             onClick={handleSignOut}
-                                            className="px-5 py-2 rounded-lg bg-rose-500/90 text-white hover:bg-rose-600 text-sm font-medium transition-all w-full sm:w-auto shadow-sm"
+                                            className="px-5 py-2 rounded-lg bg-rose-500/90 text-foreground hover:bg-rose-600 text-sm font-medium transition-all w-full sm:w-auto shadow-sm"
                                         >
                                             Sign out securely
                                         </button>

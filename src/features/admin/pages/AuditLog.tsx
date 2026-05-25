@@ -55,17 +55,17 @@ export default function AuditLog() {
         <div className="space-y-6">
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-display font-bold tracking-tight flex items-center gap-2 text-white">
+                <h1 className="text-2xl font-display font-bold tracking-tight flex items-center gap-2 text-foreground">
                     <FileSearch className="h-6 w-6" />
                     Audit Log
                 </h1>
-                <p className="text-white/60 mt-1">
+                <p className="text-foreground/60 mt-1">
                     Immutable record of all moderation decisions.
                 </p>
             </div>
 
             {/* Content */}
-            <Card className="glass-card bg-transparent border-white/[0.06] text-white">
+            <Card className="glass-card bg-transparent border-border text-foreground">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <History className="h-5 w-5" />
@@ -83,19 +83,19 @@ export default function AuditLog() {
                             <Skeleton className="h-10 w-full" />
                         </div>
                     ) : error ? (
-                        <div className="text-center py-8 text-white/60">
+                        <div className="text-center py-8 text-foreground/60">
                             Failed to load audit logs.
                         </div>
                     ) : !logs || logs.length === 0 ? (
                         <div className="text-center py-12">
-                            <FileSearch className="h-12 w-12 mx-auto text-white/30 mb-4" />
+                            <FileSearch className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                             <h3 className="text-lg font-medium">No audit logs yet</h3>
-                            <p className="text-white/60 mt-1">
+                            <p className="text-foreground/60 mt-1">
                                 Audit entries will appear here after you approve or reject requests.
                             </p>
                         </div>
                     ) : (
-                        <div className="rounded-md border border-white/[0.06] bg-black/20">
+                        <div className="rounded-md border border-border bg-black/20">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -111,7 +111,7 @@ export default function AuditLog() {
                                         const config = actionConfig[log.action];
                                         return (
                                             <TableRow key={log.id}>
-                                                <TableCell className="text-sm text-white/60">
+                                                <TableCell className="text-sm text-foreground/60">
                                                     {formatDate(log.timestamp, "MMM d, yyyy h:mm:ss a")}
                                                 </TableCell>
                                                 <TableCell>
@@ -128,7 +128,7 @@ export default function AuditLog() {
                                                 <TableCell>
                                                     {log.actorName}
                                                 </TableCell>
-                                                <TableCell className="text-sm text-white/60 max-w-[200px] truncate">
+                                                <TableCell className="text-sm text-foreground/60 max-w-[200px] truncate">
                                                     {formatDetails(log) || "—"}
                                                 </TableCell>
                                             </TableRow>

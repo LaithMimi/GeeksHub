@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * CATALOG QUERY HOOKS
  * ============================================================================
@@ -50,13 +50,15 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
+import type { Course, Lecturer, Major, Semester } from "@/types/domain";
+import { queryKeys } from "@/lib/queryKeys";
 import { listMajors, listYears, listSemesters, listCourses, listLecturers, getCourse, listTypes } from "@/features/courses/api/catalogService";
 
 /**
  * Fetches all majors. Cached indefinitely as majors rarely change.
  */
 export const useMajors = () => useQuery({
-    queryKey: ['majors'],
+    queryKey: queryKeys.catalog.majors(),
     queryFn: listMajors,
     staleTime: Infinity // Static data - adjust if majors can change
 });
@@ -87,7 +89,7 @@ export const useSemesters = (majorId?: string) => useQuery({
  * @param filters - Filter by majorId, yearId, semesterId
  */
 export const useCourses = (filters: Parameters<typeof listCourses>[0]) => useQuery({
-    queryKey: ['courses', filters],
+    queryKey: queryKeys.catalog.courses(filters),
     queryFn: () => listCourses(filters),
     enabled: Object.keys(filters).length === 0 || !!filters.majorId
 });
@@ -107,7 +109,7 @@ export const useCourse = (courseId: string) => useQuery({
  * @param filters - Filter by courseId
  */
 export const useLecturers = (filters: Parameters<typeof listLecturers>[0]) => useQuery({
-    queryKey: ['lecturers', filters],
+    queryKey: queryKeys.catalog.lecturers(filters),
     queryFn: () => listLecturers(filters),
     enabled: !!filters.courseId
 });
@@ -116,7 +118,7 @@ export const useLecturers = (filters: Parameters<typeof listLecturers>[0]) => us
  * Fetches all material types.
  */
 export const useTypes = () => useQuery({
-    queryKey: ['types'],
+    queryKey: queryKeys.catalog.types(),
     queryFn: listTypes,
     staleTime: Infinity 
 });

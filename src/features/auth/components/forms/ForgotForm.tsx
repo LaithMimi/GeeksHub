@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authService } from "@/features/auth/api/authService";
@@ -65,6 +65,7 @@ export default function ForgotForm({ onBack }: ForgotFormProps) {
                     className="h-10"
                     required
                     autoFocus
+                    disabled={isLoading}
                 />
             </div>
 
@@ -80,7 +81,8 @@ export default function ForgotForm({ onBack }: ForgotFormProps) {
             <button
                 type="button"
                 onClick={onBack}
-                className="flex items-center text-sm text-muted-foreground mt-4 hover:text-primary transition-colors bg-transparent border-none cursor-pointer"
+                className="flex items-center text-sm text-muted-foreground mt-4 hover:text-primary transition-colors bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
             >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Sign In
