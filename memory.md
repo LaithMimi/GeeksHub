@@ -10,6 +10,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
+<<<<<<< HEAD
 ## 1.0 Highlights of Recent Updates (May 25, 2026 — Latest)
 
 ### Settings & Notifications Refactor (May 25)
@@ -158,6 +159,9 @@ A detailed implementation plan for a `/moderator` route was created at [`moderat
 ---
 
 ## 1.2.1 Highlights of Past Updates (Late May 2026)
+=======
+## 1.1 Highlights of Recent Updates (Late May 2026)
+>>>>>>> worktree-memory-update
 
 - **Frontend Cleanliness Audit + 3-Phase Cleanup (May 22):** Full senior-engineer code review producing a 6.1/10 baseline score, followed by a four-phase incremental refactor. All changes verified via `tsc --noEmit`, `vitest run` (18/18 passing), `eslint .` (45 issues — down from 58 baseline), and `vite build`. No behavior changes intended; pure cleanup.
 
@@ -196,7 +200,11 @@ A detailed implementation plan for a `/moderator` route was created at [`moderat
 
 ---
 
+<<<<<<< HEAD
 ## 1.3 Highlights of Past Updates (Mid May 2026 — May 18)
+=======
+## 1.2 Highlights of Recent Updates (Mid May 2026 — May 18)
+>>>>>>> worktree-memory-update
 
 - **Tasks Backend Fully Implemented (May 18):** Full CRUD API for user learning-plan tasks brought live.
   - **`server/models.py`**: Added `UserTask` SQLModel table with fields: `id` (UUID PK), `user_id` (FK → users), `title`, `date` (`"YYYY-MM-DD"` string — avoids TZ issues), `start_hour` (float, 0.5-step resolution), `duration` (float hours), `priority` (`"normal"` | `"high"` | `"urgent"`), `completed` (bool), `created_at`. Composite index on `(user_id, date)` for fast per-user day queries.
@@ -215,7 +223,11 @@ A detailed implementation plan for a `/moderator` route was created at [`moderat
 
 ---
 
+<<<<<<< HEAD
 ## 1.4 Highlights of Past Updates (Late March 2026)
+=======
+## 1.3 Highlights of Recent Updates (Late March 2026)
+>>>>>>> worktree-memory-update
 - **Cyber-Neon UI Overhaul:** Rebranded the entire application to a high-contrast Deep Teal and Cyan global aesthetic, deprecating local hardcoded properties and archaic light-mode hacks. 
 - **UUID Exposure Fixes:** Refactored `Dashboard.tsx` and `Recent.tsx` to stop exposing raw Postgres UUIDs to the end user. Implemented a "resolve-on-render" pattern utilizing existing highly-cached TanStack catalog queries (`useMajors`, `useCourses`) to dynamically map UUIDs to human-readable names.
 - **Accessibility & Modal Polish:** Repaired massive breakage on the Dashboard "New Task" modal, stripping legacy `liquid-glass-heavy` hacks destroying Tailwind transform matrices. Achieved full a11y compliance and React render loop optimizations on the modal.
@@ -266,6 +278,7 @@ src/
 ├── main.tsx                    # Entry point: ErrorBoundary → AuthProvider → ThemeProvider → QueryClientProvider → Router
 ├── index.css                   # Global styles + Liquid Glass design system tokens
 ├── types/domain.ts             # All TypeScript domain interfaces (User, Course, File, FileRequest, etc.)
+<<<<<<< HEAD
 │
 ├── app/
 │   ├── layouts/
@@ -361,6 +374,86 @@ src/
 └── test/
     ├── setup.ts                # Vitest + MSW + jest-dom bootstrap
     └── mocks/                  # handlers.ts, server.ts
+=======
+├── services/                   # Service layer — ALL migrated to live API calls
+│   ├── authService.ts          # Real fetch calls to /api/v1/signin, /api/v1/signup. Fully typed (AuthUserDTO, etc.)
+│   ├── taskService.ts          # ✅ calls /me/tasks (list, create, update, delete). Typed Task, CreateTaskPayload, PatchTaskPayload.
+│   ├── fileService.ts          # ✅ calls /files, /reputation/leaderboard, /me/recent-files
+│   ├── catalogService.ts       # ✅ calls /majors, /types, /years, /semesters, /courses, /lecturers
+│   ├── requestService.ts       # ✅ calls /courses/{id}/upload, /me/requests, /admin/requests/*
+│   ├── reputationService.ts    # ✅ calls /me/reputation
+│   ├── assistantService.ts     # ✅ calls /assistant/chat, /me/notes
+│   └── auditService.ts         # ✅ calls /admin/audit-logs
+├── queries/                    # TanStack Query hooks (thin wrappers over services)
+│   ├── useFiles.ts             # useFiles, useFile, useTopContributors, useRecentFiles
+│   ├── useCatalog.ts           # useMajors, useYears, useSemesters, useCourses, useLecturers
+│   ├── useRequests.ts          # useMyRequests, useAllRequests, useApproveRequest, etc.
+│   ├── useReputation.ts        # useReputation
+│   └── useAudit.ts             # useAuditLogs
+├── hooks/                      # React hooks
+│   ├── useTasks.ts             # Learning plan tasks via TanStack Query (list, create, toggle, update, delete). Wrapper exposes { tasks, taskDates, addTask, toggleTask, moveTask, deleteTask }.
+│   ├── useDashboardData.ts     # Memoized dashboard derivations (recentCourses, weeklyActivity). Exports DAY_LABELS.
+│   ├── useViewerSession.ts     # PDF viewer heartbeat + completion tracking (uses isCompletedRef to avoid stale-closure re-renders).
+│   ├── usePinnedCourses.ts     # Pinned course IDs (localStorage) — backend migration still pending.
+│   ├── useTheme.tsx            # Theme provider + useTheme hook (light/dark/system)
+│   ├── useReducedMotion.ts     # Accessibility: prefers-reduced-motion
+│   ├── use-mobile.tsx          # Breakpoint detection (768px)
+│   └── __tests__/              # Hook tests (useTasks.test.tsx — 4 tests using MSW)
+├── context/
+│   └── AuthContext.tsx          # Auth state (user, signIn, signUp, signOut). Persists to localStorage via SESSION_KEY.
+├── lib/
+│   ├── apiClient.ts            # Centralized fetch wrapper. Exports api, apiFetch, ApiError, snakeToCamel.
+│   ├── router.tsx              # All route definitions. Loadable<T> generic typed (no more (props: any)).
+│   ├── constants.ts            # Shared constants. SESSION_KEY = "gh_user_session".
+│   ├── utils.ts                # cn (Tailwind merge), isMac, getGreeting, formatDeadline, formatHour.
+│   └── __tests__/              # Utility tests (utils.test.ts — 14 tests).
+├── test/                       # Test infrastructure
+│   ├── setup.ts                # Vitest setup — wires up MSW server lifecycle + jest-dom matchers.
+│   └── mocks/                  # MSW handlers + server (handlers.ts, server.ts).
+├── components/
+│   ├── dashboard/              # Dashboard sub-components extracted from Dashboard.tsx (May 22 refactor)
+│   │   ├── LearningPlan.tsx    # 7-day schedule, drag-to-create, drag-to-move with shadow/ghost UX, H:MM time labels
+│   │   ├── MiniCalendar.tsx    # Month-view calendar with task-date dots
+│   │   └── AddTaskModal.tsx    # New-task dialog. Accepts arbitrary durations injected from drag.
+│   ├── pages/                  # Route-level page components
+│   │   ├── Dashboard.tsx       # Composition root only (~580 lines, down from 1,127). Wires hooks and sub-components.
+│   │   ├── Courses.tsx         # Course browser with cascading filters
+│   │   ├── CourseMaterials.tsx # File listing for a course (materials tab)
+│   │   ├── CourseNotes.tsx     # File listing for a course (notes tab)
+│   │   ├── CourseExams.tsx     # File listing for a course (exams tab)
+│   │   ├── UserUploads.tsx     # User's file requests + upload form
+│   │   ├── Recent.tsx          # Recently viewed files page
+│   │   ├── Settings.tsx        # User settings (theme, language, notifications)
+│   │   ├── MyPath.tsx          # Placeholder learning path page
+│   │   ├── NotFound.tsx        # 404 page
+│   │   └── admin/
+│   │       ├── AdminHome.tsx   # Admin dashboard with request stats
+│   │       ├── ModerationQueue.tsx  # Approve/reject file requests
+│   │       └── AuditLog.tsx    # Audit trail viewer
+│   ├── layout/                 # Shell layouts (sidebar, header, content)
+│   │   ├── AppShell.tsx        # Main app shell with sidebar
+│   │   ├── AdminShell.tsx      # Admin area shell
+│   │   ├── CourseShell.tsx     # Course detail shell (tabs: materials/notes/exams)
+│   │   └── FileShell.tsx       # File viewer shell (simplified passthrough layout)
+│   ├── pages/
+│   │   └── FilePage.tsx        # Bridges FileViewer + AssistantPanel + selectedText state
+│   ├── viewer/
+│   │   └── FileViewer.tsx      # react-pdf viewer with text selection tooltip ("Ask AI")
+│   ├── auth/                   # Auth UI components
+│   │   ├── SlidingAuth.tsx     # Sign-in / sign-up sliding panel
+│   │   ├── AuthCard.tsx        # Auth card wrapper
+│   │   ├── AuthLayout.tsx      # Auth page layout
+│   │   ├── useAuthMode.ts      # Auth mode state (sign-in vs sign-up)
+│   │   └── forms/              # SignInForm, SignUpForm, ForgotPasswordForm, ResetPasswordForm
+│   ├── features/
+│   │   └── RequestFileModal.tsx # Upload file request modal
+│   ├── routing/
+│   │   └── ProtectedRoute.tsx  # Auth + role guard
+│   ├── errors/
+│   │   └── RouteError.tsx      # Error boundary for routes
+│   ├── ErrorBoundary.tsx       # Top-level error boundary
+│   └── ui/                     # Shadcn/ui primitives (27 files — do not modify)
+>>>>>>> worktree-memory-update
 
 server/
 ├── main.py                     # FastAPI app entry point. Registers all routers.
@@ -449,6 +542,7 @@ Centralized HTTP client used by all service files.
 ### Critical
 1. **Backend approval flow bug**: `POST /api/v1/admin/requests/{id}/approve` deletes file metadata instead of persisting it to a `files` table. Approved files are lost.
 2. **Many P0 backend endpoints missing**: See `BACKEND_TASKS.md` §14. Frontend calls are wired up but the backend doesn't serve them yet (years, semesters, files, requests, etc.).
+<<<<<<< HEAD
 
 ### Security (Partially Mitigated — May 25)
 3. **VULN-08 — CSRF in production**: Backend sets `samesite="none"` in production (`server/routers/auth.py`). Frontend sends `credentials: "include"`. This disables SameSite CSRF protection. Backend must switch to `samesite="lax"` or `"strict"`, or add CSRF tokens on state-changing admin endpoints.
@@ -472,6 +566,21 @@ Centralized HTTP client used by all service files.
 17. ~~**Admin role check client-side only (VULN-01)**~~: ✅ RESOLVED (May 25) — `AuthContext` now calls `/me` on boot and overwrites cached role with server-authoritative value.
 18. ~~**`JSON.parse` session data unguarded (VULN-03)**~~: ✅ RESOLVED (May 25) — `readStoredSession()` in `AuthContext` wraps parse in try/catch.
 19. ~~**No 401/session-expiry handling (QA-04)**~~: ✅ RESOLVED (May 25) — `apiClient` intercepts 401s and redirects to `/auth`.
+=======
+
+### Medium
+3. **`MyPath.tsx` is a placeholder**: The learning path page has no real content.
+4. **Course metadata hardcoded in Dashboard**: `COURSE_META` map in `Dashboard.tsx` duplicates data.
+5. ~~**`requestPasswordReset` is mock-only**~~: ✅ RESOLVED (May 22) — both `requestPasswordReset` and `confirmPasswordReset` now hit real `/forgot-password` and `/reset-password` endpoints.
+6. **`usePinnedCourses` still localStorage-only**: No backend sync. Pins are device-local. Migration plan is in the file's header comment but the endpoint hasn't landed.
+7. **Pre-existing `any` types in services**: `fileService.ts`, `requestService.ts`, `gamificationService.ts`, `learningPathService.ts` still use `any` in places. `authService.ts` is fully typed as of May 22.
+
+### Low / Polish
+8. ~~**`listTopContributors` calls `/reputation/leaderboard`**~~: ✅ RESOLVED — endpoint now live (Phase 2).
+9. ~~**Adobe PDF Embed API key hardcoded**~~: FileViewer now uses `react-pdf` instead.
+10. ~~**Mock data remnants**~~: ✅ RESOLVED — `mock-db.ts` deleted, all services and components fully migrated.
+11. ~~**Tasks were localStorage-only**~~: ✅ RESOLVED (May 18) — tasks fully backed by `/me/tasks` backend API.
+>>>>>>> worktree-memory-update
 
 ---
 
