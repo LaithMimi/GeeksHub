@@ -49,7 +49,29 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.2 Highlights of Recent Updates (Mid May 2026 — May 18)
+## 1.2 Highlights of Recent Updates (May 29 2026)
+
+- **P4 Backend + Frontend Completed (May 29):** All remaining localStorage-only features migrated to live API endpoints.
+
+  **User Settings (`/me/settings`):**
+  - New `UserSettings` table (1:1 with users, auto-created on first GET with defaults).
+  - `GET /api/v1/me/settings` + `PATCH /api/v1/me/settings` — stores language, defaultMajorId, defaultYearId, notifyNewMaterials, notifyAdminUpdates, reduceMotion, compactMode.
+  - `src/features/settings/services/settingsService.ts` (new). `Settings.tsx` loads from API on mount, debounces PATCH 600ms after each change, falls back to localStorage if API unreachable.
+
+  **Pinned Courses (`/me/pinned-courses`):**
+  - New `PinnedCourse` table (composite PK: user_id + course_id).
+  - `GET`, `POST /{course_id}`, `DELETE /{course_id}` endpoints in `server/routers/pinned_courses.py`.
+  - `usePinnedCourses.ts` rewritten with TanStack Query + optimistic updates. Public API (`pinnedIds`, `togglePin`, `isPinned`) unchanged — no component edits needed.
+
+  **Notifications (`/me/notifications`):**
+  - New `UserNotification` table (`id`, `user_id`, `title`, `message`, `read`, `created_at`).
+  - `GET /me/notifications`, `GET /me/notifications/unread-count` (polled every 30s), `PATCH /me/notifications/{id}/read`, `PATCH /me/notifications/read-all`.
+  - Backend creates notifications for the uploader inside `approve_file` and `reject_request` in `admin.py`.
+  - `useInAppNotifications.ts` rewritten with TanStack Query. `addNotification` / `clearAll` removed — backend owns creation. `AppShell.tsx` updated (`timestamp` → `createdAt`). Stale `addNotification` calls removed from `useRequests.ts`.
+
+---
+
+## 1.3 Highlights of Recent Updates (Mid May 2026 — May 18)
 
 - **Tasks Backend Fully Implemented (May 18):** Full CRUD API for user learning-plan tasks brought live.
   - **`server/models.py`**: Added `UserTask` SQLModel table with fields: `id` (UUID PK), `user_id` (FK → users), `title`, `date` (`"YYYY-MM-DD"` string — avoids TZ issues), `start_hour` (float, 0.5-step resolution), `duration` (float hours), `priority` (`"normal"` | `"high"` | `"urgent"`), `completed` (bool), `created_at`. Composite index on `(user_id, date)` for fast per-user day queries.
@@ -68,7 +90,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.3 Highlights of Recent Updates (Late March 2026)
+## 1.4 Highlights of Recent Updates (Late March 2026)
 - **Cyber-Neon UI Overhaul:** Rebranded the entire application to a high-contrast Deep Teal and Cyan global aesthetic, deprecating local hardcoded properties and archaic light-mode hacks. 
 - **UUID Exposure Fixes:** Refactored `Dashboard.tsx` and `Recent.tsx` to stop exposing raw Postgres UUIDs to the end user. Implemented a "resolve-on-render" pattern utilizing existing highly-cached TanStack catalog queries (`useMajors`, `useCourses`) to dynamically map UUIDs to human-readable names.
 - **Accessibility & Modal Polish:** Repaired massive breakage on the Dashboard "New Task" modal, stripping legacy `liquid-glass-heavy` hacks destroying Tailwind transform matrices. Achieved full a11y compliance and React render loop optimizations on the modal.
@@ -290,7 +312,7 @@ Centralized HTTP client used by all service files.
 3. **`MyPath.tsx` is a placeholder**: The learning path page has no real content.
 4. **Course metadata hardcoded in Dashboard**: `COURSE_META` map in `Dashboard.tsx` duplicates data.
 5. ~~**`requestPasswordReset` is mock-only**~~: ✅ RESOLVED (May 22) — both `requestPasswordReset` and `confirmPasswordReset` now hit real `/forgot-password` and `/reset-password` endpoints.
-6. **`usePinnedCourses` still localStorage-only**: No backend sync. Pins are device-local. Migration plan is in the file's header comment but the endpoint hasn't landed.
+6. ~~**`usePinnedCourses` still localStorage-only**~~: ✅ RESOLVED (May 29) — pinned courses fully backed by `/me/pinned-courses` API with optimistic updates.
 7. **Pre-existing `any` types in services**: `fileService.ts`, `requestService.ts`, `gamificationService.ts`, `learningPathService.ts` still use `any` in places. `authService.ts` is fully typed as of May 22.
 
 ### Low / Polish

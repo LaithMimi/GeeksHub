@@ -271,8 +271,8 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 
 | Method | Endpoint | Description | Status |
 |--------|----------|-------------|--------|
-| `GET` | `/api/v1/me/settings` | Get user preferences | 🔴 |
-| `PATCH` | `/api/v1/me/settings` | Update user preferences | 🔴 |
+| `GET` | `/api/v1/me/settings` | Get user preferences | ✅ |
+| `PATCH` | `/api/v1/me/settings` | Update user preferences | ✅ |
 
 ---
 
@@ -282,13 +282,13 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 
 | Method | Endpoint | Description | Status |
 |--------|----------|-------------|--------|
-| `GET` | `/api/v1/me/tasks` | List user tasks | 🟡 |
-| `POST` | `/api/v1/me/tasks` | Create task | 🟡 |
-| `PATCH` | `/api/v1/me/tasks/{id}` | Toggle/edit task | 🟡 |
-| `DELETE` | `/api/v1/me/tasks/{id}` | Delete task | 🟡 |
-| `GET` | `/api/v1/me/pinned-courses` | Get pinned courses | 🟡 |
-| `POST` | `/api/v1/me/pinned-courses/{courseId}` | Pin course | 🟡 |
-| `DELETE` | `/api/v1/me/pinned-courses/{courseId}` | Unpin course | 🟡 |
+| `GET` | `/api/v1/me/tasks` | List user tasks | ✅ |
+| `POST` | `/api/v1/me/tasks` | Create task | ✅ |
+| `PATCH` | `/api/v1/me/tasks/{id}` | Toggle/edit task | ✅ |
+| `DELETE` | `/api/v1/me/tasks/{id}` | Delete task | ✅ |
+| `GET` | `/api/v1/me/pinned-courses` | Get pinned courses | ✅ |
+| `POST` | `/api/v1/me/pinned-courses/{courseId}` | Pin course | ✅ |
+| `DELETE` | `/api/v1/me/pinned-courses/{courseId}` | Unpin course | ✅ |
 
 ### Implementation Notes
 - **Tasks Payload:** When bridging the `/api/v1/me/tasks` POST endpoint, the frontend sends the following schema:
@@ -305,14 +305,14 @@ audit_logs(id UUID PK, timestamp TIMESTAMP, actor_id UUID FK, actor_name TEXT, a
 
 ---
 
-## 13. Notifications (🟡 Not Yet Built)
+## 13. Notifications (✅ Completed May 29)
 
 | Method | Endpoint | Description | Status |
 |--------|----------|-------------|--------|
-| `GET` | `/api/v1/me/notifications` | List notifications | 🟡 |
-| `GET` | `/api/v1/me/notifications/unread-count` | Badge count | 🟡 |
-| `PATCH` | `/api/v1/me/notifications/{id}/read` | Mark as read | 🟡 |
-| `PATCH` | `/api/v1/me/notifications/read-all` | Mark all read | 🟡 |
+| `GET` | `/api/v1/me/notifications` | List notifications | ✅ |
+| `GET` | `/api/v1/me/notifications/unread-count` | Badge count | ✅ |
+| `PATCH` | `/api/v1/me/notifications/{id}/read` | Mark as read | ✅ |
+| `PATCH` | `/api/v1/me/notifications/read-all` | Mark all read | ✅ |
 
 ---
 
