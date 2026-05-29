@@ -9,12 +9,13 @@
  * ============================================================================
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Monitor, Globe, CheckCircle, Sun, Moon, Laptop, Palette, Sparkles, BookOpen, Bell } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useMajors, useYears } from "@/features/courses/hooks/useCatalog";
+import { getSettings, updateSettings, type SettingsPatch } from "../services/settingsService";
 
 // Language Options
 const languages = [
@@ -28,49 +29,69 @@ export default function Settings() {
     const { data: majors = [] } = useMajors();
     const { data: years = [] } = useYears();
 
-    const [language, setLanguage] = useState(() => localStorage.getItem("language") || "en");
-    const [defaultMajor, setDefaultMajor] = useState(() => localStorage.getItem("geekshub-default-major") || "none");
-    const [defaultYear, setDefaultYear] = useState(() => localStorage.getItem("geekshub-default-year") || "none");
-    const [notifications, setNotifications] = useState(() => {
-        try {
-            const saved = localStorage.getItem("geekshub-notifications");
-            if (saved) return JSON.parse(saved);
-        } catch (e) {}
-        return { newMaterials: false, adminUpdates: false };
-    });
-    const [reduceMotion, setReduceMotion] = useState(() => {
-        const saved = localStorage.getItem("geekshub-reduce-motion");
-        return saved === "true";
-    });
-    const [compactMode, setCompactMode] = useState(() => {
-        const saved = localStorage.getItem("geekshub-compact-mode");
-        return saved === "true";
-    });
+    const [language, setLanguage] = useState("en");
+    const [defaultMajor, setDefaultMajor] = useState("none");
+    const [defaultYear, setDefaultYear] = useState("none");
+    const [notifications, setNotifications] = useState({ newMaterials: false, adminUpdates: false });
+    const [reduceMotion, setReduceMotion] = useState(false);
+    const [compactMode, setCompactMode] = useState(false);
+
+    // Load from API once on mount; fall back to localStorage if the request fails.
+    useEffect(() => {
+        getSettings()
+            .then(s => {
+                setLanguage(s.language);
+                setDefaultMajor(s.defaultMajorId ?? "none");
+                setDefaultYear(s.defaultYearId != null ? String(s.defaultYearId) : "none");
+                setNotifications({ newMaterials: s.notifyNewMaterials, adminUpdates: s.notifyAdminUpdates });
+                setReduceMotion(s.reduceMotion);
+                setCompactMode(s.compactMode);
+            })
+            .catch(() => {
+                // Offline / not logged in — keep localStorage defaults
+                setLanguage(localStorage.getItem("language") || "en");
+                setDefaultMajor(localStorage.getItem("geekshub-default-major") || "none");
+                setDefaultYear(localStorage.getItem("geekshub-default-year") || "none");
+                try {
+                    const saved = localStorage.getItem("geekshub-notifications");
+                    if (saved) setNotifications(JSON.parse(saved));
+                } catch { /* ignore */ }
+                setReduceMotion(localStorage.getItem("geekshub-reduce-motion") === "true");
+                setCompactMode(localStorage.getItem("geekshub-compact-mode") === "true");
+            });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // Debounced API sync — fires 600 ms after the last change.
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        if (isFirstRender.current) { isFirstRender.current = false; return; }
+
+        const patch: SettingsPatch = {
+            language,
+            defaultMajorId: defaultMajor === "none" ? null : defaultMajor,
+            defaultYearId: defaultYear === "none" ? null : Number(defaultYear),
+            notifyNewMaterials: notifications.newMaterials,
+            notifyAdminUpdates: notifications.adminUpdates,
+            reduceMotion,
+            compactMode,
+        };
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => updateSettings(patch).catch(() => {}), 600);
+
+        return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    }, [language, defaultMajor, defaultYear, notifications, reduceMotion, compactMode]);
 
     // Apply CSS classes when toggles change
     useEffect(() => {
         document.body.classList.toggle("reduce-motion", reduceMotion);
-        localStorage.setItem("geekshub-reduce-motion", String(reduceMotion));
     }, [reduceMotion]);
 
     useEffect(() => {
-        localStorage.setItem("geekshub-default-major", defaultMajor);
-    }, [defaultMajor]);
-
-    useEffect(() => {
-        localStorage.setItem("geekshub-default-year", defaultYear);
-    }, [defaultYear]);
-
-    useEffect(() => {
-        localStorage.setItem("geekshub-notifications", JSON.stringify(notifications));
-        if (notifications.adminUpdates && "Notification" in window && Notification.permission === "default") {
-            Notification.requestPermission();
-        }
-    }, [notifications]);
-
-    useEffect(() => {
         document.body.classList.toggle("compact", compactMode);
-        localStorage.setItem("geekshub-compact-mode", String(compactMode));
     }, [compactMode]);
 
     useEffect(() => {
@@ -78,9 +99,14 @@ export default function Settings() {
         if (selectedLang) {
             document.documentElement.lang = selectedLang.code;
             document.documentElement.dir = selectedLang.dir;
-            localStorage.setItem("language", language);
         }
     }, [language]);
+
+    useEffect(() => {
+        if (notifications.adminUpdates && "Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+    }, [notifications.adminUpdates]);
 
     const themeOptions = [
         {

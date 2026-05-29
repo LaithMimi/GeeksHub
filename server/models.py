@@ -196,6 +196,28 @@ class MaterialChunk(SQLModel, table=True):
         ),
     )
 
+class PinnedCourse(SQLModel, table=True):
+    __tablename__ = "pinned_courses"
+
+    user_id: UUID = Field(foreign_key="users.id", primary_key=True)
+    course_id: UUID = Field(foreign_key="courses.id", primary_key=True)
+    pinned_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class UserSettings(SQLModel, table=True):
+    """One row per user — created on first GET with defaults."""
+    __tablename__ = "user_settings"
+
+    user_id: UUID = Field(foreign_key="users.id", primary_key=True)
+    language: str = Field(default="en")
+    default_major_id: Optional[UUID] = Field(default=None)
+    default_year_id: Optional[int] = Field(default=None)
+    notify_new_materials: bool = Field(default=False)
+    notify_admin_updates: bool = Field(default=False)
+    reduce_motion: bool = Field(default=False)
+    compact_mode: bool = Field(default=False)
+
+
 # Tasks
 class UserTask(SQLModel, table=True):
     """Personal learning-plan tasks created by a student."""

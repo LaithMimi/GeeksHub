@@ -132,6 +132,26 @@ class ChatMessage(BaseModel):
     role: str       # "user" or "assistant"
     content: str
 
+# --- Settings Payloads ---
+class SettingsResponse(BaseModel):
+    language: str
+    defaultMajorId: Optional[str]
+    defaultYearId: Optional[int]
+    notifyNewMaterials: bool
+    notifyAdminUpdates: bool
+    reduceMotion: bool
+    compactMode: bool
+
+class SettingsPatch(BaseModel):
+    language: Optional[str] = None
+    defaultMajorId: Optional[str] = None
+    defaultYearId: Optional[int] = None
+    notifyNewMaterials: Optional[bool] = None
+    notifyAdminUpdates: Optional[bool] = None
+    reduceMotion: Optional[bool] = None
+    compactMode: Optional[bool] = None
+
+
 # --- Tasks Payloads ---
 class TaskCreate(BaseModel):
     title: str

@@ -10,158 +10,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-<<<<<<< HEAD
-## 1.0 Highlights of Recent Updates (May 25, 2026 — Latest)
-
-### Settings & Notifications Refactor (May 25)
-
-A set of features focusing on user preferences and native notifications:
-- **Study Defaults (Major/Year):** Re-introduced default selections for Major and Year in the Settings page. This choice is saved locally and instantly applies as a default filter when the user opens the Course Library.
-- **In-App Notification Center:** Transformed the top-right Bell icon in `AppShell.tsx` into a fully functional `NotificationsMenu` dropdown with unread badges, timestamping, and a "Mark all as read" capability via a new `useInAppNotifications` local storage hook.
-- **Push Notification Integration:** Added preference toggles for "Request Updates" and "New Materials". Toggling these requests browser push notification permissions. Admin approval/rejection actions (`useRequests.ts`) now trigger native browser alerts alongside in-app toasts and bell menu items.
-- **UUID UI Leak Bug:** **[BUG]** Raw UUID strings were visible in the Course Library and Settings page dropdowns (e.g. `123e4567-...`) momentarily before the actual data names loaded from the backend. **[FIX]** Updated `GlassSelect` and dropdown implementations to use a safe `displayValue` prop which renders "Loading..." or placeholder text instead of exposing the raw UUID to the frontend.
-- **Privacy First:** Removed the drafted "Privacy & Cookies" section and its toggles from the Settings page. Audited the codebase and confirmed that GeeksHub employs zero third-party tracking, analytics, or marketing cookies, relying purely on essential `localStorage` configs.
-
-### Assistant Panel Polish & Bug Fixes (May 25)
-
-A series of targeted fixes to improve the AI Assistant's UX and reliability:
-- **Light Mode UI Fix:** The Assistant Panel, Chat, and Notes Board were previously hardcoded to dark colors. These were migrated to use semantic design tokens (`liquid-glass-heavy`, `bg-foreground/5`) so they properly adapt to Light Mode.
-- **Chat History Persistence:** Assistant chats are now saved to `localStorage` (keyed by `fileId`). Chat history is fully preserved across page refreshes and when navigating between different files.
-- **Notes Board Truncation Bug:** **[BUG]** Long AI responses were being artificially truncated to 220 characters when pinned to the Notes Board. **[FIX]** Removed the truncation limit entirely and added a scrollbar (`max-h-[200px] overflow-y-auto`) to the `StickyCard` component, allowing full messages to be pinned without breaking the grid layout.
-- **Pin to Notes Mounting Bug:** **[BUG]** Clicking "Pin to notes" from the chat tab did nothing because the Radix `TabsContent` unmounted the inactive Notes tab from the DOM, causing `notesBoardRef.current` to be null. **[FIX]** Added `forceMount={true}` to the `TabsContent` components in `AssistantPanel.tsx` so the Notes board stays mounted in the background and can reliably receive pinned notes.
-- **Cookie Consent Audit:** Investigated adding a Cookie Consent banner for compliance. After a full codebase audit, confirmed GeeksHub uses **zero** third-party tracking, analytics, or marketing tools. The platform is entirely privacy-first, relying only on essential mechanisms like `localStorage` for UI preferences. The drafted banner was removed to keep the codebase clean.
-
-
-### Frontend Cleanliness & CSS Token Refactor (May 25)
-
-A comprehensive four-phase architectural and cleanliness refactor was completed to address massive monolithic files, lack of tests, and hardcoded CSS values.
-
-**Phase 1 — Quick Wins & Infrastructure:**
-- Extracted shared components (`CommandPalette`, `EmptyState`, `PriorityBadge`) to `@/shared/components/`.
-- Created `queryKeys.ts` to centralize TanStack Query cache keys.
-- Fixed SSR hydration mismatches by extracting `isMac` to `constants.ts`.
-
-**Phase 2 — Test Safety Net:**
-- Configured Vitest + MSW with comprehensive handlers in `src/test/mocks/handlers.ts`.
-- Wrote pure logic tests (`useDashboardData.test.ts`, `authService.test.ts`) and critical component integration tests (`Dashboard.test.tsx`, `RequestFileModal.test.tsx`).
-
-**Phase 3 — Structural Refactors:**
-- **Dashboard Hooks:** Optimized `useDashboardData` from O(n²) array filtering to an O(n) `Map` lookup.
-- **LearningPlan Instability:** Fixed a major re-render bug with `colorMap` by shifting to `useRef`.
-- **RequestFileModal:** Broke down the ~600-line monolith into a central `useRequestForm` hook and 4 step subcomponents (`StepMajor`, `StepCourse`, `StepDetails`, `StepUpload`).
-- **AssistantPanel:** Split into `AssistantChat.tsx` and `NotesBoard.tsx`, extracting shared logic to `useDebounce.ts`.
-- **Auth Hardening:** Replaced `any` catch blocks with strict `instanceof Error` checks and created `useIsAdmin()`/`useIsSuperAdmin()` session helpers.
-- **Viewer Telemetry:** Extracted window event listeners out of `useViewerSession` into `useActivityTracker`.
-
-**Phase 4 — CSS Token Migration:**
-- Migrated all hardcoded `text-white/xx` and `bg-white/xx` tailwind classes across 37 files to semantic design tokens (`text-foreground/80`, `bg-foreground/5`).
-- Deleted the 200+ line manual `.light` override block from `index.css`, fully enforcing native CSS variable theme inversion.
-- Standardized interactive cards to use `hover:glow-*` utilities instead of manual border opacities.
-
-### Learning Plan Drag-and-Drop UX & Performance Fixes (May 25)
-
-Fixed critical bugs in the Learning Plan component related to task interactions and responsiveness:
-- **Click vs. Dragging Reliability Bug:** Clicking a task to open the details modal was failing intermittently because a `pointer-events-none` CSS class was applied immediately on `mousedown`. If the React render batched before `mouseup`, the click event was dropped. The fix shifted the click-to-open logic into the row-level global `mouseup` handler (`handleMouseUp` in `LearningPlan.tsx`) so it robustly handles quick clicks without any drag movement.
-- **Missing Optimistic Updates:** Dragging a task or adding a new one caused a noticeable delay because the UI was waiting for the server roundtrip to complete before updating. Added full `onMutate` optimistic update handlers to all four mutations in `useTasks.ts` (`useCreateTask`, `useUpdateTask`, `useToggleTask`, `useDeleteTask`) to provide instant UI feedback and vastly improve perceived performance.
-
----
-
-## 1.1 Highlights of Past Updates (May 25, 2026)
-
-### Frontend QA & Security Audit + Remediation (May 25)
-
-A full security and quality audit was run against all frontend source files (see [`frontend_qa_security_report.md`](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/frontend_qa_security_report.md)). The audit found 10 vulnerabilities (1 CRITICAL, 2 HIGH, 5 MEDIUM, 2 LOW) and 11 QA issues. A remediation pass was completed the same day. All 18 existing unit tests pass and `tsc --noEmit` is clean after the pass.
-
-**Vulnerabilities fixed:**
-
-| ID | Issue | Severity | Status |
-|----|-------|----------|--------|
-| VULN-01 | Client-side role check controls admin access | CRITICAL | ✅ Fixed |
-| VULN-02 | Full user object in plain-text localStorage | HIGH | 🟡 Mitigated (backend-gated) |
-| VULN-03 | No try/catch around `JSON.parse` of session | HIGH | ✅ Fixed |
-| VULN-04 | Reset token exposed in URL query param | MEDIUM | 🟡 Partial (backend link change needed) |
-| VULN-05 | No file size validation on upload | MEDIUM | ✅ Fixed |
-| VULN-06 | `fileId` interpolated into URLs unencoded | MEDIUM | ✅ Fixed |
-| VULN-07 | XSS risk in `RichContent` renderer | MEDIUM | ✅ Hardened |
-| VULN-08 | CSRF gap during cookie migration | MEDIUM | 🔧 Backend-only |
-| VULN-09 | Full chat history sent every AI message | LOW | ✅ Fixed |
-| VULN-10 | `console.error` leaks errors in production | LOW | ✅ Fixed |
-
-**Key code changes made during remediation:**
-
-- **`AuthContext.tsx`**: Added `readStoredSession()` — wraps `JSON.parse` in try/catch, validates `id` and `role` fields, clears corrupted entries. Added boot `/me` call via `authService.getMe()` to overwrite the cached `role` with the server-authoritative value before protected routes are trusted (fixes VULN-01 + VULN-03).
-- **`apiClient.ts`**: Added `handleUnauthorized(path)` — on any `401` response from `api()` or `apiFetch()`, clears session from both storages and redirects to `/auth`. Auth endpoints (`/signin`, `/signup`, `/me`, etc.) are excluded to avoid a redirect loop on failed logins (fixes QA-04).
-- **`logger.ts`** (new file at `src/lib/logger.ts`): Thin prod-safe logger — `logger.error`/`logger.warn` only forward to console when `import.meta.env.DEV` is true; stub comment for Sentry wiring in prod (fixes VULN-10). Used in `authService.ts` and `useViewerSession.ts`.
-- **`assistantService.ts`**: History truncated to last 10 messages (`history.slice(-MAX_HISTORY_MESSAGES)`) before sending. `fileId` / `fileTitle` interpolated via `URLSearchParams` (fixes VULN-09 + VULN-06).
-- **`FileViewer.tsx`**: Stream path `fileId` wrapped in `encodeURIComponent` (fixes VULN-06).
-- **`RequestFileModal.tsx`**: Added `validateFile()` helper with `MAX_FILE_SIZE` (25 MB) and `ALLOWED_EXTENSIONS` constants. File validated on selection and on submit. Added `fileError` state rendered inline. `handleCascadeSelect` now resets `form.file` when upstream fields change. Upload `onError` surfaces the actual `ApiError.message` (fixes VULN-05, QA-01, QA-02, QA-07).
-- **`AssistantPanel.tsx`**: Added `maxLength={2000}` to chat textarea, `maxLength={500}` to notes textarea. Explicit security comment on `RichContent` warning it must never use `dangerouslySetInnerHTML` (fixes QA-05, QA-06, VULN-07).
-- **`ResetPasswordForm.tsx`**: Now reads token from URL fragment (`#token=`) first, falls back to `?token=`. Non-breaking; full fix needs backend email template update (partial fix for VULN-04).
-- **`authService.ts` / `SignUpForm.tsx` / `AuthContext.tsx`**: Threaded real `confirmPassword` through the `signUp()` call chain — was sending `password` as both fields (fixes QA-10).
-- **`useRequests.ts`**: Upload `onError` now surfaces the real backend error message.
-- **`useViewerSession.ts`**: `console.error` replaced with `logger.error`.
-
-**Still pending (backend / deferred):**
-- VULN-08 (CSRF): Backend uses `samesite="none"` in prod — needs switching to `lax`/`strict`.
-- VULN-04 (full): Auth0 reset email template must emit `#token=` fragment links.
-- VULN-02 (full): Fully resolved only when HttpOnly-cookie migration removes the need for localStorage identity caching.
-- QA-09: Confirm with backend whether `activeSeconds` is cumulative or per-heartbeat.
-- QA-03 / QA-11 (viewer race conditions): Deferred to avoid destabilizing the PDF viewer without manual testing.
-
----
-
-### Moderator Dashboard Plan (May 23)
-
-A detailed implementation plan for a `/moderator` route was created at [`moderator_dashboard_plan.md`](file:///c:/Users/Lenovo/Documents/Programming%20projects/GeeksHub/moderator_dashboard_plan.md). This is a **plan only** — not yet implemented.
-
-**Planned scope:**
-- New `MODERATOR` role gating: `ProtectedRoute` extended from `requiredRole?: Role` → `requiredRoles?: Role[]`
-- New `/moderator` route tree with `ModeratorShell` (mirrors `AdminShell`, amber badge instead of red)
-- Pages: `ModeratorHome` (KPI stats), `UsersPage` (CRUD users + role assignment), `LecturersPage` (two-panel: lecturer list + course assignment combobox), `CoursesPage` (CRUD courses)
-- New backend router: `server/routers/moderator.py` at `/api/v1/moderator/*`, gated by new `get_moderator_user` dependency
-- New DB table: `LecturerCourse` many-to-many junction (lecturer ↔ course assignment)
-- New frontend service: `src/features/moderator/api/moderatorService.ts` + `hooks/useModerator.ts`
-
-**Status: Not yet implemented. Tracked in `moderator_dashboard_plan.md`.**
-
----
-
-## 1.2 Highlights of Past Updates (Late May 2026 — May 25)
-
-- **Frontend Refactored to Feature-First Architecture (May 25):** Full structural reorganization of `src/` from a type-first layout (flat `hooks/`, `services/`, `components/pages/`) to a feature-sliced / feature-first layout. Build (`✓ 4.28s`), tests (18/18), and behavior are identical — pure structural move.
-
-  **Key changes:**
-  - **`src/features/`** introduced with 9 domain slices: `auth`, `dashboard`, `courses`, `files`, `admin`, `gamification`, `assistant`, `profile`, `settings`. Each slice owns its `api/`, `components/`, `hooks/`, and `pages/`.
-  - **`src/app/`** now holds bootstrap concerns: `layouts/` (AppShell, AdminShell, CourseShell, FileShell) and `router/index.tsx` (was `lib/router.tsx`).
-  - **`src/shared/`** introduced for cross-feature code: `components/` (ErrorBoundary, RouteError, ProtectedRoute, MouseGlow, NotFound) and `hooks/` (useTheme, use-mobile, useReducedMotion).
-  - **`src/components/ui/`** and **`src/lib/`** stayed in place — shadcn CLI targets `@/components/ui` and every generated component imports `@/lib/utils`, so moving them would require touching 20+ generated files.
-  - **`src/hooks/`**, **`src/services/`**, **`src/context/`**, and **`src/components/` sub-folders** (except `ui/`) are all deleted — everything colocated inside the relevant feature slice.
-  - **`components.json`** updated: `"hooks"` alias changed from `@/hooks` to `@/shared/hooks` (the old path no longer exists).
-  - **57 files moved** via `git mv` (history preserved), **47 files had import paths updated** automatically.
-  - **All imports use `@/` alias** throughout; no relative `../` cross-boundary imports remain.
-
-  **Import path reference (old → new):**
-  | Old | New |
-  |-----|-----|
-  | `@/context/AuthContext` | `@/features/auth/context/AuthContext` |
-  | `@/services/authService` | `@/features/auth/api/authService` |
-  | `@/hooks/useTasks` | `@/features/dashboard/hooks/useTasks` |
-  | `@/hooks/useCatalog` | `@/features/courses/hooks/useCatalog` |
-  | `@/hooks/useFiles` | `@/features/files/hooks/useFiles` |
-  | `@/hooks/useRequests` | `@/features/files/hooks/useRequests` |
-  | `@/hooks/useAudit` | `@/features/admin/hooks/useAudit` |
-  | `@/hooks/useLearningPath` | `@/features/gamification/hooks/useLearningPath` |
-  | `@/hooks/useTheme` | `@/shared/hooks/useTheme` |
-  | `@/components/layout/AppShell` | `@/app/layouts/AppShell` |
-  | `@/components/ErrorBoundary` | `@/shared/components/ErrorBoundary` |
-  | `@/lib/router` | `@/app/router` |
-
----
-
-## 1.2.1 Highlights of Past Updates (Late May 2026)
-=======
 ## 1.1 Highlights of Recent Updates (Late May 2026)
->>>>>>> worktree-memory-update
 
 - **Frontend Cleanliness Audit + 3-Phase Cleanup (May 22):** Full senior-engineer code review producing a 6.1/10 baseline score, followed by a four-phase incremental refactor. All changes verified via `tsc --noEmit`, `vitest run` (18/18 passing), `eslint .` (45 issues — down from 58 baseline), and `vite build`. No behavior changes intended; pure cleanup.
 
@@ -200,11 +49,7 @@ A detailed implementation plan for a `/moderator` route was created at [`moderat
 
 ---
 
-<<<<<<< HEAD
-## 1.3 Highlights of Past Updates (Mid May 2026 — May 18)
-=======
 ## 1.2 Highlights of Recent Updates (Mid May 2026 — May 18)
->>>>>>> worktree-memory-update
 
 - **Tasks Backend Fully Implemented (May 18):** Full CRUD API for user learning-plan tasks brought live.
   - **`server/models.py`**: Added `UserTask` SQLModel table with fields: `id` (UUID PK), `user_id` (FK → users), `title`, `date` (`"YYYY-MM-DD"` string — avoids TZ issues), `start_hour` (float, 0.5-step resolution), `duration` (float hours), `priority` (`"normal"` | `"high"` | `"urgent"`), `completed` (bool), `created_at`. Composite index on `(user_id, date)` for fast per-user day queries.
@@ -223,11 +68,7 @@ A detailed implementation plan for a `/moderator` route was created at [`moderat
 
 ---
 
-<<<<<<< HEAD
-## 1.4 Highlights of Past Updates (Late March 2026)
-=======
 ## 1.3 Highlights of Recent Updates (Late March 2026)
->>>>>>> worktree-memory-update
 - **Cyber-Neon UI Overhaul:** Rebranded the entire application to a high-contrast Deep Teal and Cyan global aesthetic, deprecating local hardcoded properties and archaic light-mode hacks. 
 - **UUID Exposure Fixes:** Refactored `Dashboard.tsx` and `Recent.tsx` to stop exposing raw Postgres UUIDs to the end user. Implemented a "resolve-on-render" pattern utilizing existing highly-cached TanStack catalog queries (`useMajors`, `useCourses`) to dynamically map UUIDs to human-readable names.
 - **Accessibility & Modal Polish:** Repaired massive breakage on the Dashboard "New Task" modal, stripping legacy `liquid-glass-heavy` hacks destroying Tailwind transform matrices. Achieved full a11y compliance and React render loop optimizations on the modal.
@@ -278,103 +119,6 @@ src/
 ├── main.tsx                    # Entry point: ErrorBoundary → AuthProvider → ThemeProvider → QueryClientProvider → Router
 ├── index.css                   # Global styles + Liquid Glass design system tokens
 ├── types/domain.ts             # All TypeScript domain interfaces (User, Course, File, FileRequest, etc.)
-<<<<<<< HEAD
-│
-├── app/
-│   ├── layouts/
-│   │   ├── AppShell.tsx        # Main app shell — collapsible glass sidebar, breadcrumbs, command palette
-│   │   ├── AdminShell.tsx      # Admin area shell with admin sidebar
-│   │   ├── CourseShell.tsx     # Course detail shell (materials / notes / exams tabs)
-│   │   └── FileShell.tsx       # File viewer shell
-│   └── router/
-│       └── index.tsx           # All route definitions. Loadable<T> lazy wrapper.
-│
-├── features/
-│   ├── auth/
-│   │   ├── api/authService.ts          # /signin, /signup, /signout, /me, /forgot-password, /reset-password. Fully typed.
-│   │   ├── context/AuthContext.tsx     # Auth state (user, signIn, signUp, signOut). Persists via SESSION_KEY.
-│   │   ├── hooks/useAuthMode.ts        # Sign-in vs sign-up panel toggle state
-│   │   ├── components/                 # AuthCard, AuthLayout, SlidingAuth, forms/
-│   │   └── pages/                      # AuthPage, ResetPasswordPage
-│   │
-│   ├── dashboard/
-│   │   ├── api/taskService.ts          # /me/tasks CRUD. Exports Task, CreateTaskPayload, PatchTaskPayload.
-│   │   ├── hooks/useTasks.ts           # TanStack Query wrapper. Exposes { tasks, taskDates, addTask, toggleTask, moveTask, deleteTask }.
-│   │   ├── hooks/useDashboardData.ts   # Memoized recentCourses + weeklyActivity derivations. Exports DAY_LABELS.
-│   │   ├── hooks/__tests__/            # useTasks.test.tsx — 4 tests (MSW)
-│   │   ├── components/
-│   │   │   ├── LearningPlan.tsx        # 7-day schedule, drag-to-create, drag-to-move, H:MM labels
-│   │   │   ├── MiniCalendar.tsx        # Month calendar with task-date dots
-│   │   │   └── AddTaskModal.tsx        # New-task dialog; accepts arbitrary durations from drag
-│   │   └── pages/Dashboard.tsx         # Composition root (~580 lines). Wires all hooks + sub-components.
-│   │
-│   ├── courses/
-│   │   ├── api/catalogService.ts       # /majors, /types, /years, /semesters, /courses, /lecturers
-│   │   ├── hooks/useCatalog.ts         # useMajors, useYears, useSemesters, useCourses, useCourse, useLecturers
-│   │   ├── hooks/usePinnedCourses.ts   # Pinned course IDs (localStorage — backend sync pending)
-│   │   └── pages/                      # Courses, CourseMaterials, CourseNotes, CourseExams
-│   │
-│   ├── files/
-│   │   ├── api/fileService.ts          # /files, /files/{id}, /me/recent-files, /reputation/leaderboard
-│   │   ├── api/requestService.ts       # /courses/{id}/upload, /me/requests, /admin/requests/*
-│   │   ├── hooks/useFiles.ts           # useFiles, useFile, useTopContributors, useRecentFiles
-│   │   ├── hooks/useRequests.ts        # useMyRequests, useAllRequests, useApproveRequest, etc.
-│   │   ├── hooks/useViewerSession.ts   # PDF heartbeat + completion tracking (isCompletedRef guards stale closure)
-│   │   ├── components/FileViewer.tsx   # react-pdf viewer with text selection tooltip ("Ask AI")
-│   │   └── pages/                      # FilePage, Recent, UserUploads
-│   │
-│   ├── admin/
-│   │   ├── api/auditService.ts         # /admin/audit-logs
-│   │   ├── hooks/useAudit.ts           # useAuditLogs
-│   │   ├── components/                 # BulkActionBar, RejectDialog, RequestDetailSheet, RequestFileModal
-│   │   └── pages/                      # AdminHome, ModerationQueue, AuditLog
-│   │
-│   ├── gamification/
-│   │   ├── api/gamificationService.ts  # /me/gamification
-│   │   ├── api/learningPathService.ts  # /me/activity/summary, /me/session/start
-│   │   ├── api/reputationService.ts    # /me/reputation
-│   │   ├── hooks/useGamification.ts
-│   │   ├── hooks/useLearningPath.ts    # useActivitySummary
-│   │   ├── hooks/useReputation.ts
-│   │   └── components/CourseCompletionCelebration.tsx
-│   │
-│   ├── assistant/
-│   │   ├── api/assistantService.ts     # /assistant/chat, /me/notes
-│   │   └── components/AssistantPanel.tsx
-│   │
-│   ├── profile/
-│   │   └── pages/UserProfile.tsx
-│   │
-│   └── settings/
-│       └── pages/Settings.tsx
-│
-├── shared/
-│   ├── components/
-│   │   ├── ErrorBoundary.tsx           # Top-level crash boundary
-│   │   ├── MouseGlow.tsx               # Ambient cursor glow decoration
-│   │   ├── NotFound.tsx                # 404 page
-│   │   ├── errors/RouteError.tsx       # Route-level error boundary
-│   │   └── routing/ProtectedRoute.tsx  # Auth + role guard (requiredRole prop)
-│   └── hooks/
-│       ├── useTheme.tsx                # ThemeProvider + useTheme (light/dark/system)
-│       ├── useReducedMotion.ts         # prefers-reduced-motion
-│       └── use-mobile.tsx              # Breakpoint detection (768px)
-│
-├── components/
-│   └── ui/                     # Shadcn/ui primitives — do NOT move or modify manually (CLI target)
-│
-├── lib/                        # Shared utilities — do NOT move (shadcn imports @/lib/utils)
-│   ├── apiClient.ts            # Centralized fetch wrapper. Exports api, apiFetch, ApiError, snakeToCamel.
-│   ├── constants.ts            # SESSION_KEY = "gh_user_session"
-│   ├── formatDate.ts           # Date formatting helpers
-│   ├── logger.ts               # Thin console logger
-│   ├── utils.ts                # cn, isMac, getGreeting, formatDeadline, formatHour
-│   └── __tests__/utils.test.ts # 14 utility tests
-│
-└── test/
-    ├── setup.ts                # Vitest + MSW + jest-dom bootstrap
-    └── mocks/                  # handlers.ts, server.ts
-=======
 ├── services/                   # Service layer — ALL migrated to live API calls
 │   ├── authService.ts          # Real fetch calls to /api/v1/signin, /api/v1/signup. Fully typed (AuthUserDTO, etc.)
 │   ├── taskService.ts          # ✅ calls /me/tasks (list, create, update, delete). Typed Task, CreateTaskPayload, PatchTaskPayload.
@@ -453,7 +197,6 @@ src/
 │   │   └── RouteError.tsx      # Error boundary for routes
 │   ├── ErrorBoundary.tsx       # Top-level error boundary
 │   └── ui/                     # Shadcn/ui primitives (27 files — do not modify)
->>>>>>> worktree-memory-update
 
 server/
 ├── main.py                     # FastAPI app entry point. Registers all routers.
@@ -540,33 +283,8 @@ Centralized HTTP client used by all service files.
 ## 7. Known Issues & Technical Debt
 
 ### Critical
-1. **Backend approval flow bug**: `POST /api/v1/admin/requests/{id}/approve` deletes file metadata instead of persisting it to a `files` table. Approved files are lost.
-2. **Many P0 backend endpoints missing**: See `BACKEND_TASKS.md` §14. Frontend calls are wired up but the backend doesn't serve them yet (years, semesters, files, requests, etc.).
-<<<<<<< HEAD
-
-### Security (Partially Mitigated — May 25)
-3. **VULN-08 — CSRF in production**: Backend sets `samesite="none"` in production (`server/routers/auth.py`). Frontend sends `credentials: "include"`. This disables SameSite CSRF protection. Backend must switch to `samesite="lax"` or `"strict"`, or add CSRF tokens on state-changing admin endpoints.
-4. **VULN-04 (full fix pending)** — Backend / Auth0 reset email still emits `?token=` query links. Frontend now prefers `#token=` fragment (non-breaking) but the backend email template must be updated to fully remove the token from logs/Referer headers.
-5. **VULN-02 (partial)** — Full user object (incl. role) still cached in `localStorage` for optimistic render. Role tamperability is neutralized by the boot `/me` reconciliation, but full resolution requires the HttpOnly-cookie migration so client-side identity caching is no longer needed.
-6. **QA-09 — `activeSeconds` semantics unclear**: `useViewerSession.ts` sends cumulative active seconds; backend may expect per-heartbeat. Needs confirmation with backend team.
-
-### Medium
-7. **`MyPath.tsx` is a placeholder**: The learning path page has no real content.
-8. **Course metadata hardcoded in Dashboard**: `COURSE_META` map in `Dashboard.tsx` duplicates data.
-9. ~~**`requestPasswordReset` is mock-only**~~: ✅ RESOLVED (May 22) — both `requestPasswordReset` and `confirmPasswordReset` now hit real `/forgot-password` and `/reset-password` endpoints.
-10. **`usePinnedCourses` still localStorage-only**: No backend sync. Pins are device-local. Migration plan is in the file's header comment but the endpoint hasn't landed.
-11. **Pre-existing `any` types in services**: `fileService.ts`, `requestService.ts`, `gamificationService.ts`, `learningPathService.ts` still use `any` in places. `authService.ts` is fully typed as of May 22.
-12. **Viewer race conditions (QA-03 / QA-11)**: `useViewerSession.ts` session-start and `FileViewer.tsx` PDF blob cleanup have minor race-condition edge cases. Deferred due to risk of destabilizing viewer without manual browser testing. `isMounted` guards cover the common paths.
-
-### Low / Polish
-13. ~~**`listTopContributors` calls `/reputation/leaderboard`**~~: ✅ RESOLVED — endpoint now live (Phase 2).
-14. ~~**Adobe PDF Embed API key hardcoded**~~: FileViewer now uses `react-pdf` instead.
-15. ~~**Mock data remnants**~~: ✅ RESOLVED — `mock-db.ts` deleted, all services and components fully migrated.
-16. ~~**Tasks were localStorage-only**~~: ✅ RESOLVED (May 18) — tasks fully backed by `/me/tasks` backend API.
-17. ~~**Admin role check client-side only (VULN-01)**~~: ✅ RESOLVED (May 25) — `AuthContext` now calls `/me` on boot and overwrites cached role with server-authoritative value.
-18. ~~**`JSON.parse` session data unguarded (VULN-03)**~~: ✅ RESOLVED (May 25) — `readStoredSession()` in `AuthContext` wraps parse in try/catch.
-19. ~~**No 401/session-expiry handling (QA-04)**~~: ✅ RESOLVED (May 25) — `apiClient` intercepts 401s and redirects to `/auth`.
-=======
+1. ~~**Backend approval flow bug**~~: ✅ RESOLVED — `POST /admin/requests/{id}/approve` correctly creates a `Material` record and moves the file in GCS. No data loss.
+2. ~~**Many P0 backend endpoints missing**~~: ✅ RESOLVED — All P0–P3 endpoints are now live per `BACKEND_TASKS.md` §14.
 
 ### Medium
 3. **`MyPath.tsx` is a placeholder**: The learning path page has no real content.
@@ -580,7 +298,6 @@ Centralized HTTP client used by all service files.
 9. ~~**Adobe PDF Embed API key hardcoded**~~: FileViewer now uses `react-pdf` instead.
 10. ~~**Mock data remnants**~~: ✅ RESOLVED — `mock-db.ts` deleted, all services and components fully migrated.
 11. ~~**Tasks were localStorage-only**~~: ✅ RESOLVED (May 18) — tasks fully backed by `/me/tasks` backend API.
->>>>>>> worktree-memory-update
 
 ---
 
