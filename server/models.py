@@ -196,6 +196,17 @@ class MaterialChunk(SQLModel, table=True):
         ),
     )
 
+class UserNotification(SQLModel, table=True):
+    __tablename__ = "user_notifications"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    title: str
+    message: str
+    read: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+
+
 class PinnedCourse(SQLModel, table=True):
     __tablename__ = "pinned_courses"
 

@@ -132,6 +132,18 @@ class ChatMessage(BaseModel):
     role: str       # "user" or "assistant"
     content: str
 
+# --- Notification Payloads ---
+class NotificationResponse(BaseModel):
+    id: UUID
+    title: str
+    message: str
+    read: bool
+    createdAt: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # --- Settings Payloads ---
 class SettingsResponse(BaseModel):
     language: str

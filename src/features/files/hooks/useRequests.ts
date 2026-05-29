@@ -45,7 +45,6 @@ import { toast } from "sonner";
 import { ApiError } from "@/lib/apiClient";
 import type { RejectReason, FileStatus } from "@/types/domain";
 import { queryKeys } from "@/lib/queryKeys";
-import { useInAppNotifications } from "@/shared/hooks/useInAppNotifications";
 
 function invalidateAdmin(qc: ReturnType<typeof useQueryClient>): void {
     qc.invalidateQueries({ queryKey: queryKeys.requests.all() });
@@ -156,7 +155,6 @@ export const useRequestStats = () =>
  */
 export const useApproveRequest = () => {
     const queryClient = useQueryClient();
-    const { addNotification } = useInAppNotifications();
 
     const invalidateAdmin = () => {
         queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
@@ -181,7 +179,6 @@ export const useApproveRequest = () => {
                         },
                     },
                 });
-                addNotification("Upload Approved", `Your upload "${result.title}" has been approved and is now live.`);
             }
         },
         onError: () => {
@@ -196,7 +193,6 @@ export const useApproveRequest = () => {
  */
 export const useRejectRequest = () => {
     const queryClient = useQueryClient();
-    const { addNotification } = useInAppNotifications();
 
     const invalidateAdmin = () => {
         queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
@@ -228,7 +224,6 @@ export const useRejectRequest = () => {
                         },
                     },
                 });
-                addNotification("Upload Rejected", `Your upload "${result.title}" was rejected: ${variables.reason}`);
             }
         },
         onError: () => {

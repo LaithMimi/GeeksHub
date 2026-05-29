@@ -6,7 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Response
 from sqlmodel import Session, select, func
 from database import get_session, engine
-from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog, Lecturer, MaterialType
+from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog, Lecturer, MaterialType, UserNotification
 from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
 from utils.auth_utils import get_admin_user
 from utils.shared import storage_client, BUCKET_NAME
@@ -162,6 +162,12 @@ def approve_file(
     )
     session.add(audit)
 
+    session.add(UserNotification(
+        user_id=request.user_id,
+        title="Upload Approved",
+        message=f'Your upload "{request.title}" has been approved and is now live.',
+    ))
+
     session.commit()
 
     # Fire-and-forget: admin gets an instant response; embedding runs in the background.
@@ -208,6 +214,13 @@ def reject_request(
         meta_data={"title": request.title, "filename": filename, "reason": payload.note if payload and payload.note else ""}
     )
     session.add(audit)
+
+    note_text = f": {payload.note}" if payload and payload.note else ""
+    session.add(UserNotification(
+        user_id=request.user_id,
+        title="Upload Rejected",
+        message=f'Your upload "{request.title}" was rejected{note_text}.',
+    ))
 
     session.commit()
     return {"message": "Request rejected and moved to trash for 3 days."}

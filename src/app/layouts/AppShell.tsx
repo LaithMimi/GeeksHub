@@ -400,7 +400,7 @@ function NotificationsMenu() {
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{notif.message}</p>
                                 <p className="text-[10px] text-muted-foreground/50 mt-2">
-                                    {new Date(notif.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                             </div>
                         ))
