@@ -6,7 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Response
 from sqlmodel import Session, select, func
 from database import get_session, engine
-from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog, Lecturer, MaterialType, UserNotification
+from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog, Lecturer, MaterialType, UserNotification, CourseLecturer
 from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
 from utils.auth_utils import get_admin_user
 from utils.shared import storage_client, BUCKET_NAME
@@ -472,6 +472,58 @@ def undo_reject(
     session.commit()
     
     return {"message": "Rejection undone. File rescued from trash and back in pending queue."}
+
+# ---------------------------------------------------------------------------
+# Lecturer ↔ Course assignment management
+# ---------------------------------------------------------------------------
+
+@router.get("/api/v1/admin/courses/{course_id}/lecturers")
+def get_course_lecturers(
+    course_id: UUID,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_admin_user),
+):
+    rows = session.exec(
+        select(Lecturer)
+        .join(CourseLecturer, CourseLecturer.lecturer_id == Lecturer.id)
+        .where(CourseLecturer.course_id == course_id)
+    ).all()
+    return rows
+
+
+@router.post("/api/v1/admin/courses/{course_id}/lecturers/{lecturer_id}", status_code=201)
+def assign_lecturer(
+    course_id: UUID,
+    lecturer_id: UUID,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_admin_user),
+):
+    if not session.get(Course, course_id):
+        raise HTTPException(status_code=404, detail="Course not found.")
+    if not session.get(Lecturer, lecturer_id):
+        raise HTTPException(status_code=404, detail="Lecturer not found.")
+    existing = session.get(CourseLecturer, (course_id, lecturer_id))
+    if existing:
+        return {"message": "Already assigned."}
+    session.add(CourseLecturer(course_id=course_id, lecturer_id=lecturer_id))
+    session.commit()
+    return {"message": "Lecturer assigned."}
+
+
+@router.delete("/api/v1/admin/courses/{course_id}/lecturers/{lecturer_id}", status_code=204)
+def unassign_lecturer(
+    course_id: UUID,
+    lecturer_id: UUID,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_admin_user),
+):
+    row = session.get(CourseLecturer, (course_id, lecturer_id))
+    if not row:
+        raise HTTPException(status_code=404, detail="Assignment not found.")
+    session.delete(row)
+    session.commit()
+    return Response(status_code=204)
+
 
 @router.get("/api/v1/admin/requests/stats")
 def get_request_stats(

@@ -41,6 +41,7 @@ const CourseExams = Loadable(React.lazy(() => import("@/features/courses/pages/C
 const AdminHome = Loadable(React.lazy(() => import("@/features/admin/pages/AdminHome")));
 const ModerationQueue = Loadable(React.lazy(() => import("@/features/admin/pages/ModerationQueue")));
 const AuditLog = Loadable(React.lazy(() => import("@/features/admin/pages/AuditLog")));
+const CatalogManager = Loadable(React.lazy(() => import("@/features/admin/pages/CatalogManager")));
 
 export const router = createBrowserRouter([
     // Public auth routes
@@ -150,6 +151,10 @@ export const router = createBrowserRouter([
                     {
                         path: "audit",
                         element: <AuditLog />,
+                    },
+                    {
+                        path: "catalog",
+                        element: <CatalogManager />,
                     },
                 ],
             },

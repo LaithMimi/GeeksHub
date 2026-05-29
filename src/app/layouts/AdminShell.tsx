@@ -48,10 +48,10 @@ const adminNavItems = [
     { label: "Overview", icon: Home, href: "/admin" },
     { label: "Queue", icon: ClipboardList, href: "/admin/requests" },
     { label: "Audit Log", icon: FileSearch, href: "/admin/audit" },
+    { label: "Catalog", icon: BookOpen, href: "/admin/catalog" },
 ];
 
 const comingSoonItems = [
-    { label: "Catalog", icon: BookOpen },
     { label: "Users", icon: Users },
 ];
 
@@ -59,6 +59,7 @@ const adminLabelMap: Record<string, string> = {
     admin: "Admin",
     requests: "Queue",
     audit: "Audit Log",
+    catalog: "Catalog",
 };
 
 // -- Admin Breadcrumbs ---------------------------------------------------------

@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 from typing import List, Optional
 from uuid import UUID
 from database import get_session
-from models import Major, Course, Lecturer, MaterialType, User
+from models import Major, Course, Lecturer, MaterialType, User, CourseLecturer
 from utils.auth_utils import get_verified_user
 
 router = APIRouter(tags=["Catalog"])
@@ -34,11 +34,17 @@ def get_semesters():
 @router.get("/api/v1/lecturers")
 def get_lecturers(
     course_id: Optional[UUID] = Query(None),
-    session: Session = Depends(get_session)):
-
-    """Fetches all lecturers from the database."""
-    lecturers = session.exec(select(Lecturer)).all()
-    return lecturers
+    session: Session = Depends(get_session),
+):
+    if course_id:
+        statement = (
+            select(Lecturer)
+            .join(CourseLecturer, CourseLecturer.lecturer_id == Lecturer.id)
+            .where(CourseLecturer.course_id == course_id)
+        )
+    else:
+        statement = select(Lecturer)
+    return session.exec(statement).all()
 
 @router.get("/api/v1/majors", response_model=List[Major])
 def list_majors(

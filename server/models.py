@@ -196,6 +196,14 @@ class MaterialChunk(SQLModel, table=True):
         ),
     )
 
+class CourseLecturer(SQLModel, table=True):
+    """Junction table: which lecturers teach which courses."""
+    __tablename__ = "course_lecturers"
+
+    course_id: UUID = Field(foreign_key="courses.id", primary_key=True)
+    lecturer_id: UUID = Field(foreign_key="lecturers.id", primary_key=True)
+
+
 class UserNotification(SQLModel, table=True):
     __tablename__ = "user_notifications"
 
