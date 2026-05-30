@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, ChevronDown, ChevronRight, Plus, X, Loader2 } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronRight, Plus, X, Loader2, Search } from "lucide-react";
 import { toast } from "sonner";
 import {
     listAllCourses, listAllLecturers,
@@ -14,6 +14,7 @@ import type { Course, Lecturer } from "@/types/domain";
 
 function CourseRow({ course, allLecturers }: { course: Course; allLecturers: Lecturer[] }) {
     const [open, setOpen] = useState(false);
+    const [lecturerSearch, setLecturerSearch] = useState("");
     const qc = useQueryClient();
     const key = ["course-lecturers", course.id];
 
@@ -37,11 +38,19 @@ function CourseRow({ course, allLecturers }: { course: Course; allLecturers: Lec
 
     const assignedIds = new Set(assigned.map((l) => l.id));
     const available = allLecturers.filter((l) => !assignedIds.has(l.id));
+    const filteredAvailable = available.filter((l) =>
+        l.name.toLowerCase().includes(lecturerSearch.toLowerCase())
+    );
+
+    const handleToggle = () => {
+        if (open) setLecturerSearch("");
+        setOpen((v) => !v);
+    };
 
     return (
         <div className="liquid-glass-subtle rounded-xl overflow-hidden">
             <button
-                onClick={() => setOpen((v) => !v)}
+                onClick={handleToggle}
                 className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-foreground/5 transition-colors"
             >
                 {open
@@ -95,18 +104,32 @@ function CourseRow({ course, allLecturers }: { course: Course; allLecturers: Lec
                             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                                 Add Lecturer
                             </p>
+                            <div className="relative mb-3">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/40 pointer-events-none" />
+                                <input
+                                    type="search"
+                                    placeholder="Search lecturers…"
+                                    value={lecturerSearch}
+                                    onChange={(e) => setLecturerSearch(e.target.value)}
+                                    className="w-full pl-8 pr-3 py-1.5 rounded-lg liquid-glass-subtle border border-border text-[13px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
+                                />
+                            </div>
                             <div className="flex flex-wrap gap-2">
-                                {available.map((l) => (
-                                    <button
-                                        key={l.id}
-                                        onClick={() => assign(l.id)}
-                                        disabled={assigning}
-                                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border/60 text-[13px] text-muted-foreground hover:text-foreground hover:border-blue-500/40 hover:bg-blue-500/5 transition-colors disabled:opacity-50"
-                                    >
-                                        <Plus className="h-3 w-3" />
-                                        {l.name}
-                                    </button>
-                                ))}
+                                {filteredAvailable.length === 0 ? (
+                                    <p className="text-[13px] text-muted-foreground/50">No lecturers match your search.</p>
+                                ) : (
+                                    filteredAvailable.map((l) => (
+                                        <button
+                                            key={l.id}
+                                            onClick={() => assign(l.id)}
+                                            disabled={assigning}
+                                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-border/60 text-[13px] text-muted-foreground hover:text-foreground hover:border-blue-500/40 hover:bg-blue-500/5 transition-colors disabled:opacity-50"
+                                        >
+                                            <Plus className="h-3 w-3" />
+                                            {l.name}
+                                        </button>
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}

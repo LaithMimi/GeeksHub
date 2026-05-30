@@ -295,7 +295,7 @@ export interface ActivitySummary {
 // ============================================================================
 
 /** Actions that can be performed by admins */
-export type AuditAction = "APPROVE" | "REJECT" | "BULK_APPROVE" | "BULK_REJECT" | "WITHDRAW" | "UNDO_APPROVE" | "UNDO_REJECT";
+export type AuditAction = "approve" | "reject" | "bulk_approve" | "bulk_reject" | "withdraw" | "undo_approve" | "undo_reject";
 
 /** Standardized rejection reasons */
 export type RejectReason = "DUPLICATE" | "OUTDATED" | "INCORRECT_COURSE" | "BAD_QUALITY" | "OTHER";
@@ -310,9 +310,9 @@ export interface AuditLogEntry {
     actorId: string;
     actorName: string;
     action: AuditAction;
-    targetType: "FileRequest";
+    targetType: string;
     targetIds: string[];
-    metadata: {
+    metaData: {
         reason?: RejectReason;
         note?: string;
         pointsAwarded?: number;

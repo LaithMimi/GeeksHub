@@ -10,6 +10,27 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
+## 1.0 Highlights of Recent Updates (May 30 2026 — Latest)
+
+- **Admin UI Consistency + CatalogManager Enhancements (May 30):**
+
+  **Lecturer search in CatalogManager:**
+  - Each expanded `CourseRow` now has a live search input in the "Add Lecturer" section, filtering available lecturers by name as you type.
+  - `lecturerSearch` state is scoped per row and resets automatically when the row is collapsed (`handleToggle` clears it on close).
+  - Shows "No lecturers match your search." when the filter yields nothing.
+  - Files changed: `src/features/admin/pages/CatalogManager.tsx`
+
+  **AdminHome UI consistency:**
+  - Rewrote `AdminHome.tsx` to match the liquid-glass design language used by CatalogManager and the rest of the admin pages.
+  - Replaced shadcn `Card` components with `liquid-glass-subtle rounded-xl` divs.
+  - Updated header to `text-[28px] font-display font-bold tracking-[-0.03em]` with a `LayoutDashboard` icon (same pattern as CatalogManager's `BookOpen` header).
+  - Added `animate-fade-in max-w-3xl mx-auto pb-20` wrapper and `bg-foreground/10` kbd styling.
+  - Files changed: `src/features/admin/pages/AdminHome.tsx`
+
+- **AuditLog Bug Fixes (May 30):** See Bug Fixes table in §1.1 below.
+
+---
+
 ## 1.1 Highlights of Recent Updates (Late May 2026)
 
 - **Frontend Cleanliness Audit + 3-Phase Cleanup (May 22):** Full senior-engineer code review producing a 6.1/10 baseline score, followed by a four-phase incremental refactor. All changes verified via `tsc --noEmit`, `vitest run` (18/18 passing), `eslint .` (45 issues — down from 58 baseline), and `vite build`. No behavior changes intended; pure cleanup.
@@ -47,6 +68,25 @@ A university course materials platform where students **share, browse, and study
   - **Time format**: `2.5` → `2:30` everywhere on task blocks. New `formatHour(decimalHour)` helper in `src/lib/utils.ts`.
   - **AddTaskModal accepts arbitrary durations**: if the drag creates a block longer than 4 hours (the standard DURATIONS list cap), the dragged duration is dynamically added to the select options via a `useMemo`.
 
+- **Bug Fixes (May 25):**
+
+  | Bug | Where | Fix |
+  |-----|-------|-----|
+  | **UUID UI Leak** — Raw UUID strings (e.g. `123e4567-...`) were momentarily visible in the Course Library and Settings page dropdowns before real names loaded from the backend | `Courses.tsx`, `Settings.tsx`, `select.tsx` | Added a `displayValue` prop to `GlassSelect` / dropdown implementations that renders `"Loading…"` or a placeholder instead of the raw ID until data resolves |
+  | **Notes Board Truncation** — Long AI responses were silently cut to 220 characters when pinned to the Notes Board | `NotesBoard.tsx` | Removed the 220-char hard truncation; added `max-h-[200px] overflow-y-auto` scroll container to `StickyCard` so full messages display without breaking the grid layout |
+  | **Pin-to-Notes No-op** — Clicking "Pin to notes" from the Chat tab did nothing; `notesBoardRef.current` was always `null` because Radix `TabsContent` unmounts inactive tabs | `AssistantPanel.tsx` | Added `forceMount={true}` to both `TabsContent` nodes so the Notes board stays mounted in the DOM even when the Chat tab is active |
+  | **LearningPlan Click-vs-Drag Drop** — Clicking a task to open its details modal failed intermittently; `pointer-events-none` was applied on `mousedown`, and if React batched before `mouseup` the click event was silently dropped | `LearningPlan.tsx` | Moved the click-to-open logic into the row-level `handleMouseUp` handler so quick taps with no drag movement reliably open the details dialog |
+  | **Task Mutation Lag** — Adding or dragging a task caused a visible delay because the UI waited for the full server round-trip before re-rendering | `useTasks.ts` | Added `onMutate` optimistic-update handlers to all four mutations (`useCreateTask`, `useUpdateTask`, `useToggleTask`, `useDeleteTask`); UI updates instantly and rolls back on error |
+  | **LearningPlan colorMap Re-render Loop** — `colorMap` was recreated on every render, causing cascade re-renders across all task blocks | `LearningPlan.tsx` | Shifted `colorMap` from `useState`/inline object to `useRef` so the reference is stable across renders |
+  | **Dashboard O(n²) Filter** — `recentCourses` derivation in `useDashboardData` ran up to 350 nested `.filter()` passes per render on realistic data sizes | `useDashboardData.ts` | Replaced nested array iteration with an O(n) `Map` lookup keyed by course ID |
+
+- **Bug Fixes (May 30):**
+
+  | Bug | Where | Fix |
+  |-----|-------|-----|
+  | **AuditLog crash — `Cannot read properties of undefined (reading 'variant')`** — `actionConfig` keys were uppercase (`APPROVE`, `REJECT`, etc.) but the backend sends lowercase (`approve`, `reject`, etc.). `actionConfig[log.action]` returned `undefined`, and `undefined.variant` crashed the entire Admin area via the error boundary | `AuditLog.tsx`, `domain.ts` (`AuditAction` type) | Changed `AuditAction` type and `actionConfig` keys to lowercase to match what the backend actually sends; added `?? { label: log.action, variant: "outline" }` fallback so unknown future action values never crash |
+  | **AuditLog crash — `meta_data` vs `metadata` field mismatch** — `snakeToCamel` in `apiClient.ts` converts the backend field `meta_data` → `metaData` (camelCase). The `AuditLogEntry` interface had `metadata` (no capital D) and `formatDetails` accessed `log.metadata.reason`, which was `undefined` at runtime, throwing a second crash after the first was fixed | `domain.ts` (`AuditLogEntry.metadata`), `AuditLog.tsx` (`formatDetails`) | Renamed `metadata` → `metaData` in `AuditLogEntry`; updated `formatDetails` to use `log.metaData ?? {}` with optional chaining |
+
 ---
 
 ## 1.2 Highlights of Recent Updates (May 29 2026)
@@ -68,6 +108,12 @@ A university course materials platform where students **share, browse, and study
   - `GET /me/notifications`, `GET /me/notifications/unread-count` (polled every 30s), `PATCH /me/notifications/{id}/read`, `PATCH /me/notifications/read-all`.
   - Backend creates notifications for the uploader inside `approve_file` and `reject_request` in `admin.py`.
   - `useInAppNotifications.ts` rewritten with TanStack Query. `addNotification` / `clearAll` removed — backend owns creation. `AppShell.tsx` updated (`timestamp` → `createdAt`). Stale `addNotification` calls removed from `useRequests.ts`.
+
+  **Course-Lecturer Assignment (`/admin/courses/{id}/lecturers`):**
+  - `GET /admin/courses/{courseId}/lecturers`, `POST /admin/courses/{courseId}/lecturers/{lecturerId}`, `DELETE /admin/courses/{courseId}/lecturers/{lecturerId}` added to `server/routers/admin.py` and `server/routers/catalog.py`.
+  - `src/features/admin/pages/CatalogManager.tsx` (new): expandable course rows showing assigned lecturers + add/remove UI, with search filter.
+  - `src/features/admin/api/catalogAdminService.ts` (new): `listAllCourses`, `listAllLecturers`, `getCourseLecturers`, `assignLecturer`, `unassignLecturer`.
+  - "Catalog" nav item promoted from "coming soon" to a live link in `AdminShell.tsx`; `/admin/catalog` route wired in `router/index.tsx`.
 
 ---
 
@@ -140,97 +186,108 @@ A university course materials platform where students **share, browse, and study
 src/
 ├── main.tsx                    # Entry point: ErrorBoundary → AuthProvider → ThemeProvider → QueryClientProvider → Router
 ├── index.css                   # Global styles + Liquid Glass design system tokens
-├── types/domain.ts             # All TypeScript domain interfaces (User, Course, File, FileRequest, etc.)
-├── services/                   # Service layer — ALL migrated to live API calls
-│   ├── authService.ts          # Real fetch calls to /api/v1/signin, /api/v1/signup. Fully typed (AuthUserDTO, etc.)
-│   ├── taskService.ts          # ✅ calls /me/tasks (list, create, update, delete). Typed Task, CreateTaskPayload, PatchTaskPayload.
-│   ├── fileService.ts          # ✅ calls /files, /reputation/leaderboard, /me/recent-files
-│   ├── catalogService.ts       # ✅ calls /majors, /types, /years, /semesters, /courses, /lecturers
-│   ├── requestService.ts       # ✅ calls /courses/{id}/upload, /me/requests, /admin/requests/*
-│   ├── reputationService.ts    # ✅ calls /me/reputation
-│   ├── assistantService.ts     # ✅ calls /assistant/chat, /me/notes
-│   └── auditService.ts         # ✅ calls /admin/audit-logs
-├── queries/                    # TanStack Query hooks (thin wrappers over services)
-│   ├── useFiles.ts             # useFiles, useFile, useTopContributors, useRecentFiles
-│   ├── useCatalog.ts           # useMajors, useYears, useSemesters, useCourses, useLecturers
-│   ├── useRequests.ts          # useMyRequests, useAllRequests, useApproveRequest, etc.
-│   ├── useReputation.ts        # useReputation
-│   └── useAudit.ts             # useAuditLogs
-├── hooks/                      # React hooks
-│   ├── useTasks.ts             # Learning plan tasks via TanStack Query (list, create, toggle, update, delete). Wrapper exposes { tasks, taskDates, addTask, toggleTask, moveTask, deleteTask }.
-│   ├── useDashboardData.ts     # Memoized dashboard derivations (recentCourses, weeklyActivity). Exports DAY_LABELS.
-│   ├── useViewerSession.ts     # PDF viewer heartbeat + completion tracking (uses isCompletedRef to avoid stale-closure re-renders).
-│   ├── usePinnedCourses.ts     # Pinned course IDs (localStorage) — backend migration still pending.
-│   ├── useTheme.tsx            # Theme provider + useTheme hook (light/dark/system)
-│   ├── useReducedMotion.ts     # Accessibility: prefers-reduced-motion
-│   ├── use-mobile.tsx          # Breakpoint detection (768px)
-│   └── __tests__/              # Hook tests (useTasks.test.tsx — 4 tests using MSW)
-├── context/
-│   └── AuthContext.tsx          # Auth state (user, signIn, signUp, signOut). Persists to localStorage via SESSION_KEY.
-├── lib/
-│   ├── apiClient.ts            # Centralized fetch wrapper. Exports api, apiFetch, ApiError, snakeToCamel.
-│   ├── router.tsx              # All route definitions. Loadable<T> generic typed (no more (props: any)).
-│   ├── constants.ts            # Shared constants. SESSION_KEY = "gh_user_session".
-│   ├── utils.ts                # cn (Tailwind merge), isMac, getGreeting, formatDeadline, formatHour.
-│   └── __tests__/              # Utility tests (utils.test.ts — 14 tests).
-├── test/                       # Test infrastructure
-│   ├── setup.ts                # Vitest setup — wires up MSW server lifecycle + jest-dom matchers.
-│   └── mocks/                  # MSW handlers + server (handlers.ts, server.ts).
-├── components/
-│   ├── dashboard/              # Dashboard sub-components extracted from Dashboard.tsx (May 22 refactor)
-│   │   ├── LearningPlan.tsx    # 7-day schedule, drag-to-create, drag-to-move with shadow/ghost UX, H:MM time labels
-│   │   ├── MiniCalendar.tsx    # Month-view calendar with task-date dots
-│   │   └── AddTaskModal.tsx    # New-task dialog. Accepts arbitrary durations injected from drag.
-│   ├── pages/                  # Route-level page components
-│   │   ├── Dashboard.tsx       # Composition root only (~580 lines, down from 1,127). Wires hooks and sub-components.
-│   │   ├── Courses.tsx         # Course browser with cascading filters
-│   │   ├── CourseMaterials.tsx # File listing for a course (materials tab)
-│   │   ├── CourseNotes.tsx     # File listing for a course (notes tab)
-│   │   ├── CourseExams.tsx     # File listing for a course (exams tab)
-│   │   ├── UserUploads.tsx     # User's file requests + upload form
-│   │   ├── Recent.tsx          # Recently viewed files page
-│   │   ├── Settings.tsx        # User settings (theme, language, notifications)
-│   │   ├── MyPath.tsx          # Placeholder learning path page
-│   │   ├── NotFound.tsx        # 404 page
-│   │   └── admin/
-│   │       ├── AdminHome.tsx   # Admin dashboard with request stats
-│   │       ├── ModerationQueue.tsx  # Approve/reject file requests
-│   │       └── AuditLog.tsx    # Audit trail viewer
-│   ├── layout/                 # Shell layouts (sidebar, header, content)
-│   │   ├── AppShell.tsx        # Main app shell with sidebar
-│   │   ├── AdminShell.tsx      # Admin area shell
+├── types/domain.ts             # All TypeScript domain interfaces (User, Course, File, FileRequest, Lecturer, Task, etc.)
+├── app/
+│   ├── layouts/
+│   │   ├── AppShell.tsx        # Main app shell with sidebar + NotificationsMenu (polls unread count every 30s)
+│   │   ├── AdminShell.tsx      # Admin area shell (Catalog now a live nav link, not "coming soon")
 │   │   ├── CourseShell.tsx     # Course detail shell (tabs: materials/notes/exams)
-│   │   └── FileShell.tsx       # File viewer shell (simplified passthrough layout)
-│   ├── pages/
-│   │   └── FilePage.tsx        # Bridges FileViewer + AssistantPanel + selectedText state
-│   ├── viewer/
-│   │   └── FileViewer.tsx      # react-pdf viewer with text selection tooltip ("Ask AI")
-│   ├── auth/                   # Auth UI components
-│   │   ├── SlidingAuth.tsx     # Sign-in / sign-up sliding panel
-│   │   ├── AuthCard.tsx        # Auth card wrapper
-│   │   ├── AuthLayout.tsx      # Auth page layout
-│   │   ├── useAuthMode.ts      # Auth mode state (sign-in vs sign-up)
-│   │   └── forms/              # SignInForm, SignUpForm, ForgotPasswordForm, ResetPasswordForm
-│   ├── features/
-│   │   └── RequestFileModal.tsx # Upload file request modal
-│   ├── routing/
-│   │   └── ProtectedRoute.tsx  # Auth + role guard
-│   ├── errors/
-│   │   └── RouteError.tsx      # Error boundary for routes
-│   ├── ErrorBoundary.tsx       # Top-level error boundary
-│   └── ui/                     # Shadcn/ui primitives (27 files — do not modify)
+│   │   └── FileShell.tsx       # File viewer shell
+│   └── router/
+│       └── index.tsx           # All route definitions with Loadable lazy-loading
+├── features/
+│   ├── admin/
+│   │   ├── api/
+│   │   │   ├── auditService.ts         # ✅ /admin/audit-logs
+│   │   │   └── catalogAdminService.ts  # ✅ /courses, /lecturers, /admin/courses/{id}/lecturers (assign/unassign)
+│   │   ├── components/
+│   │   │   ├── BulkActionBar.tsx
+│   │   │   ├── RejectDialog.tsx
+│   │   │   ├── RequestDetailSheet.tsx
+│   │   │   ├── RequestFileModal.tsx    # Upload file request modal (multi-step)
+│   │   │   └── request-modal/          # StepCourse, StepDetails, StepMajor, StepUpload, SummaryChip, useRequestForm
+│   │   ├── hooks/
+│   │   │   └── useAudit.ts
+│   │   └── pages/
+│   │       ├── AdminHome.tsx           # Admin dashboard — liquid-glass-subtle cards, LayoutDashboard header (rewritten May 30)
+│   │       ├── AuditLog.tsx            # Audit trail viewer
+│   │       ├── CatalogManager.tsx      # ✅ Assign/unassign lecturers; per-row lecturer search (May 30)
+│   │       └── ModerationQueue.tsx     # Approve/reject file requests
+│   ├── assistant/
+│   │   ├── api/assistantService.ts     # ✅ /assistant/chat, /me/notes
+│   │   └── components/                 # AssistantChat, AssistantPanel, NotesBoard
+│   ├── auth/
+│   │   ├── api/authService.ts          # ✅ /signin, /signup, /forgot-password, /reset-password. Fully typed.
+│   │   ├── components/                 # SlidingAuth, AuthCard, AuthLayout, forms/
+│   │   ├── context/AuthContext.tsx     # Auth state. SESSION_KEY = "gh_user_session" (src/lib/constants.ts).
+│   │   ├── hooks/useAuthMode.ts
+│   │   └── pages/                      # AuthPage, ResetPasswordPage
+│   ├── courses/
+│   │   ├── api/catalogService.ts       # ✅ /majors, /types, /years, /semesters, /courses, /lecturers
+│   │   ├── hooks/
+│   │   │   ├── useCatalog.ts           # useMajors, useYears, useSemesters, useCourses, useLecturers
+│   │   │   └── usePinnedCourses.ts     # ✅ TanStack Query + optimistic updates → /me/pinned-courses (was localStorage)
+│   │   └── pages/                      # Courses, CourseMaterials, CourseNotes, CourseExams
+│   ├── dashboard/
+│   │   ├── api/taskService.ts          # ✅ /me/tasks (list, create, update, delete)
+│   │   ├── components/                 # LearningPlan, MiniCalendar, AddTaskModal, TaskDetailsDialog
+│   │   ├── hooks/
+│   │   │   ├── useDashboardData.ts     # Memoized recentCourses + weeklyActivity derivations
+│   │   │   └── useTasks.ts             # TanStack Query hooks; exposes { tasks, taskDates, addTask, toggleTask, moveTask, deleteTask }
+│   │   └── pages/Dashboard.tsx         # Composition root (~580 lines)
+│   ├── files/
+│   │   ├── api/
+│   │   │   ├── fileService.ts          # ✅ /files, /files/{id}, /me/recent-files
+│   │   │   └── requestService.ts       # ✅ /courses/{id}/upload, /me/requests, /admin/requests/*
+│   │   ├── components/FileViewer.tsx   # react-pdf viewer with text selection → "Ask AI" tooltip
+│   │   ├── hooks/
+│   │   │   ├── useFiles.ts
+│   │   │   ├── useRequests.ts          # approve/reject mutations (no longer fires local addNotification)
+│   │   │   └── useViewerSession.ts     # PDF heartbeat + completion (isCompletedRef avoids stale closure)
+│   │   └── pages/                      # FilePage, Recent, UserUploads
+│   ├── gamification/
+│   │   ├── api/                        # gamificationService, learningPathService, reputationService
+│   │   ├── components/                 # CourseCompletionCelebration
+│   │   └── hooks/                      # useGamification, useLearningPath, useReputation
+│   ├── profile/
+│   │   └── pages/UserProfile.tsx
+│   └── settings/
+│       ├── pages/Settings.tsx          # ✅ Loads from /me/settings on mount; debounce-PATCHes 600ms after change; localStorage fallback
+│       └── services/settingsService.ts # ✅ NEW (May 29): getSettings, updateSettings → /me/settings
+├── shared/
+│   ├── components/                     # CommandPalette, EmptyState, ErrorBoundary, MouseGlow, NotFound, PriorityBadge
+│   │   ├── errors/RouteError.tsx
+│   │   └── routing/ProtectedRoute.tsx
+│   └── hooks/
+│       ├── useInAppNotifications.ts    # ✅ TanStack Query → /me/notifications (was localStorage). addNotification/clearAll removed.
+│       ├── useActivityTracker.ts
+│       ├── useDebounce.ts
+│       ├── use-mobile.tsx
+│       ├── useReducedMotion.ts
+│       └── useTheme.tsx
+├── components/ui/                      # Shadcn/ui primitives — do NOT modify
+├── lib/
+│   ├── apiClient.ts                    # api<T>, ApiError, snakeToCamel. Auto-injects Bearer token. credentials: include.
+│   ├── constants.ts                    # SESSION_KEY = "gh_user_session"
+│   ├── queryKeys.ts                    # Centralized TanStack Query key factories
+│   ├── utils.ts                        # cn, isMac, getGreeting, formatDeadline, formatHour
+│   └── __tests__/utils.test.ts         # 14 utility tests
+└── test/                               # Vitest + MSW setup (setup.ts, mocks/handlers.ts, mocks/server.ts)
 
 server/
 ├── main.py                     # FastAPI app entry point. Registers all routers.
-├── models.py                   # SQLModel ORM models (User, Course, Lecturer, UserTask, FileRequest, MaterialChunk, etc.)
-├── schemas.py                  # Pydantic request/response schemas (TaskCreate, TaskPatch, TaskResponse, etc.)
+├── models.py                   # SQLModel ORM: User, Course, Lecturer, UserTask, FileRequest, PinnedCourse, UserSettings, UserNotification, MaterialChunk, etc.
+├── schemas.py                  # Pydantic schemas: TaskCreate/Patch/Response, UserSettings, SettingsPatch, NotificationResponse, etc.
 ├── database.py                 # Neon DB connection + get_session dependency
 ├── routers/
 │   ├── auth.py                 # /signin, /signup, /forgot-password, /reset-password
-│   ├── catalog.py              # /majors, /courses, /lecturers, /years, /semesters, /types
+│   ├── catalog.py              # /majors, /courses, /lecturers, /years, /semesters, /types + course-lecturer assignment endpoints
 │   ├── files.py                # /files, /files/{id}
-│   ├── tasks.py                # ✅ /me/tasks CRUD (GET, POST, PATCH, DELETE) — live as of May 18
-│   ├── admin.py                # /admin/requests/*, /admin/audit-logs
+│   ├── tasks.py                # ✅ /me/tasks CRUD (GET, POST, PATCH, DELETE)
+│   ├── admin.py                # /admin/requests/*, /admin/audit-logs, /admin/courses/{id}/lecturers
+│   ├── pinned_courses.py       # ✅ NEW (May 29): /me/pinned-courses (GET, POST /{id}, DELETE /{id})
+│   ├── settings.py             # ✅ NEW (May 29): /me/settings (GET, PATCH)
+│   ├── notifications.py        # ✅ NEW (May 29): /me/notifications, /unread-count, /{id}/read, /read-all
 │   ├── gamification.py         # /me/reputation, /reputation/leaderboard
 │   ├── activity.py             # /me/recent-files, /me/activity/summary, /me/session/start
 │   ├── viewer.py               # Viewer session endpoints
@@ -260,7 +317,7 @@ Every service returns a `Promise`. Query hooks wrap services with TanStack Query
 
 ### State Management
 - **Server state**: TanStack Query (all data fetching, including tasks — fully API-backed as of May 18)
-- **Local state**: React `useState` + `localStorage` (pinned courses, recent files, theme)
+- **Local state**: React `useState` + `localStorage` (recent files, theme; pinned courses and settings now API-backed)
 - **Auth state**: React Context (`AuthContext`). Token stored in `localStorage` (future: HTTP-only cookies)
 - **Theme state**: React Context (`ThemeProvider`)
 - ~~Tasks were once localStorage-only~~ — tasks are now live API calls via `taskService.ts` + `useTasks.ts`.
@@ -402,6 +459,10 @@ The frontend expects the backend at `http://localhost:8000/api/v1` (configurable
 - ✅ `authService.ts` — fully live (fully typed as of May 22)
 - ✅ `taskService.ts` — fully live (`/me/tasks` — GET, POST, PATCH, DELETE, live as of May 18)
 - ✅ `catalogService.ts` — fully live (`/majors`, `/types`, `/years`, `/semesters`, `/courses`, `/lecturers`)
+- ✅ `catalogAdminService.ts` — fully live (`/admin/courses/{id}/lecturers` — GET, POST, DELETE; live as of May 29)
+- ✅ `settingsService.ts` — fully live (`/me/settings` — GET, PATCH; live as of May 29)
+- ✅ `usePinnedCourses.ts` — fully live (`/me/pinned-courses` — GET, POST, DELETE with optimistic updates; live as of May 29)
+- ✅ `useInAppNotifications.ts` — fully live (`/me/notifications`, `/unread-count`, `/{id}/read`, `/read-all`; live as of May 29)
 - ✅ `fileService.ts` — fully live (`/files`, `/files/{id}`, `/reputation/leaderboard`, `/me/recent-files`)
 - ✅ `requestService.ts` — fully live (`/courses/{id}/upload`, `/me/requests`, `/admin/requests/*`)
 - ✅ `reputationService.ts` — fully live (`/me/reputation`)

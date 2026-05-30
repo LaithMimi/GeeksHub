@@ -23,13 +23,13 @@ import type { AuditAction, AuditLogEntry } from "@/types/domain";
 
 // Action display config
 const actionConfig: Record<AuditAction, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    APPROVE: { label: "Approved", variant: "default" },
-    REJECT: { label: "Rejected", variant: "destructive" },
-    BULK_APPROVE: { label: "Bulk Approved", variant: "default" },
-    BULK_REJECT: { label: "Bulk Rejected", variant: "destructive" },
-    WITHDRAW: { label: "Withdrawn", variant: "secondary" },
-    UNDO_APPROVE: { label: "Undo Approve", variant: "outline" },
-    UNDO_REJECT: { label: "Undo Reject", variant: "outline" },
+    approve: { label: "Approved", variant: "default" },
+    reject: { label: "Rejected", variant: "destructive" },
+    bulk_approve: { label: "Bulk Approved", variant: "default" },
+    bulk_reject: { label: "Bulk Rejected", variant: "destructive" },
+    withdraw: { label: "Withdrawn", variant: "secondary" },
+    undo_approve: { label: "Undo Approve", variant: "outline" },
+    undo_reject: { label: "Undo Reject", variant: "outline" },
 };
 
 export default function AuditLog() {
@@ -38,16 +38,11 @@ export default function AuditLog() {
 
 
     const formatDetails = (log: AuditLogEntry) => {
+        const meta = log.metaData ?? {};
         const parts: string[] = [];
-        if (log.metadata.reason) {
-            parts.push(`Reason: ${log.metadata.reason}`);
-        }
-        if (log.metadata.pointsAwarded) {
-            parts.push(`+${log.metadata.pointsAwarded} pts`);
-        }
-        if (log.metadata.note) {
-            parts.push(`"${log.metadata.note}"`);
-        }
+        if (meta.reason) parts.push(`Reason: ${meta.reason}`);
+        if (meta.pointsAwarded) parts.push(`+${meta.pointsAwarded} pts`);
+        if (meta.note) parts.push(`"${meta.note}"`);
         return parts.join(" · ");
     };
 
@@ -108,7 +103,7 @@ export default function AuditLog() {
                                 </TableHeader>
                                 <TableBody>
                                     {logs.map((log) => {
-                                        const config = actionConfig[log.action];
+                                        const config = actionConfig[log.action] ?? { label: log.action, variant: "outline" as const };
                                         return (
                                             <TableRow key={log.id}>
                                                 <TableCell className="text-sm text-foreground/60">
