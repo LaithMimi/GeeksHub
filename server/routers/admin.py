@@ -5,6 +5,7 @@ from uuid import UUID
 from typing import List, Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Response
 from sqlmodel import Session, select, func
+from sqlalchemy import update
 from database import get_session, engine
 from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog, Lecturer, MaterialType, UserNotification, CourseLecturer
 from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
@@ -145,10 +146,10 @@ def approve_file(
     )
     session.add(reward)
 
-    uploader = session.get(User, request.user_id)
-    if uploader:
-        uploader.total_points += XP_UPLOAD_APPROVAL
-        session.add(uploader)
+    session.exec(
+        update(User).where(User.id == request.user_id)
+        .values(total_points=User.total_points + XP_UPLOAD_APPROVAL)
+    )
 
     request.status = "approved"
 
@@ -300,10 +301,10 @@ def bulk_approve_requests(
         session.add(reward)
 
         # UPDATE THE USER'S TOTAL POINTS
-        uploader = session.get(User, request.user_id)
-        if uploader:
-            uploader.total_points += XP_UPLOAD_APPROVAL
-            session.add(uploader)
+        session.exec(
+            update(User).where(User.id == request.user_id)
+            .values(total_points=User.total_points + XP_UPLOAD_APPROVAL)
+        )
         
         request.status = "approved"
         approved_count += 1

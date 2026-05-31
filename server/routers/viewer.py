@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, Depends
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
+from sqlalchemy import update
 from database import get_session
-from models import User, Material, UserNote, FileViewingSession, PointsTransaction, UserCourseActivity
+from models import User, Material, MaterialChunk, UserNote, FileViewingSession, PointsTransaction, UserCourseActivity
 from schemas import NotePayload, ViewerSessionStartPayload, ViewerHeartbeatPayload, ViewerSessionEndPayload
 from utils.auth_utils import get_verified_user
 
@@ -57,13 +58,20 @@ def start_viewer_session(
     if not material:
         raise HTTPException(status_code=404, detail="Material not found")
 
-    # Formula from frontend spec: Pages * 45 seconds * 0.60 effort threshold
-    target_seconds = int(payload.totalPages * 45 * 0.60)
+    # Server-authoritative page count — never trust the client value
+    page_count = session.exec(
+        select(func.max(MaterialChunk.page_number))
+        .where(MaterialChunk.material_id == payload.file_id)
+    ).first() or 10
+
+    # Formula: Pages * 45 seconds * 0.60 effort threshold
+    target_seconds = int(page_count * 45 * 0.60)
 
     view_session = FileViewingSession(
         user_id=current_user.id,
         file_id=material.id,
         course_id=material.course_id,
+        total_pages=page_count,
         required_active_seconds=target_seconds
     )
     
@@ -97,9 +105,9 @@ def viewer_heartbeat(
 
     # 3. Calculate the score based on Laith's formula (Time x Pages)
     # Sanitize visited_pages: only count valid, in-range page numbers
-    valid_pages = set(p for p in payload.visited_pages if 1 <= p <= payload.total_pages)
+    valid_pages = set(p for p in payload.visited_pages if 1 <= p <= view_session.total_pages)
     time_ratio = min(view_session.active_seconds / max(view_session.required_active_seconds, 1), 1.0)
-    page_ratio = min(len(valid_pages) / max(payload.total_pages, 1), 1.0)
+    page_ratio = min(len(valid_pages) / max(view_session.total_pages, 1), 1.0)
     
     view_session.completion_score = time_ratio * page_ratio
 
@@ -118,8 +126,10 @@ def viewer_heartbeat(
         session.add(reward)
         
         # B. Update the fast User Cache
-        current_user.total_points += 10
-        session.add(current_user)
+        session.exec(
+            update(User).where(User.id == current_user.id)
+            .values(total_points=User.total_points + 10)
+        )
         
         # C. Update the Course Progress Bar Cache
         activity = session.get(UserCourseActivity, (current_user.id, view_session.course_id))

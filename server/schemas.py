@@ -108,16 +108,14 @@ class RecentFileResponse(BaseModel):
 
 class ViewerSessionStartPayload(BaseModel):
     file_id: UUID
-    totalPages: int = 10 # Default fallback if frontend doesn't send it
 
 class ViewerSessionEndPayload(BaseModel):
     session_id: UUID
 
 class ViewerHeartbeatPayload(BaseModel):
     session_id: UUID
-    visited_pages: List[int] = [] # List of page numbers the user has visited in this interval
-    total_pages: int = 1
-    active_seconds_to_add: int = 10 # Assume the heartbeat fires every 10 seconds
+    visited_pages: List[int] = []
+    active_seconds_to_add: int = 10
 
 class NotePayload(BaseModel):
     content: str

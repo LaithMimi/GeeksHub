@@ -2,7 +2,7 @@ from schemas import AIChatRequest
 import os
 from google.genai import types
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 import time
 import traceback
 from slowapi import Limiter
@@ -52,6 +52,7 @@ def _send_chat_message_with_retry(chat, message):
 @router.post("/api/v1/assistant/chat")
 @limiter.limit("20/minute")  # Basic rate limit to prevent abuse; adjust as needed
 def ask_ai_tutor(
+    request: Request,
     payload: AIChatRequest,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_verified_user)

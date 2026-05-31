@@ -152,6 +152,7 @@ class FileViewingSession(SQLModel, table=True):
     started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active_seconds: int = Field(default=0)
     required_active_seconds: int = Field(default=300) # Our computed target time
+    total_pages: int = Field(default=10) # Server-authoritative page count, never from client
     completion_score: float = Field(default=0.0)
     is_complete: bool = Field(default=False)
 
