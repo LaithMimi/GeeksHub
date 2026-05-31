@@ -161,8 +161,24 @@ def sign_in(request: Request, payload: UserSignIn, response: Response, session: 
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
 @router.post("/api/v1/signout")
-def sign_out(response: Response):
-    # This clears the cookie on the browser side
+def sign_out(request: Request, response: Response):
+    token = request.cookies.get("auth_token")
+
+    if token:
+        domain = os.getenv("AUTH0_DOMAIN")
+        try:
+            requests.post(
+                f"https://{domain}/oauth/revoke",
+                json={
+                    "client_id": os.getenv("AUTH0_M2M_ID"),
+                    "client_secret": os.getenv("AUTH0_M2M_SECRET"),
+                    "token": token,
+                },
+                timeout=5,
+            )
+        except Exception:
+            pass  # revocation is best-effort; always clear the cookie regardless
+
     response.delete_cookie("auth_token")
     return {"message": "Logged out successfully"}
 
