@@ -32,13 +32,14 @@ async def validate_uploaded_file(file: UploadFile):
     Validates file size, extension, MIME type, and Magic Bytes.
     Raises an HTTPException if the file fails any check.
     """
-    # 1. FILE SIZE CHECK
-    # FastAPI automatically calculates the size of the uploaded file
-    if file.size and file.size > MAX_BYTES:
+    # 1. FILE SIZE CHECK (read actual bytes — client-reported file.size cannot be trusted)
+    header_bytes = await file.read(MAX_BYTES + 1)
+    if len(header_bytes) > MAX_BYTES:
         raise HTTPException(
-            status_code=413, 
+            status_code=413,
             detail=f"File is too large. Maximum allowed size is {MAX_FILE_SIZE_MB}MB."
         )
+    await file.seek(0)
 
     # 2. EXTENSION CHECK
     filename = file.filename or ""
@@ -67,14 +68,7 @@ async def validate_uploaded_file(file: UploadFile):
         )
 
     # 4. MAGIC BYTES CHECK (What the file ACTUALLY is)
-    # We read the first 16 bytes of the file directly from memory
-    header_bytes = await file.read(16)
-    
-    # CRITICAL: We must reset the file cursor back to the beginning (0).
-    # If we don't do this, when we try to save the file to Google Cloud later, 
-    # it will save a corrupted file that is missing the first 16 bytes!
-    await file.seek(0)
-
+    # header_bytes was already read above; no second read needed
     if not header_bytes.startswith(expected_info["magic"]):
         raise HTTPException(
             status_code=400, 

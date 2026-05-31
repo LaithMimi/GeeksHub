@@ -2,6 +2,7 @@ import os
 import random
 import string
 import datetime
+import re
 from uuid import UUID
 from sqlmodel import func
 from typing import List, Optional
@@ -206,7 +207,7 @@ async def upload_course_file(
     safe_ext = await validate_uploaded_file(file)
 
     # 2. FILENAME KEEP ORIGINAL NAME (with a tiny random string to prevent overwrites)
-    base_name = os.path.splitext(file.filename)[0].replace(" ", "_")
+    base_name = re.sub(r'[^\w\-]', '_', os.path.splitext(file.filename)[0])[:100]
     random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
     file_name = f"{base_name}_{random_suffix}{safe_ext}"
     

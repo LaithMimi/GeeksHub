@@ -229,6 +229,7 @@ def reject_request(
 # Gemini 1.5 free-tier limit: 15 RPM. We embed 1 API call per file,
 # so capping at 10 files/minute gives a comfortable safety buffer.
 BULK_APPROVE_LIMIT = 10
+BULK_REJECT_LIMIT = 10
 
 @router.post("/api/v1/admin/requests/bulk-approve")
 def bulk_approve_requests(
@@ -340,9 +341,15 @@ def bulk_reject_requests(
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
+    if len(payload.request_ids) > BULK_REJECT_LIMIT:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Bulk reject is limited to {BULK_REJECT_LIMIT} files at a time. You sent {len(payload.request_ids)} IDs."
+        )
+
     rejected_count = 0
     bucket = storage_client.bucket(BUCKET_NAME)
-    
+
     for req_id in payload.request_ids:
         request = session.get(FileRequest, req_id)
         if not request or request.status != "pending":

@@ -1,8 +1,8 @@
 import re
-from typing import List, Optional, Self
+from typing import List, Literal, Optional, Self
 from uuid import UUID
 from datetime import datetime
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 # --- Auth Payloads ---
 class UserSignUp(BaseModel):
@@ -120,15 +120,14 @@ class ViewerHeartbeatPayload(BaseModel):
 class NotePayload(BaseModel):
     content: str
 
-class AIChatRequest(BaseModel):
-    fileId: UUID               # The file they are currently reading (camelCase to match frontend)
-    message: str
-    history: list["ChatMessage"] = []  # Conversation history for multi-turn context
-
 class ChatMessage(BaseModel):
-    """One message in the conversation history sent by the frontend."""
-    role: str       # "user" or "assistant"
-    content: str
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=4000)
+
+class AIChatRequest(BaseModel):
+    fileId: UUID
+    message: str = Field(max_length=2000)
+    history: list[ChatMessage] = Field(default=[], max_length=20)
 
 # --- Notification Payloads ---
 class NotificationResponse(BaseModel):
