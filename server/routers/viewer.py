@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Depends
 from sqlmodel import Session, select, func
 from sqlalchemy import update
+from sqlalchemy.exc import IntegrityError
 from database import get_session
 from models import User, Material, MaterialChunk, UserNote, FileViewingSession, PointsTransaction, UserCourseActivity
 from schemas import NotePayload, ViewerSessionStartPayload, ViewerHeartbeatPayload, ViewerSessionEndPayload
@@ -141,10 +142,21 @@ def viewer_heartbeat(
         if activity.status == "not_started":
             activity.status = "exploring"
 
-    session.commit()
-    
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        # A concurrent heartbeat already committed the XP reward — return current state
+        session.refresh(view_session)
+        return {
+            "message": "Heartbeat registered",
+            "activeSeconds": view_session.active_seconds,
+            "score": view_session.completion_score,
+            "isComplete": view_session.is_complete,
+        }
+
     return {
-        "message": "Heartbeat registered", 
+        "message": "Heartbeat registered",
         "activeSeconds": view_session.active_seconds,
         "score": view_session.completion_score,
         "isComplete": view_session.is_complete

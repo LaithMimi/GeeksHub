@@ -404,19 +404,15 @@ def undo_approve(
         select(PointsTransaction).where(PointsTransaction.request_id == request.id)
     ).first()
     if xp_transaction:
-        # Subtract the XP before deleting the transaction receipt
-        uploader = session.get(User, xp_transaction.user_id)
-        if uploader:
-            uploader.total_points -= xp_transaction.amount
-            session.add(uploader)
-            
+        session.exec(
+            update(User).where(User.id == xp_transaction.user_id)
+            .values(total_points=User.total_points - xp_transaction.amount)
+        )
         session.delete(xp_transaction)
 
     # 2. Find and delete the published Material from the catalog
-    # (We match it using the file_url since that is unique to this upload)
-    material = session.exec(
-        select(Material).where(Material.title == request.title, Material.uploader_id == request.user_id)
-    ).first()
+    # Material.id == FileRequest.id (set explicitly at approval time)
+    material = session.get(Material, request.id)
     if material:
         session.delete(material)
 
@@ -569,7 +565,7 @@ def get_request_stats(
 def list_audit_logs(
     action: Optional[str] = Query(None),
     actorId: Optional[UUID] = Query(None),
-    limit: int = Query(50),
+    limit: int = Query(default=50, ge=1, le=100),
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):

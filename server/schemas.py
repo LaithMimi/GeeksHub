@@ -1,7 +1,7 @@
 import re
 from typing import List, Literal, Optional, Self
 from uuid import UUID
-from datetime import datetime
+from datetime import date, datetime
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 # --- Auth Payloads ---
@@ -118,7 +118,7 @@ class ViewerHeartbeatPayload(BaseModel):
     active_seconds_to_add: int = 10
 
 class NotePayload(BaseModel):
-    content: str
+    content: str = Field(max_length=50_000)
 
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
@@ -152,9 +152,9 @@ class SettingsResponse(BaseModel):
     compactMode: bool
 
 class SettingsPatch(BaseModel):
-    language: Optional[str] = None
+    language: Optional[Literal["en", "he", "ar"]] = None
     defaultMajorId: Optional[str] = None
-    defaultYearId: Optional[int] = None
+    defaultYearId: Optional[int] = Field(default=None, ge=1, le=4)
     notifyNewMaterials: Optional[bool] = None
     notifyAdminUpdates: Optional[bool] = None
     reduceMotion: Optional[bool] = None
@@ -163,19 +163,32 @@ class SettingsPatch(BaseModel):
 
 # --- Tasks Payloads ---
 class TaskCreate(BaseModel):
-    title: str
-    date: str                  # "YYYY-MM-DD"
-    priority: str = "normal"   # "normal" | "high" | "urgent"
-    startHour: float = 12.0
-    duration: float = 1.0
+    title: str = Field(min_length=1, max_length=200)
+    date: str
+    priority: Literal["normal", "high", "urgent"] = "normal"
+    startHour: float = Field(default=12.0, ge=0, le=23.5)
+    duration: float = Field(default=1.0, gt=0, le=12)
+
+    @field_validator("date")
+    @classmethod
+    def valid_date(cls, v: str) -> str:
+        date.fromisoformat(v)
+        return v
 
 class TaskPatch(BaseModel):
-    title: Optional[str] = None
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
     date: Optional[str] = None
-    priority: Optional[str] = None
-    startHour: Optional[float] = None
-    duration: Optional[float] = None
+    priority: Optional[Literal["normal", "high", "urgent"]] = None
+    startHour: Optional[float] = Field(default=None, ge=0, le=23.5)
+    duration: Optional[float] = Field(default=None, gt=0, le=12)
     completed: Optional[bool] = None
+
+    @field_validator("date")
+    @classmethod
+    def valid_date(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            date.fromisoformat(v)
+        return v
 
 class TaskResponse(BaseModel):
     id: UUID
