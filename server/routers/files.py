@@ -6,7 +6,8 @@ import re
 from uuid import UUID
 from sqlmodel import func
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Query, Form, UploadFile, File, Response
+from fastapi import APIRouter, HTTPException, Depends, Query, Form, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 from database import get_session
 from models import Material, FileRequest, Course, Lecturer, User, PointsTransaction
@@ -30,9 +31,8 @@ async def upload_to_gcs(file: UploadFile, destination_blob_name: str):
         file.file.seek(0)
         
         # Run the blocking upload in a background thread
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(
-            None,  # Use the default thread pool
+        await asyncio.get_running_loop().run_in_executor(
+            None,
             lambda: blob.upload_from_file(file.file, content_type=file.content_type)
         )
         
@@ -54,14 +54,15 @@ def list_files(
     type_id: Optional[UUID] = Query(None),
     lecturer_id: Optional[UUID] = Query(None),
     search: Optional[str] = Query(None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, le=100),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_verified_user)
 ):
     """
-    Returns a list of approved materials.
+    Returns a paginated list of approved materials.
     Leaves the downloadUrl blank so the frontend fetches it only when clicked.
     """
-    # Note: We query the Material table, which represents approved files.
     statement = select(Material)
 
     # Apply all the filters
@@ -75,7 +76,8 @@ def list_files(
         safe_search = sanitize_like(search)
         statement = statement.where(Material.title.ilike(f"%{safe_search}%"))
 
-    # Execute and return the list
+    statement = statement.offset((page - 1) * page_size).limit(page_size)
+
     materials = session.exec(statement).all()
 
     frontend_friendly_list = []
@@ -136,8 +138,15 @@ def stream_file(
         raise HTTPException(status_code=404, detail="File not found")
     try:
         blob = storage_client.bucket(BUCKET_NAME).blob(material.file_url)
-        pdf_bytes = blob.download_as_bytes()
-        return Response(content=pdf_bytes, media_type="application/pdf")
+        if not blob.exists():
+            raise HTTPException(status_code=404, detail="File not found in storage.")
+        def iter_blob():
+            with blob.open("rb") as f:
+                while chunk := f.read(256 * 1024):  # 256 KB chunks
+                    yield chunk
+        return StreamingResponse(iter_blob(), media_type="application/pdf")
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"GCS Stream Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to stream file.")

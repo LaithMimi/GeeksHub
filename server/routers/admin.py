@@ -4,6 +4,7 @@ import traceback
 from uuid import UUID
 from typing import List, Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Response
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select, func
 from sqlalchemy import update
 from database import get_session, engine
@@ -260,14 +261,22 @@ def bulk_approve_requests(
     approved_count = 0
     bucket = storage_client.bucket(BUCKET_NAME)
     approved_materials: list[tuple[str, str]] = []  # (material_id, final_gcs_path)
-    
-    for req_id in payload.request_ids:
-        request = session.get(FileRequest, req_id)
-        # Skip if it doesn't exist or is already processed
-        if not request or request.status != "pending":
-            continue 
-            
-        course = session.get(Course, request.course_id)
+
+    # Bulk-fetch all requested records upfront — avoids N+1 round-trips
+    all_requests = session.exec(
+        select(FileRequest).where(FileRequest.id.in_(payload.request_ids))
+    ).all()
+    pending_requests = [r for r in all_requests if r.status == "pending"]
+
+    course_ids = {r.course_id for r in pending_requests}
+    courses = {
+        c.id: c for c in session.exec(select(Course).where(Course.id.in_(course_ids))).all()
+    }
+
+    for request in pending_requests:
+        course = courses.get(request.course_id)
+        if not course:
+            continue
         safe_course_name = course.name.replace(" ", "_")
 
         # MOVE FILE IN GOOGLE CLOUD STORAGE
@@ -278,7 +287,7 @@ def bulk_approve_requests(
             temp_blob = bucket.blob(request.file_url)
             bucket.rename_blob(temp_blob, final_gcs_path) 
         except Exception as e:
-            print(f"GCS Move failed for request {req_id}: {e}")
+            print(f"GCS Move failed for request {request.id}: {e}")
             # If the cloud move fails, skip — don't award XP for a broken file.
             continue
 
@@ -350,10 +359,12 @@ def bulk_reject_requests(
     rejected_count = 0
     bucket = storage_client.bucket(BUCKET_NAME)
 
-    for req_id in payload.request_ids:
-        request = session.get(FileRequest, req_id)
-        if not request or request.status != "pending":
-            continue
+    # Bulk-fetch all requested records upfront — avoids N+1 round-trips
+    all_requests = session.exec(
+        select(FileRequest).where(FileRequest.id.in_(payload.request_ids))
+    ).all()
+
+    for request in [r for r in all_requests if r.status == "pending"]:
             
         filename = request.file_url.split('/')[-1]
         trash_path = f"trash_bin/{filename}"
@@ -363,7 +374,7 @@ def bulk_reject_requests(
             bucket.rename_blob(temp_blob, trash_path)
             request.file_url = trash_path
         except Exception as e:
-            print(f"GCS Move failed for {req_id}: {e}")
+            print(f"GCS Move failed for {request.id}: {e}")
             
         request.status = "rejected"
         if payload.reason:
@@ -619,8 +630,11 @@ def proxy_admin_request_preview(
         raise HTTPException(status_code=404, detail="Request not found.")
     try:
         blob = storage_client.bucket(BUCKET_NAME).blob(request.file_url)
-        pdf_bytes = blob.download_as_bytes()
-        return Response(content=pdf_bytes, media_type="application/pdf")
+        def iter_blob():
+            with blob.open("rb") as f:
+                while chunk := f.read(256 * 1024):  # 256 KB chunks
+                    yield chunk
+        return StreamingResponse(iter_blob(), media_type="application/pdf")
     except Exception as e:
         print(f"GCS Admin Preview Proxy Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch preview.")

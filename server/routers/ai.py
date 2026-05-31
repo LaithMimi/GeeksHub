@@ -1,11 +1,13 @@
 from schemas import AIChatRequest
 import os
+import threading
 from google.genai import types
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception
 from fastapi import APIRouter, Depends, HTTPException, Request
 import time
 import traceback
 from slowapi import Limiter
+from cachetools import TTLCache
 from slowapi.util import get_remote_address
 from sqlmodel import Session, select
 from database import engine, get_session
@@ -35,7 +37,8 @@ def search_course_knowledge(query: str, course_id: str) -> str:
 
 # Global in-memory store for Gemini Document Caches
 # Maps material_id -> (cache_name, expiry_timestamp)
-_active_document_caches = {}
+_active_document_caches = TTLCache(maxsize=200, ttl=3600)
+_cache_lock = threading.Lock()
 
 CHAT_MODEL = "gemini-2.5-flash"  # confirmed working on this account
 
@@ -143,26 +146,26 @@ You have access to the `search_course_knowledge` tool which can search across AL
         
         if is_large_enough:
             mat_id = str(material.id)
-            cached_data = _active_document_caches.get(mat_id)
-            if cached_data and cached_data[1] > time.time():
-                # Cache is valid
-                cache_name = cached_data[0]
-            else:
-                # Create a new cache
-                try:
-                    new_cache = client.caches.create(
-                        model='models/gemini-2.5-flash',
-                        config=types.CreateCachedContentConfig(
-                            system_instruction=system_prompt,
-                            # We must pass the document in contents to cache it
-                            contents=[types.Content(role="user", parts=[types.Part(text="Here is the document context:\n" + base_context)])],
-                            ttl="3600s" # 1 hour
+            with _cache_lock:
+                cached_data = _active_document_caches.get(mat_id)
+                if cached_data and cached_data[1] > time.time():
+                    # Cache is still valid
+                    cache_name = cached_data[0]
+                else:
+                    # Create a new cache (lock held so only one thread does this)
+                    try:
+                        new_cache = client.caches.create(
+                            model='models/gemini-2.5-flash',
+                            config=types.CreateCachedContentConfig(
+                                system_instruction=system_prompt,
+                                contents=[types.Content(role="user", parts=[types.Part(text="Here is the document context:\n" + base_context)])],
+                                ttl="3600s"
+                            )
                         )
-                    )
-                    cache_name = new_cache.name
-                    _active_document_caches[mat_id] = (cache_name, time.time() + 3500)
-                except Exception as e:
-                    print(f"Cache creation skipped/failed: {e}")
+                        cache_name = new_cache.name
+                        _active_document_caches[mat_id] = (cache_name, time.time() + 3500)
+                    except Exception as e:
+                        print(f"Cache creation skipped/failed: {e}")
 
         # 6. Create the Agent with the Tool enabled
         if cache_name:
