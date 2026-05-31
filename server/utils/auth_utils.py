@@ -67,7 +67,6 @@ def get_verified_user(request: Request,
         raise HTTPException(status_code=401, detail="Authentication failed.")
     
 def get_admin_user(current_user: User = Depends(get_verified_user)):
-    print(f"DEBUG: Checking admin for {current_user.email}, role={current_user.role}")
     if current_user.role != "ADMIN":
         raise HTTPException(status_code=403, detail=f"Admin privileges required. Your role: {current_user.role}")
     return current_user

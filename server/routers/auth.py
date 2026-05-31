@@ -2,7 +2,9 @@ import os
 import jwt
 import requests
 import time
-from fastapi import APIRouter, HTTPException, Depends, Response
+from fastapi import APIRouter, HTTPException, Depends, Response, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlmodel import Session, select
 from auth0.authentication import GetToken
 from auth0.management import Auth0
@@ -10,6 +12,8 @@ from database import get_session
 from models import User
 from schemas import UserSignUp, UserSignIn, ForgotPassword
 from utils.auth_utils import get_verified_user
+
+limiter = Limiter(key_func=get_remote_address)
 
 # This is the magic object that replaces "app" in this file
 router = APIRouter(tags=["Authentication"])
@@ -102,7 +106,8 @@ def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
         raise HTTPException(status_code=400, detail="Registration failed. Please try again later.")
 
 @router.post("/api/v1/signin")
-def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(get_session)):
+@limiter.limit("10/minute")  # Rate limit to prevent brute-force attacks
+def sign_in(request: Request, payload: UserSignIn, response: Response, session: Session = Depends(get_session)):
     clean_email = payload.email.lower().strip()
     user = session.exec(select(User).where(User.email == clean_email)).first()
     if not user:
@@ -124,7 +129,6 @@ def sign_in(payload: UserSignIn, response: Response, session: Session = Depends(
         if id_token:
             # We can decode without verifying signature here because it came directly from Auth0 over secure HTTPS
             token_payload = jwt.decode(id_token, options={"verify_signature": False})
-            print(f"DEBUG ID Token: {token_payload}")
             if not token_payload.get("email_verified"):
                 raise HTTPException(status_code=403, detail="Email not verified. Please verify your email before signing in.")
             
@@ -163,7 +167,8 @@ def sign_out(response: Response):
     return {"message": "Logged out successfully"}
 
 @router.post("/api/v1/forgot-password")
-def forgot_password(payload: ForgotPassword):
+@limiter.limit("3/minute")  # Rate limit to prevent abuse
+def forgot_password(request: Request, payload: ForgotPassword):
     domain = os.getenv("AUTH0_DOMAIN")
     client_id = os.getenv("AUTH0_M2M_ID") 
     

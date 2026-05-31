@@ -5,6 +5,8 @@ from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_excep
 from fastapi import APIRouter, Depends, HTTPException
 import time
 import traceback
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlmodel import Session, select
 from database import engine, get_session
 from models import User, Material, MaterialChunk
@@ -12,7 +14,7 @@ from utils.auth_utils import get_verified_user
 from utils.ai_utils import client, search_material_context
 
 router = APIRouter(tags=["AI Study Companion"])
-
+limiter = Limiter(key_func=get_remote_address)
 
 # ---------------------------------------------------------------------------
 # Gemini Function-Calling Tool
@@ -48,6 +50,7 @@ def _send_chat_message_with_retry(chat, message):
     return chat.send_message(message)
 
 @router.post("/api/v1/assistant/chat")
+@limiter.limit("20/minute")  # Basic rate limit to prevent abuse; adjust as needed
 def ask_ai_tutor(
     payload: AIChatRequest,
     session: Session = Depends(get_session),

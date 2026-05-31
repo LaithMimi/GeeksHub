@@ -1,5 +1,7 @@
 import os
 from pathlib import Path
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI,Depends
 from sqlmodel import Session, select
@@ -7,7 +9,7 @@ from contextlib import asynccontextmanager
 from database import get_session, init_db
 from routers import auth, catalog, files, admin, gamification, activity, viewer, ai, tasks, settings, pinned_courses, notifications
 
-
+limiter = Limiter(key_func=get_remote_address)
 # Resolve GCP key path relative to this file so it works from any CWD
 _server_dir = Path(__file__).parent
 _gcp_cred = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "gcp_key.json")
