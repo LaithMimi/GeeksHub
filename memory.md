@@ -30,6 +30,27 @@ A university course materials platform where students **share, browse, and study
 
   **Note:** Cloud Vision API must be enabled in the GCP project. Free tier is 1,000 pages/month; $1.50 per 1,000 after that. Existing GCP service account credentials cover it automatically.
 
+- **PPTX Upload Support with Google Drive Conversion (June 7):**
+
+  The system already accepted `.pptx` uploads but had no conversion — the file was stored as-is and the PDF viewer/embedding pipeline couldn't handle it. Added automatic PPTX → PDF conversion at admin approval time using the Google Drive API (no system dependencies required).
+
+  **How it works:**
+  - When an admin approves a `.pptx` file, `convert_pptx_to_pdf()` is called before the GCS move.
+  - The PPTX bytes are uploaded to Google Drive with `mimeType: application/vnd.google-apps.presentation` — Drive auto-converts it to Google Slides.
+  - The Google Slides file is immediately exported as PDF via `files().export_media()`.
+  - The temp Drive file is deleted in a `finally` block (always cleaned up).
+  - The PDF is uploaded to the final GCS path with a `.pdf` extension; the original PPTX is deleted.
+  - `Material.file_url` always ends up pointing to a PDF — the viewer, streaming, and embedding pipeline are completely unchanged.
+  - Drive service is lazy-initialized (`_drive_service` global).
+  - Both `approve_file` and `bulk_approve_requests` use the same conversion logic.
+
+  **Files changed:**
+  - `server/utils/pptx_utils.py` — new file with `convert_pptx_to_pdf()` and `_get_drive_service()`.
+  - `server/routers/admin.py` — both approval endpoints check for `.pptx` and call `convert_pptx_to_pdf()` before GCS move.
+  - `requirements.txt` — added `google-api-python-client==2.197.0`.
+
+  **Note:** Google Drive API must be enabled in the GCP project (GCP Console → APIs & Services → "Google Drive API" → Enable). Existing service account credentials cover it automatically. No installation needed on developer machines.
+
 ---
 
 ## 1.1 Highlights of Recent Updates (May 30 2026)

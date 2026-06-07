@@ -13,6 +13,7 @@ from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
 from utils.auth_utils import get_admin_user
 from utils.shared import storage_client, BUCKET_NAME
 from utils.ai_utils import process_and_embed_pdf
+from utils.pptx_utils import convert_pptx_to_pdf
 
 router = APIRouter(tags=["Admin Moderation"])
 
@@ -118,14 +119,26 @@ def approve_file(
 
     course = session.get(Course, request.course_id)
     safe_course_name = course.name.replace(" ", "_")
-    
-    filename = request.file_url.split('/')[-1] 
-    final_gcs_path = f"{safe_course_name}/{filename}"
-    
+
+    filename = request.file_url.split('/')[-1]
+    bucket = storage_client.bucket(BUCKET_NAME)
+
     try:
-        bucket = storage_client.bucket(BUCKET_NAME)
-        temp_blob = bucket.blob(request.file_url)
-        bucket.rename_blob(temp_blob, final_gcs_path) 
+        if filename.lower().endswith('.pptx'):
+            # Convert to PDF: download → convert → upload PDF → delete PPTX
+            print(f"[APPROVE] Converting PPTX to PDF: {filename}")
+            pptx_bytes = bucket.blob(request.file_url).download_as_bytes()
+            pdf_bytes = convert_pptx_to_pdf(pptx_bytes)
+            pdf_filename = filename[:-5] + '.pdf'
+            final_gcs_path = f"{safe_course_name}/{pdf_filename}"
+            bucket.blob(final_gcs_path).upload_from_string(pdf_bytes, content_type='application/pdf')
+            bucket.blob(request.file_url).delete()
+            print(f"[APPROVE] PPTX converted and stored as PDF: {final_gcs_path}")
+        else:
+            final_gcs_path = f"{safe_course_name}/{filename}"
+            bucket.rename_blob(bucket.blob(request.file_url), final_gcs_path)
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=f"PPTX conversion failed: {e}")
     except Exception as e:
         print(f"GCS Move failed: {e}")
         raise HTTPException(status_code=500, detail="Cloud storage error.")
@@ -279,16 +292,24 @@ def bulk_approve_requests(
             continue
         safe_course_name = course.name.replace(" ", "_")
 
-        # MOVE FILE IN GOOGLE CLOUD STORAGE
+        # MOVE FILE IN GOOGLE CLOUD STORAGE (convert PPTX to PDF if needed)
         filename = request.file_url.split('/')[-1]
-        final_gcs_path = f"{safe_course_name}/{filename}"
-        
         try:
-            temp_blob = bucket.blob(request.file_url)
-            bucket.rename_blob(temp_blob, final_gcs_path) 
+            if filename.lower().endswith('.pptx'):
+                print(f"[BULK-APPROVE] Converting PPTX to PDF: {filename}")
+                pptx_bytes = bucket.blob(request.file_url).download_as_bytes()
+                pdf_bytes = convert_pptx_to_pdf(pptx_bytes)
+                pdf_filename = filename[:-5] + '.pdf'
+                final_gcs_path = f"{safe_course_name}/{pdf_filename}"
+                bucket.blob(final_gcs_path).upload_from_string(pdf_bytes, content_type='application/pdf')
+                bucket.blob(request.file_url).delete()
+                print(f"[BULK-APPROVE] Converted and stored as PDF: {final_gcs_path}")
+            else:
+                final_gcs_path = f"{safe_course_name}/{filename}"
+                bucket.rename_blob(bucket.blob(request.file_url), final_gcs_path)
         except Exception as e:
-            print(f"GCS Move failed for request {request.id}: {e}")
-            # If the cloud move fails, skip — don't award XP for a broken file.
+            print(f"GCS move/conversion failed for request {request.id}: {e}")
+            # If the cloud move or conversion fails, skip — don't award XP for a broken file.
             continue
 
         # CREATE THE OFFICIAL CATALOG ENTRY
