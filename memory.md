@@ -10,7 +10,29 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.0 Highlights of Recent Updates (May 30 2026 — Latest)
+## 1.0 Highlights of Recent Updates (June 7 2026 — Latest)
+
+- **OCR Fallback for Image-Heavy PDF/Slide Pages (June 7):**
+
+  The embedding pipeline previously skipped pages with no selectable text (scanned slides, photo pages, image-only diagrams). Added a Google Cloud Vision OCR fallback that kicks in automatically for those pages.
+
+  **How it works:**
+  - `process_and_embed_pdf()` loops through every page as before, extracting text with `pypdf`.
+  - If a page yields **zero characters** of selectable text, `pypdfium2` renders it as a 2x-resolution PNG.
+  - That PNG is sent to **Google Cloud Vision** (`text_detection`), which reads any visible text from the image.
+  - The OCR result replaces the empty text for that page and flows into the normal chunking + Gemini embedding pipeline — nothing else changes.
+  - The Vision client is lazy-initialized (`_vision_client` global) so there's no startup cost when OCR isn't needed.
+  - OCR only fires on pages with **zero** extractable text — title-only slides (e.g. "Introduction to Algorithms") still have selectable text and pass through normally without hitting the API.
+
+  **Files changed:**
+  - `server/utils/ai_utils.py` — added `_get_vision_client()`, `_ocr_page()`, and the OCR branch in the page loop.
+  - `requirements.txt` — added `pypdfium2==5.9.0`, `google-cloud-vision==3.14.0`, `Pillow==12.2.0`.
+
+  **Note:** Cloud Vision API must be enabled in the GCP project. Free tier is 1,000 pages/month; $1.50 per 1,000 after that. Existing GCP service account credentials cover it automatically.
+
+---
+
+## 1.1 Highlights of Recent Updates (May 30 2026)
 
 - **Admin UI Consistency + CatalogManager Enhancements (May 30):**
 
@@ -31,7 +53,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.1 Highlights of Recent Updates (Late May 2026)
+## 1.2 Highlights of Recent Updates (Late May 2026)
 
 - **Frontend Cleanliness Audit + 3-Phase Cleanup (May 22):** Full senior-engineer code review producing a 6.1/10 baseline score, followed by a four-phase incremental refactor. All changes verified via `tsc --noEmit`, `vitest run` (18/18 passing), `eslint .` (45 issues — down from 58 baseline), and `vite build`. No behavior changes intended; pure cleanup.
 
@@ -89,7 +111,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.2 Highlights of Recent Updates (May 29 2026)
+## 1.3 Highlights of Recent Updates (May 29 2026)
 
 - **P4 Backend + Frontend Completed (May 29):** All remaining localStorage-only features migrated to live API endpoints.
 
@@ -117,7 +139,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.3 Highlights of Recent Updates (Mid May 2026 — May 18)
+## 1.4 Highlights of Recent Updates (Mid May 2026 — May 18)
 
 - **Tasks Backend Fully Implemented (May 18):** Full CRUD API for user learning-plan tasks brought live.
   - **`server/models.py`**: Added `UserTask` SQLModel table with fields: `id` (UUID PK), `user_id` (FK → users), `title`, `date` (`"YYYY-MM-DD"` string — avoids TZ issues), `start_hour` (float, 0.5-step resolution), `duration` (float hours), `priority` (`"normal"` | `"high"` | `"urgent"`), `completed` (bool), `created_at`. Composite index on `(user_id, date)` for fast per-user day queries.
@@ -136,7 +158,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.4 Highlights of Recent Updates (Late March 2026)
+## 1.5 Highlights of Recent Updates (Late March 2026)
 - **Cyber-Neon UI Overhaul:** Rebranded the entire application to a high-contrast Deep Teal and Cyan global aesthetic, deprecating local hardcoded properties and archaic light-mode hacks. 
 - **UUID Exposure Fixes:** Refactored `Dashboard.tsx` and `Recent.tsx` to stop exposing raw Postgres UUIDs to the end user. Implemented a "resolve-on-render" pattern utilizing existing highly-cached TanStack catalog queries (`useMajors`, `useCourses`) to dynamically map UUIDs to human-readable names.
 - **Accessibility & Modal Polish:** Repaired massive breakage on the Dashboard "New Task" modal, stripping legacy `liquid-glass-heavy` hacks destroying Tailwind transform matrices. Achieved full a11y compliance and React render loop optimizations on the modal.

@@ -2,13 +2,16 @@ import os
 from io import BytesIO
 import time
 from pypdf import PdfReader
+import pypdfium2 as pdfium
 from google import genai
+from google.cloud import vision as gcloud_vision
 from sqlmodel import Session, select
 from models import MaterialChunk
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception
 
 # Initialize the Gemini Client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+_vision_client = None  # lazy-initialized to avoid startup cost when OCR isn't needed
 
 EMBED_MODEL = "gemini-embedding-001"  # stable production model
 EMBED_DIM   = 1536  # truncated from 3072 — keeps quality, fits under pgvector HNSW 2000-dim limit
@@ -30,6 +33,23 @@ def _embed_content_with_retry(texts: list[str]):
     )
 
 
+def _get_vision_client() -> gcloud_vision.ImageAnnotatorClient:
+    global _vision_client
+    if _vision_client is None:
+        _vision_client = gcloud_vision.ImageAnnotatorClient()
+    return _vision_client
+
+
+def _ocr_page(page_png_bytes: bytes) -> str:
+    """Sends a rendered page image to Cloud Vision and returns extracted text."""
+    image = gcloud_vision.Image(content=page_png_bytes)
+    response = _get_vision_client().text_detection(image=image)
+    if response.error.message:
+        raise RuntimeError(f"Cloud Vision: {response.error.message}")
+    annotations = response.text_annotations
+    return annotations[0].description if annotations else ""
+
+
 def process_and_embed_pdf(file_content: bytes, material_id: str, session: Session):
     print(f"[EMBED] ▶ Starting embedding for material: {material_id}")
     print(f"[EMBED] File size: {len(file_content):,} bytes")
@@ -43,19 +63,41 @@ def process_and_embed_pdf(file_content: bytes, material_id: str, session: Sessio
         print(f"[EMBED] ❌ Step 1 FAILED — could not parse PDF: {type(e).__name__}: {e}")
         raise
 
+    # Open with pypdfium2 so we can render image-heavy pages for OCR
+    pdf_doc = pdfium.PdfDocument(BytesIO(file_content))
+
     full_text = ""
     page_map = []  # stores (end_char_index, page_number)
+    ocr_page_count = 0
     for i, page in enumerate(reader.pages):
         try:
             text = page.extract_text() or ""
         except Exception as e:
             print(f"[EMBED] ⚠️  Could not extract text from page {i+1}: {type(e).__name__}: {e}")
             text = ""
+
+        # OCR fallback: page has zero selectable text (embedded image, scanned page, photo slide)
+        if not text.strip():
+            try:
+                pdf_page = pdf_doc[i]
+                bitmap = pdf_page.render(scale=2.0)  # 2x scale improves OCR accuracy
+                pil_image = bitmap.to_pil()
+                buf = BytesIO()
+                pil_image.save(buf, format="PNG")
+                ocr_text = _ocr_page(buf.getvalue())
+                if ocr_text.strip():
+                    print(f"[EMBED] 🔍 Page {i+1}: OCR found {len(ocr_text)} chars (pypdf got {len(text.strip())})")
+                    text = ocr_text
+                    ocr_page_count += 1
+            except Exception as e:
+                print(f"[EMBED] ⚠️  OCR failed for page {i+1}: {type(e).__name__}: {e}")
+
         if text.strip():
             full_text += text + "\n"
             page_map.append((len(full_text), i + 1))
 
-    print(f"[EMBED] Extracted {len(full_text):,} characters from {len(page_map)} text-bearing pages")
+    pdf_doc.close()
+    print(f"[EMBED] Extracted {len(full_text):,} characters from {len(page_map)} text-bearing pages ({ocr_page_count} via OCR)")
 
     # 2. Bail out if no text found
     if not full_text.strip():
