@@ -28,6 +28,9 @@ function getBlockColor(title: string, colorMap: Map<string, number>): typeof BLO
 const MIN_HOUR = 7;
 const MAX_HOUR = 22;
 const DAYS_VISIBLE = 7;
+// Backend caps task duration at 12 hours (TaskCreate.duration le=12); a full-height
+// drag spans 15 hours, so clamp before opening the modal to avoid a 422.
+const MAX_TASK_DURATION = 12;
 
 type DragMode = "create" | "move";
 
@@ -249,7 +252,7 @@ export default function LearningPlan({ tasks, onOpenAddModal, onToggleTask, onMo
         if (dragState.mode === "create") {
             const start = Math.min(dragState.startHour, dragState.endHour);
             const end = Math.max(dragState.startHour, dragState.endHour);
-            const duration = Math.max(0.5, end - start);
+            const duration = Math.min(MAX_TASK_DURATION, Math.max(0.5, end - start));
             onOpenAddModal(dragState.dateStr, start, duration);
         } else if (dragState.mode === "move" && dragState.taskId) {
             if (didMoveRef.current) {

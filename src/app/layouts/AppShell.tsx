@@ -60,8 +60,8 @@ import { useInAppNotifications } from "@/shared/hooks/useInAppNotifications";
 
 const languages = [
     { code: "en", name: "English", dir: "ltr" },
-    { code: "ar", name: "???????", dir: "rtl" },
-    { code: "he", name: "?????", dir: "rtl" },
+    { code: "ar", name: "العربية", dir: "rtl" },
+    { code: "he", name: "עברית", dir: "rtl" },
 ];
 
 const navItems = [
@@ -178,7 +178,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                             </Link>
                         )}
 
-                        {/* Close sidebar button � expanded state */}
+                        {/* Close sidebar button expanded state */}
                         {!collapsed && (
                             <button
                                 onClick={onToggle}
@@ -190,7 +190,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                         )}
                     </div>
 
-                    {/* Open sidebar button � collapsed state */}
+                    {/* Open sidebar button collapsed state */}
                     {collapsed && (
                         <button
                             onClick={onToggle}
@@ -243,7 +243,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                             return linkContent;
                         })}
 
-                        {/* Admin link � only shown to admins */}
+                        {/* Admin link only shown to admins */}
                         {isAdmin && (() => {
                             const adminLink = (
                                 <Link
@@ -277,7 +277,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                     {/* Bottom section */}
                     <div className="mt-auto pt-5 space-y-3">
 
-                        {/* Pro card � only when expanded */}
+                        {/* Pro card only when expanded */}
                         {!collapsed && (
                             <div className="liquid-glass-subtle rounded-xl p-4 space-y-3">
                                 <div className="flex items-center gap-2">

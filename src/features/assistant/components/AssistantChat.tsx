@@ -115,7 +115,9 @@ export function AssistantChat({ fileId, fileTitle, selectedText, pinToNotes }: A
     }
 
     async function sendMsg(override?: string) {
-        const text = (override ?? inputValue).trim();
+        // Backend caps message at 2000 chars; the textarea enforces this for typing,
+        // but text-selection injections set the value programmatically and can exceed it.
+        const text = (override ?? inputValue).trim().slice(0, 2000);
         if (!text) return;
         setMessages(prev => [...prev, {
             id: Date.now().toString(), role: "user", content: text, timestamp: new Date(),

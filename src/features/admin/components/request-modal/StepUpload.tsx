@@ -29,7 +29,7 @@ export function StepUpload({
         <div className="space-y-5">
             <div className="space-y-1">
                 <p className="text-foreground text-[15px] font-semibold">Upload your file</p>
-                <p className="text-muted-foreground/70 text-[12px]">PDF, PPTX, DOCX, JPG or PNG — max 25 MB.</p>
+                <p className="text-muted-foreground/70 text-[12px]">PDF, PPTX, DOCX, JPG or PNG — max 15 MB.</p>
             </div>
             {/* Full summary before committing */}
             <div className="flex flex-wrap gap-2">

@@ -2,11 +2,16 @@ import { useState, useEffect, forwardRef, useImperativeHandle, useRef } from "re
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle, AlertCircle, X, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { getNotes, saveNotes } from "@/features/assistant/api/assistantService";
 import type { AssistantMessage } from "@/features/assistant/api/assistantService";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 
 const ROTATIONS = [-2, -1, 0, 1, 2, -1.5, 1.5, -0.5, 0.5, 2];
+
+// Notes are persisted as the JSON-serialized card array; the backend caps that
+// payload (NotePayload.content) at 50,000 chars, so guard before adding.
+const MAX_NOTES_CONTENT = 50_000;
 
 export interface StickyNoteCard {
     id: string;
@@ -74,13 +79,20 @@ export const NotesBoard = forwardRef<NotesBoardRef, NotesBoardProps>(
 
         useImperativeHandle(ref, () => ({
             pinNote: (content: string) => {
-                const card: StickyNoteCard = {
-                    id: Date.now().toString(),
-                    text: content,
-                    rotation: ROTATIONS[cards.length % ROTATIONS.length],
-                    createdAt: new Date().toISOString(),
-                };
-                setCards((prev) => [...prev, card]);
+                setCards((prev) => {
+                    const card: StickyNoteCard = {
+                        id: Date.now().toString(),
+                        text: content,
+                        rotation: ROTATIONS[prev.length % ROTATIONS.length],
+                        createdAt: new Date().toISOString(),
+                    };
+                    const next = [...prev, card];
+                    if (JSON.stringify(next).length > MAX_NOTES_CONTENT) {
+                        toast.error("Notes board is full. Remove some notes before pinning more.");
+                        return prev;
+                    }
+                    return next;
+                });
             }
         }));
 
@@ -140,6 +152,10 @@ export const NotesBoard = forwardRef<NotesBoardRef, NotesBoardProps>(
                 rotation: ROTATIONS[cards.length % ROTATIONS.length],
                 createdAt: new Date().toISOString(),
             };
+            if (JSON.stringify([...cards, card]).length > MAX_NOTES_CONTENT) {
+                toast.error("Notes board is full. Remove some notes before adding more.");
+                return;
+            }
             setCards(prev => [...prev, card]);
             setNoteInput("");
         }

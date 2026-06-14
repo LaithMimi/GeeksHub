@@ -63,6 +63,7 @@ export default function AddTaskModal({ onClose, onAdd, initialDate, initialStart
                             autoFocus
                             value={title}
                             onChange={e => setTitle(e.target.value)}
+                            maxLength={200}
                             placeholder="Current objective..."
                             className="w-full h-12 rounded-xl bg-card/60 px-4 text-sm text-foreground placeholder:text-muted-foreground/50 border border-border hover:border-border/50 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-colors"
                         />
