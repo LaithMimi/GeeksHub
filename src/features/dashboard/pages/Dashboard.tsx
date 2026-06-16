@@ -48,6 +48,14 @@ const progressGlows: Record<string, string> = {
     red: "shadow-[0_0_12px_rgba(239,68,68,0.4)]",
 };
 
+/** Formats total study minutes as a compact label, e.g. 0 → "0h", 45 → "45m", 150 → "2.5h". */
+function formatStudyTime(minutes: number): string {
+    if (!minutes || minutes <= 0) return "0h";
+    if (minutes < 60) return `${minutes}m`;
+    const hours = minutes / 60;
+    return `${Number.isInteger(hours) ? hours : hours.toFixed(1)}h`;
+}
+
 // ────────────────────────────────────────────
 // Main Dashboard
 // ────────────────────────────────────────────
@@ -98,10 +106,14 @@ export default function Dashboard() {
         ? `${Math.round((completedTasks / totalTasks) * 100)}%`
         : "0%";
 
+    const studyHoursValue = activitySummary
+        ? formatStudyTime(activitySummary.totalStudyMinutes)
+        : "0h";
+
     const metrics = [
         {
             label: "Study Hours",
-            value: "0h", // Backend endpoint needed: GET /api/me/study-hours
+            value: isLoadingSummary ? <Skeleton className="h-9 w-16 bg-foreground/5" /> : studyHoursValue,
             change: "",
             positive: true,
             neutral: false,
@@ -111,7 +123,7 @@ export default function Dashboard() {
         },
         {
             label: "Courses Active",
-            value: isLoadingSummary ? <Skeleton className="h-9 w-16 bg-foreground/5" /> : (activitySummary ? activitySummary.courseActivity.filter(c => c.status === "engaged").length.toString() : "0"),
+            value: isLoadingSummary ? <Skeleton className="h-9 w-16 bg-foreground/5" /> : (activitySummary ? activitySummary.coursesEngaged.toString() : "0"),
             change: "",
             positive: true,
             neutral: false,

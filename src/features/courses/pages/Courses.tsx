@@ -8,8 +8,17 @@ import RequestFileModal from "@/features/admin/components/RequestFileModal";
 
 import { useMajors, useCourses, useLecturers, useTypes } from "@/features/courses/hooks/useCatalog";
 import { useFiles, useTopContributors } from "@/features/files/hooks/useFiles";
+import { BadgeChip } from "@/features/gamification/components/BadgeChip";
 import { usePinnedCourses } from "@/features/courses/hooks/usePinnedCourses";
 import { useAuth } from "@/features/auth/context/AuthContext";
+
+/** Rank-circle styling — gold/silver/bronze for the top three, muted otherwise. */
+const rankStyle = (index: number): string => {
+    if (index === 0) return "bg-yellow-400/15 text-yellow-300";
+    if (index === 1) return "bg-slate-300/15 text-slate-200";
+    if (index === 2) return "bg-amber-500/15 text-amber-400";
+    return "bg-foreground/5 text-muted-foreground/60";
+};
 
 export default function Courses() {
     const { user } = useAuth();
@@ -331,28 +340,28 @@ export default function Courses() {
                             </div>
                         ) : (
                             <div className="liquid-glass rounded-2xl divide-y divide-border overflow-hidden">
-                                {topContributors?.map((c, i) => (
+                                {topContributors?.length === 0 ? (
+                                    <p className="px-5 py-8 text-center text-[13px] text-muted-foreground/60">
+                                        No contributors yet.
+                                    </p>
+                                ) : topContributors?.map((c, i) => (
                                     <div key={c.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-foreground/5 transition-colors">
-                                        <div className="font-display font-bold text-muted-foreground/50 w-4 text-center text-[13px]">
+                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-display font-bold shrink-0 ${rankStyle(i)}`}>
                                             {i + 1}
                                         </div>
-                                        <div className="h-8 w-8 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-[12px] font-display font-bold">
+                                        <div className="h-9 w-9 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-[12px] font-display font-bold shrink-0">
                                             {c.avatar}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-[13px] font-medium text-foreground truncate">{c.name}</p>
-                                                <span className="text-[11px] px-2 py-0.5 rounded-md bg-foreground/5 text-muted-foreground">
-                                                    {c.points} pts
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                <p className="text-[11px] text-muted-foreground/50 truncate">{c.major}</p>
-                                                {c.badge === "gold" && <span className="text-[10px] text-yellow-400 font-medium">Gold</span>}
-                                                {c.badge === "silver" && <span className="text-[10px] text-slate-300 font-medium">Silver</span>}
-                                                {c.badge === "bronze" && <span className="text-[10px] text-amber-500 font-medium">Bronze</span>}
+                                            <p className="text-[13px] font-medium text-foreground truncate">{c.name}</p>
+                                            <div className="mt-1">
+                                                <BadgeChip tier={c.badge} />
                                             </div>
                                         </div>
+                                        <span className="text-[13px] font-display font-bold text-foreground shrink-0 tabular-nums">
+                                            {c.points}
+                                            <span className="text-[10px] text-muted-foreground/60 font-normal ml-0.5">pts</span>
+                                        </span>
                                     </div>
                                 ))}
                             </div>

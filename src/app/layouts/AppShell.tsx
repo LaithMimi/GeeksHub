@@ -34,7 +34,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import {
     Home, History, Settings, BookOpen, Upload,
     Bell, Search, GraduationCap, Sparkles,
-    PanelLeftClose, PanelLeftOpen, Shield, Menu,
+    PanelLeftClose, PanelLeftOpen, Shield, ShieldCheck, Menu,
     User,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -147,6 +147,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
         : "?";
 
     const isAdmin = user?.role === "ADMIN";
+    const isModerator = user?.role === "MODERATOR" || isAdmin;
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -271,6 +272,36 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                 );
                             }
                             return adminLink;
+                        })()}
+
+                        {/* Moderator link shown to moderators and admins */}
+                        {isModerator && (() => {
+                            const moderatorLink = (
+                                <Link
+                                    to="/moderator"
+                                    className={`
+                                        flex items-center rounded-xl text-[14px] transition-all group relative mt-1
+                                        ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
+                                        ${isActive("/moderator")
+                                            ? "text-amber-300 bg-amber-500/[0.08] border border-amber-500/[0.12]"
+                                            : "text-muted-foreground hover:text-foreground/75 hover:bg-foreground/5"
+                                        }
+                                    `}
+                                >
+                                    <ShieldCheck className={`h-[18px] w-[18px] shrink-0 ${isActive("/moderator") ? "text-amber-300" : "text-amber-400/80 group-hover:text-amber-400"}`} />
+                                    {!collapsed && <span className={`font-medium ${isActive("/moderator") ? "text-amber-300 font-semibold" : "text-amber-400/80 group-hover:text-amber-400"}`}>Moderator</span>}
+                                </Link>
+                            );
+
+                            if (collapsed) {
+                                return (
+                                    <Tooltip key="moderator">
+                                        <TooltipTrigger asChild>{moderatorLink}</TooltipTrigger>
+                                        <TooltipContent side="right" className="text-xs">Moderator Panel</TooltipContent>
+                                    </Tooltip>
+                                );
+                            }
+                            return moderatorLink;
                         })()}
                     </nav>
 

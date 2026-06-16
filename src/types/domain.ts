@@ -160,6 +160,15 @@ export interface Lecturer {
     name: string;
 }
 
+/**
+ * Material-type option as returned by GET /api/v1/types.
+ * @backend Table: material_types
+ */
+export interface MaterialTypeOption {
+    id: string;
+    displayName: string;
+}
+
 // ============================================================================
 // FILE ENTITIES
 // ============================================================================
@@ -275,6 +284,8 @@ export interface ViewerHeartbeatResponse {
 export interface ActivitySummary {
     totalPoints: number;
     badgeTier: BadgeTier;
+    totalStudyMinutes: number;
+    coursesEngaged: number;
     recentTransactions: {
         id: string;
         action: string;

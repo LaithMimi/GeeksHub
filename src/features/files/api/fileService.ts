@@ -1,5 +1,5 @@
 import { api } from "@/lib/apiClient";
-import type { Contributor, File } from "@/types/domain";
+import type { BadgeTier, Contributor, File } from "@/types/domain";
 
 export interface FileFilters {
     majorId?: string;
@@ -60,32 +60,50 @@ export const getFile = async (fileId: string): Promise<File | null> => {
  * Fetches top contributors ranked by points.
  * @backend GET /api/v1/reputation/leaderboard
  */
+interface LeaderboardEntryResponse {
+    userId?: string;
+    id?: string;
+    name: string;
+    totalPoints?: number;
+    points?: number;
+    badge: BadgeTier;
+    major?: string;
+}
+
 export const listTopContributors = async (): Promise<Contributor[]> => {
-    const rawData = await api<any[]>("/reputation/leaderboard");
-    return rawData.map(item => ({
-        id: item.userId || item.id,
+    const rawData = await api<LeaderboardEntryResponse[]>("/reputation/leaderboard");
+    return rawData.map((item) => ({
+        id: item.userId || item.id || "",
         name: item.name,
         avatar: item.name ? item.name.substring(0, 2).toUpperCase() : "?",
-        points: item.totalPoints || item.points || 0,
-        badge: item.badge,
-        major: item.major || "Unknown"
+        points: item.totalPoints ?? item.points ?? 0,
+        badge: item.badge ?? "newcomer",
+        major: item.major || "Unknown",
     }));
+}
+
+/** A recently-viewed file entry returned by GET /api/v1/me/recent-files. */
+export interface RecentFile {
+    id: string;
+    title: string;
+    courseId: string;
+    viewedAt: string;
 }
 
 /**
  * Fetches the current user's recently viewed files.
  * @backend GET /api/v1/me/recent-files
  */
-export const listRecentFiles = async (): Promise<any[]> => {
-    return await api<any[]>("/me/recent-files");
+export const listRecentFiles = async (): Promise<RecentFile[]> => {
+    return await api<RecentFile[]>("/me/recent-files");
 }
 
 /**
  * Marks a file as recently viewed for the current user.
- * @param file - The file object to mark as viewed
+ * @param file - The file (only its id is used) to mark as viewed
  * @backend POST /api/v1/me/recent-files/:fileId
  */
-export const addRecentFile = async (file: any): Promise<void> => {
+export const addRecentFile = async (file: { id: string }): Promise<void> => {
     await api(`/me/recent-files/${file.id}`, { method: "POST" });
 }
 

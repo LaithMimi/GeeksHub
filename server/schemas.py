@@ -161,6 +161,35 @@ class SettingsPatch(BaseModel):
     compactMode: Optional[bool] = None
 
 
+# --- Moderator Payloads ---
+# NOTE: request bodies use camelCase to match the frontend convention
+# (the apiClient sends camelCase and converts snake_case responses back).
+class ModeratorUserUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    majorId: Optional[UUID] = None
+    role: Optional[Literal["STUDENT", "MODERATOR", "ADMIN"]] = None
+
+class LecturerCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+class LecturerUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+class CourseCreate(BaseModel):
+    code: str = Field(min_length=1, max_length=40)
+    name: str = Field(min_length=1, max_length=200)
+    majorId: UUID
+    yearId: int = Field(ge=1, le=4)
+    semester: int = Field(ge=1, le=3)
+
+class CourseUpdate(BaseModel):
+    code: Optional[str] = Field(default=None, min_length=1, max_length=40)
+    name: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    majorId: Optional[UUID] = None
+    yearId: Optional[int] = Field(default=None, ge=1, le=4)
+    semester: Optional[int] = Field(default=None, ge=1, le=3)
+
+
 # --- Tasks Payloads ---
 class TaskCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)

@@ -1,5 +1,21 @@
 import { api } from "@/lib/apiClient";
-import type { ActivitySummary } from "@/types/domain";
+import type { ActivitySummary, BadgeTier, CourseStatus } from "@/types/domain";
+
+/** Raw shape returned by GET /me/activity/summary (all fields optional for resilience). */
+interface ActivitySummaryResponse {
+    totalPoints?: number;
+    badgeTier?: BadgeTier;
+    totalStudyMinutes?: number;
+    coursesEngaged?: number;
+    recentTransactions?: { id: string; action: string; points: number; createdAt: string }[];
+    courseActivity?: {
+        courseId: string;
+        courseName: string;
+        status: CourseStatus;
+        filesCompleted: number;
+        totalFiles: number;
+    }[];
+}
 
 /**
  * ============================================================================
@@ -15,18 +31,20 @@ import type { ActivitySummary } from "@/types/domain";
  * @backend GET /api/v1/me/activity/summary
  */
 export const getActivitySummary = async (): Promise<ActivitySummary> => {
-    const response = await api<any>("/me/activity/summary");
-    
+    const response = await api<ActivitySummaryResponse>("/me/activity/summary");
+
     return {
-        totalPoints: response.totalPoints,
-        badgeTier: response.badgeTier,
-        recentTransactions: response.recentTransactions.map((t: any) => ({
+        totalPoints: response.totalPoints ?? 0,
+        badgeTier: response.badgeTier ?? "newcomer",
+        totalStudyMinutes: response.totalStudyMinutes ?? 0,
+        coursesEngaged: response.coursesEngaged ?? 0,
+        recentTransactions: (response.recentTransactions ?? []).map((t) => ({
             id: t.id,
             action: t.action,
             points: t.points,
             createdAt: t.createdAt,
         })),
-        courseActivity: response.courseActivity.map((c: any) => ({
+        courseActivity: (response.courseActivity ?? []).map((c) => ({
             courseId: c.courseId,
             courseName: c.courseName,
             status: c.status,
@@ -41,6 +59,6 @@ export const getActivitySummary = async (): Promise<ActivitySummary> => {
  * @backend GET /api/v1/files/:file_id/share
  */
 export const getShareUrl = async (fileId: string): Promise<{ shareUrl: string }> => {
-    const response = await api<any>(`/files/${fileId}/share`);
+    const response = await api<{ shareUrl: string }>(`/files/${fileId}/share`);
     return { shareUrl: response.shareUrl };
 };

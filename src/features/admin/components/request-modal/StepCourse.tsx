@@ -1,6 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import type { Course, Major } from "@/types/domain";
 import type { FormState } from "./useRequestForm";
 import { PROGRAM_YEARS } from "./useRequestForm";
 import { SummaryChip } from "./SummaryChip";
@@ -9,9 +10,9 @@ interface StepCourseProps {
     form: FormState;
     handleCascadeSelect: (key: keyof FormState, value: string) => void;
     semesterData: { id: string; label: string }[];
-    filteredCourses: any[] | undefined;
-    selectedMajor: any | undefined;
-    selectedCourse: any | undefined;
+    filteredCourses: Course[] | undefined;
+    selectedMajor: Major | undefined;
+    selectedCourse: Course | undefined;
     loadingCourses: boolean;
 }
 

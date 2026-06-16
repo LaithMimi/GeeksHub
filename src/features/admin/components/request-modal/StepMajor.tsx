@@ -1,13 +1,14 @@
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { Major } from "@/types/domain";
 import type { FormState } from "./useRequestForm";
 import { PROGRAM_YEARS } from "./useRequestForm";
 
 interface StepMajorProps {
     form: FormState;
     handleCascadeSelect: (key: keyof FormState, value: string) => void;
-    majors: any[] | undefined;
-    selectedMajor: any | undefined;
+    majors: Major[] | undefined;
+    selectedMajor: Major | undefined;
 }
 
 export function StepMajor({ form, handleCascadeSelect, majors, selectedMajor }: StepMajorProps) {
@@ -23,7 +24,7 @@ export function StepMajor({ form, handleCascadeSelect, majors, selectedMajor }: 
                     <Select value={form.major} onValueChange={(v) => handleCascadeSelect("major", v)}>
                         <SelectTrigger className="liquid-glass-subtle h-11">
                             <SelectValue placeholder="Select a major...">
-                                {form.major ? selectedMajor?.name ?? form.major : undefined}
+                                {selectedMajor?.name}
                             </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="max-h-[220px] overflow-y-auto">

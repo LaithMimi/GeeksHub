@@ -1,22 +1,21 @@
 /**
  * ============================================================================
- * ADMIN SHELL / LAYOUT
+ * MODERATOR SHELL / LAYOUT
  * ============================================================================
  *
- * Mirrors AppShell's Liquid Glass design system with admin-specific navigation.
- * Provides: glass sidebar, breadcrumbs, top bar, search, notifications,
- * user profile dropdown, command palette, and mobile hamburger menu.
+ * Mirrors AdminShell's Liquid Glass design with moderator-specific navigation
+ * for directory management (users, lecturers, courses).
  *
- * Uses a separate localStorage key ("admin_sidebar_collapsed") so the admin
- * sidebar can have its own collapse state independent of the main app sidebar.
+ * Uses its own localStorage key ("moderator_sidebar_collapsed") and an amber
+ * accent badge to distinguish it from the red Admin shell.
  * ============================================================================
  */
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import {
-    Home, ClipboardList, FileSearch, BookOpen,
-    Bell, Search, GraduationCap,
+    LayoutDashboard, Users, GraduationCap,
+    Bell, Search,
     PanelLeftClose, PanelLeftOpen, Menu, Settings, ArrowLeft,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -40,32 +39,23 @@ import { Badge } from "@/components/ui/badge";
 
 const languages = [
     { code: "en", name: "English", dir: "ltr" },
-    { code: "ar", name: "???????", dir: "rtl" },
-    { code: "he", name: "?????", dir: "rtl" },
+    { code: "ar", name: "العربية", dir: "rtl" },
+    { code: "he", name: "עברית", dir: "rtl" },
 ];
 
-const adminNavItems = [
-    { label: "Overview", icon: Home, href: "/admin" },
-    { label: "Queue", icon: ClipboardList, href: "/admin/requests" },
-    { label: "Audit Log", icon: FileSearch, href: "/admin/audit" },
+const modNavItems = [
+    { label: "Overview", icon: LayoutDashboard, href: "/moderator" },
+    { label: "Users", icon: Users, href: "/moderator/users" },
 ];
 
-const directoryNavItems = [
-    { label: "Lecturers", icon: GraduationCap, href: "/admin/lecturers" },
-    { label: "Courses", icon: BookOpen, href: "/admin/courses" },
-];
-
-const adminLabelMap: Record<string, string> = {
-    admin: "Admin",
-    requests: "Queue",
-    audit: "Audit Log",
-    lecturers: "Lecturers",
-    courses: "Courses",
+const modLabelMap: Record<string, string> = {
+    moderator: "Moderator",
+    users: "Users",
 };
 
-// -- Admin Breadcrumbs ---------------------------------------------------------
+// -- Moderator Breadcrumbs -----------------------------------------------------
 
-const AdminBreadcrumbs = () => {
+const ModeratorBreadcrumbs = () => {
     const location = useLocation();
     const pathnames = location.pathname.split("/").filter((x) => x);
 
@@ -77,7 +67,7 @@ const AdminBreadcrumbs = () => {
                         href="/"
                         className="flex items-center gap-1.5 px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-all text-xs sm:text-sm font-medium"
                     >
-                        <Home className="h-3.5 w-3.5" />
+                        <LayoutDashboard className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline">Home</span>
                     </BreadcrumbLink>
                 </BreadcrumbItem>
@@ -90,7 +80,7 @@ const AdminBreadcrumbs = () => {
                     const to = `/${pathnames.slice(0, index + 1).join("/")}`;
                     const isLast = index === pathnames.length - 1;
                     const label =
-                        adminLabelMap[value] ||
+                        modLabelMap[value] ||
                         value.charAt(0).toUpperCase() + value.slice(1);
 
                     return (
@@ -123,9 +113,9 @@ const AdminBreadcrumbs = () => {
     );
 };
 
-// -- Admin Glass Sidebar -------------------------------------------------------
+// -- Moderator Glass Sidebar ---------------------------------------------------
 
-function AdminGlassSidebar({
+function ModeratorGlassSidebar({
     collapsed,
     onToggle,
 }: {
@@ -136,8 +126,8 @@ function AdminGlassSidebar({
     const { user, signOut } = useAuth();
 
     const isActive = (path: string) =>
-        path === "/admin"
-            ? location.pathname === "/admin"
+        path === "/moderator"
+            ? location.pathname === "/moderator"
             : location.pathname.startsWith(path);
 
     const initials = user?.displayName
@@ -176,9 +166,9 @@ function AdminGlassSidebar({
                                     </span>
                                     <Badge
                                         variant="outline"
-                                        className="text-[9px] px-1.5 py-0 border-rose-500/30 text-rose-400 font-semibold uppercase tracking-wider"
+                                        className="text-[9px] px-1.5 py-0 border-amber-500/30 text-amber-400 font-semibold uppercase tracking-wider"
                                     >
-                                        Admin
+                                        Mod
                                     </Badge>
                                 </div>
                             </Link>
@@ -190,7 +180,7 @@ function AdminGlassSidebar({
                                 className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft hover:scale-105 transition-transform relative"
                             >
                                 <GraduationCap className="h-4 w-4 text-foreground" />
-                                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-rose-500 border border-[hsl(225,30%,5%)]" />
+                                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 border border-[hsl(225,30%,5%)]" />
                             </Link>
                         )}
 
@@ -245,18 +235,18 @@ function AdminGlassSidebar({
                         return backLink;
                     })()}
 
-                    {/* Moderation section label */}
+                    {/* Directory section label */}
                     {!collapsed && (
                         <div className="px-3 mb-2">
                             <span className="text-[11px] font-display font-semibold text-muted-foreground/50 uppercase tracking-[0.15em]">
-                                Moderation
+                                Directory
                             </span>
                         </div>
                     )}
 
                     {/* Navigation */}
                     <nav className="flex-1 space-y-0.5">
-                        {adminNavItems.map((item) => {
+                        {modNavItems.map((item) => {
                             const active = isActive(item.href);
                             const Icon = item.icon;
 
@@ -269,17 +259,17 @@ function AdminGlassSidebar({
                                         ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
                                         ${
                                             active
-                                                ? "text-blue-300 bg-blue-500/[0.08] border border-blue-500/[0.12]"
+                                                ? "text-amber-300 bg-amber-500/[0.08] border border-amber-500/[0.12]"
                                                 : "text-muted-foreground hover:text-foreground/75 hover:bg-foreground/5"
                                         }
                                     `}
                                 >
                                     {active && (
-                                        <div className="absolute inset-0 rounded-xl bg-blue-500/10 pointer-events-none" />
+                                        <div className="absolute inset-0 rounded-xl bg-amber-500/10 pointer-events-none" />
                                     )}
                                     <Icon
                                         className={`h-[18px] w-[18px] shrink-0 ${
-                                            active ? "text-blue-300" : ""
+                                            active ? "text-amber-300" : ""
                                         }`}
                                     />
                                     {!collapsed && (
@@ -308,64 +298,9 @@ function AdminGlassSidebar({
                             }
                             return linkContent;
                         })}
-
-                        {/* Directory section */}
-                        {!collapsed && (
-                            <div className="px-3 mt-6 mb-2">
-                                <span className="text-[11px] font-display font-semibold text-muted-foreground/50 uppercase tracking-[0.15em]">
-                                    Directory
-                                </span>
-                            </div>
-                        )}
-                        {collapsed && <div className="h-4" />}
-
-                        {directoryNavItems.map((item) => {
-                            const active = isActive(item.href);
-                            const Icon = item.icon;
-
-                            const linkContent = (
-                                <Link
-                                    key={item.href}
-                                    to={item.href}
-                                    className={`
-                                        flex items-center rounded-xl text-[14px] transition-all group relative
-                                        ${collapsed ? "justify-center w-10 h-10 mx-auto" : "gap-4 px-3 py-2.5"}
-                                        ${
-                                            active
-                                                ? "text-blue-300 bg-blue-500/[0.08] border border-blue-500/[0.12]"
-                                                : "text-muted-foreground hover:text-foreground/75 hover:bg-foreground/5"
-                                        }
-                                    `}
-                                >
-                                    {active && (
-                                        <div className="absolute inset-0 rounded-xl bg-blue-500/10 pointer-events-none" />
-                                    )}
-                                    <Icon
-                                        className={`h-[18px] w-[18px] shrink-0 ${active ? "text-blue-300" : ""}`}
-                                    />
-                                    {!collapsed && (
-                                        <span className={`font-medium ${active ? "font-semibold" : ""}`}>
-                                            {item.label}
-                                        </span>
-                                    )}
-                                </Link>
-                            );
-
-                            if (collapsed) {
-                                return (
-                                    <Tooltip key={item.href}>
-                                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                                        <TooltipContent side="right" className="text-xs">
-                                            {item.label}
-                                        </TooltipContent>
-                                    </Tooltip>
-                                );
-                            }
-                            return linkContent;
-                        })}
                     </nav>
 
-                    {/* Bottom section � user profile */}
+                    {/* Bottom section — user profile */}
                     <div className="mt-auto pt-5 space-y-3">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -381,7 +316,7 @@ function AdminGlassSidebar({
                                     {!collapsed && (
                                         <div className="flex-1 min-w-0 text-left">
                                             <p className="text-[13px] font-medium text-foreground truncate">
-                                                {user?.displayName ?? "Admin"}
+                                                {user?.displayName ?? "Moderator"}
                                             </p>
                                             <p className="text-[11px] text-muted-foreground/70 truncate">
                                                 {user?.email ?? ""}
@@ -397,7 +332,7 @@ function AdminGlassSidebar({
                             >
                                 <DropdownMenuLabel>
                                     <p className="font-medium">
-                                        {user?.displayName ?? "Admin"}
+                                        {user?.displayName ?? "Moderator"}
                                     </p>
                                     <p className="text-xs text-muted-foreground font-normal">
                                         {user?.email}
@@ -429,17 +364,17 @@ function AdminGlassSidebar({
     );
 }
 
-// -- Admin Shell ---------------------------------------------------------------
+// -- Moderator Shell -----------------------------------------------------------
 
-export default function AdminShell() {
+export default function ModeratorShell() {
     const [collapsed, setCollapsed] = useState<boolean>(() => {
-        return localStorage.getItem("admin_sidebar_collapsed") === "true";
+        return localStorage.getItem("moderator_sidebar_collapsed") === "true";
     });
 
     const handleToggle = () => {
         setCollapsed((prev) => {
             const next = !prev;
-            localStorage.setItem("admin_sidebar_collapsed", String(next));
+            localStorage.setItem("moderator_sidebar_collapsed", String(next));
             return next;
         });
     };
@@ -456,7 +391,7 @@ export default function AdminShell() {
         return () => document.removeEventListener("keydown", handleKey);
     }, []);
 
-    // Language / RTL � same logic as AppShell
+    // Language / RTL — same logic as AppShell
     useEffect(() => {
         const savedLang = localStorage.getItem("language") || "en";
         const lang = languages.find((l) => l.code === savedLang);
@@ -469,15 +404,15 @@ export default function AdminShell() {
     return (
         <div className="flex h-screen overflow-hidden relative">
             <a
-                href="#admin-main-content"
+                href="#moderator-main-content"
                 className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-foreground focus:rounded-lg focus:font-semibold focus:outline-none focus:ring-2 focus:ring-white"
             >
                 Skip to main content
             </a>
 
-            {/* Sidebar � hidden on mobile */}
+            {/* Sidebar — hidden on mobile */}
             <div className="hidden lg:block relative z-20">
-                <AdminGlassSidebar
+                <ModeratorGlassSidebar
                     collapsed={collapsed}
                     onToggle={handleToggle}
                 />
@@ -492,7 +427,7 @@ export default function AdminShell() {
                             <SheetTrigger asChild>
                                 <button
                                     className="w-11 h-11 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-foreground/5 hover:text-foreground transition-all -ml-2"
-                                    aria-label="Open admin menu"
+                                    aria-label="Open moderator menu"
                                 >
                                     <Menu className="h-5 w-5" />
                                 </button>
@@ -502,9 +437,9 @@ export default function AdminShell() {
                                 className="w-[260px] p-0 border-r border-border liquid-glass-heavy text-foreground"
                             >
                                 <SheetTitle className="sr-only">
-                                    Admin Navigation
+                                    Moderator Navigation
                                 </SheetTitle>
-                                <AdminGlassSidebar
+                                <ModeratorGlassSidebar
                                     collapsed={false}
                                     onToggle={() => {}}
                                 />
@@ -512,7 +447,7 @@ export default function AdminShell() {
                         </Sheet>
                     </div>
 
-                    <AdminBreadcrumbs />
+                    <ModeratorBreadcrumbs />
 
                     <div className="ms-auto flex items-center gap-2">
                         <button
@@ -533,7 +468,7 @@ export default function AdminShell() {
                             />
                             <span className="hidden sm:inline">Search</span>
                             <kbd className="hidden sm:inline-flex h-5 items-center rounded border border-border/50 bg-foreground/5 px-1.5 font-mono text-[10px] text-muted-foreground/50">
-                                {isMac ? "?K" : "Ctrl+K"}
+                                {isMac ? "⌘K" : "Ctrl+K"}
                             </kbd>
                         </button>
                         <button
@@ -550,7 +485,7 @@ export default function AdminShell() {
 
                 {/* Page content */}
                 <main
-                    id="admin-main-content"
+                    id="moderator-main-content"
                     className="flex-1 overflow-auto"
                     tabIndex={-1}
                 >

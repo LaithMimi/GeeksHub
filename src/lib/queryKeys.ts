@@ -17,4 +17,12 @@ export const queryKeys = {
     audit:      { all: () => ["audit-logs"] as const },
     reputation: { mine: () => ["my-reputation"] as const },
     activity:   { summary: () => ["activity-summary"] as const },
+    directory:  {
+        stats:           () => ["directory", "stats"] as const,
+        users:           (f?: object) => ["directory", "users", f ?? {}] as const,
+        lecturers:       () => ["directory", "lecturers"] as const,
+        lecturerCourses: (id?: string) => ["directory", "lecturer", id, "courses"] as const,
+        courseLecturers: (id?: string) => ["directory", "course", id, "lecturers"] as const,
+        courses:         () => ["courses"] as const, // catalog course lists (shared root)
+    },
 } as const;

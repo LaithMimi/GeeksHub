@@ -68,6 +68,25 @@ export default function UserProfile() {
 
     const [isResetLoading, setIsResetLoading] = useState(false);
 
+    // Password reset handler
+    const handlePasswordReset = useCallback(async () => {
+        if (!user) return;
+        setIsResetLoading(true);
+        try {
+            await authService.requestPasswordReset(user.email);
+            toast.success("Password reset email sent. Check your inbox.");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to send reset email.");
+        } finally {
+            setIsResetLoading(false);
+        }
+    }, [user]);
+
+    // Sign out handler
+    const handleSignOut = useCallback(() => {
+        signOut();
+    }, [signOut]);
+
     if (!user) return null;
 
     const userMajor = majors?.find(m => m.id === user.majorId)?.name || "Undecided Major";
@@ -76,24 +95,6 @@ export default function UserProfile() {
     const pendingUploads = uploads?.filter(u => u.status === "pending").length || 0;
     const approvedUploads = uploads?.filter(u => u.status === "approved").length || 0;
     const totalUploads = uploads?.length || 0;
-
-    // Password reset handler
-    const handlePasswordReset = useCallback(async () => {
-        setIsResetLoading(true);
-        try {
-            await authService.requestPasswordReset(user.email);
-            toast.success("Password reset email sent. Check your inbox.");
-        } catch (error: any) {
-            toast.error(error.message || "Failed to send reset email.");
-        } finally {
-            setIsResetLoading(false);
-        }
-    }, [user.email]);
-
-    // Sign out handler
-    const handleSignOut = useCallback(() => {
-        signOut();
-    }, [signOut]);
 
     return (
         <div className="min-h-full w-full flex flex-col overflow-x-hidden p-6 sm:p-10 mb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -196,7 +197,9 @@ export default function UserProfile() {
                                                 <div key={c.courseId} className="flex items-center gap-4 text-sm group">
                                                     <span className="text-foreground font-medium truncate max-w-[140px] transition-colors">{c.courseName}</span>
                                                     <div className="h-px bg-border flex-1 border-dashed group-hover:border-solid group-hover:bg-blue-500/30 transition-all"></div>
-                                                    <span className="text-muted-foreground font-mono text-xs">{c.filesCompleted}/{c.totalFiles}</span>
+                                                    <span className="text-muted-foreground font-mono text-xs">
+                                                        {c.totalFiles > 0 ? `${c.filesCompleted}/${c.totalFiles}` : `${c.filesCompleted}`}
+                                                    </span>
                                                 </div>
                                             ))
                                         ) : (

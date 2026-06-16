@@ -4,10 +4,11 @@ import type { Role } from "@/types/domain";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
-    requiredRole?: Role;
+    /** Restricts the route to users whose role is in this list. Omit to allow any signed-in user. */
+    requiredRoles?: Role[];
 }
 
-export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
+export default function ProtectedRoute({ requiredRoles }: ProtectedRouteProps) {
     const { user, isLoading } = useAuth();
     const location = useLocation();
 
@@ -23,7 +24,7 @@ export default function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
         return <Navigate to="/auth" state={{ from: location }} replace />;
     }
 
-    if (requiredRole && user.role !== requiredRole) {
+    if (requiredRoles && !requiredRoles.includes(user.role)) {
         return <Navigate to="/" replace />;
     }
 

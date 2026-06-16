@@ -1,4 +1,5 @@
 import { UploadCloud, Check } from "lucide-react";
+import type { Course, Lecturer, Major, MaterialTypeOption } from "@/types/domain";
 import type { FormState } from "./useRequestForm";
 import { validateFile } from "./useRequestForm";
 import { SummaryChip } from "./SummaryChip";
@@ -9,10 +10,10 @@ interface StepUploadProps {
     setForm: Dispatch<SetStateAction<FormState>>;
     fileError: string;
     setFileError: (err: string) => void;
-    selectedMajor: any | undefined;
-    selectedCourse: any | undefined;
-    selectedLecturer: any | undefined;
-    selectedType: any | undefined;
+    selectedMajor: Major | undefined;
+    selectedCourse: Course | undefined;
+    selectedLecturer: Lecturer | undefined;
+    selectedType: MaterialTypeOption | undefined;
 }
 
 export function StepUpload({

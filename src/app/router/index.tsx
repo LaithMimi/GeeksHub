@@ -41,7 +41,13 @@ const CourseExams = Loadable(React.lazy(() => import("@/features/courses/pages/C
 const AdminHome = Loadable(React.lazy(() => import("@/features/admin/pages/AdminHome")));
 const ModerationQueue = Loadable(React.lazy(() => import("@/features/admin/pages/ModerationQueue")));
 const AuditLog = Loadable(React.lazy(() => import("@/features/admin/pages/AuditLog")));
-const CatalogManager = Loadable(React.lazy(() => import("@/features/admin/pages/CatalogManager")));
+const LecturersPage = Loadable(React.lazy(() => import("@/features/admin/pages/LecturersPage")));
+const CoursesPage = Loadable(React.lazy(() => import("@/features/admin/pages/CoursesPage")));
+
+// Moderator Pages
+const ModeratorShell = Loadable(React.lazy(() => import("@/app/layouts/ModeratorShell")));
+const ModeratorHome = Loadable(React.lazy(() => import("@/features/moderator/pages/ModeratorHome")));
+const UsersPage = Loadable(React.lazy(() => import("@/features/moderator/pages/UsersPage")));
 
 export const router = createBrowserRouter([
     // Public auth routes
@@ -132,7 +138,7 @@ export const router = createBrowserRouter([
     // Protected admin routes
     {
         path: "/admin",
-        element: <ProtectedRoute requiredRole="ADMIN" />,
+        element: <ProtectedRoute requiredRoles={["ADMIN"]} />,
         errorElement: <RouteError name="Admin Auth" />,
         children: [
             {
@@ -153,8 +159,35 @@ export const router = createBrowserRouter([
                         element: <AuditLog />,
                     },
                     {
-                        path: "catalog",
-                        element: <CatalogManager />,
+                        path: "lecturers",
+                        element: <LecturersPage />,
+                    },
+                    {
+                        path: "courses",
+                        element: <CoursesPage />,
+                    },
+                ],
+            },
+        ],
+    },
+    // Protected moderator routes
+    {
+        path: "/moderator",
+        element: <ProtectedRoute requiredRoles={["ADMIN", "MODERATOR"]} />,
+        errorElement: <RouteError name="Moderator Auth" />,
+        children: [
+            {
+                path: "",
+                element: <ModeratorShell />,
+                errorElement: <RouteError name="Moderator" />,
+                children: [
+                    {
+                        index: true,
+                        element: <ModeratorHome />,
+                    },
+                    {
+                        path: "users",
+                        element: <UsersPage />,
                     },
                 ],
             },

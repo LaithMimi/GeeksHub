@@ -59,6 +59,10 @@ export function useRequestForm(open: boolean, initialData?: { major?: string; co
     const [form, setForm] = useState<FormState>(defaultForm);
     const [fileError, setFileError] = useState("");
 
+    // Intentionally reset the wizard to a clean state whenever the modal
+    // (re)opens — this is a deliberate sync to the `open` prop, not a render
+    // derivation, so the set-state-in-effect rule is suppressed here.
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (open) {
             setStep(1);
@@ -70,6 +74,7 @@ export function useRequestForm(open: boolean, initialData?: { major?: string; co
             );
         }
     }, [open, initialData]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const handleCascadeSelect = (key: keyof FormState, value: string) => {
         setForm((prev) => {
@@ -90,7 +95,7 @@ export function useRequestForm(open: boolean, initialData?: { major?: string; co
         setFileError("");
     };
 
-    const set = (key: keyof FormState, value: any) =>
+    const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
         setForm((prev) => ({ ...prev, [key]: value }));
 
     const canProceed = () => {

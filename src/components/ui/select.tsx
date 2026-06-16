@@ -66,18 +66,25 @@ const SelectTrigger = React.forwardRef<
 })
 SelectTrigger.displayName = "SelectTrigger"
 
+// A raw UUID must never surface in the UI. If the resolved display text is a
+// UUID (e.g. an id-valued <Select> whose label lookup hasn't resolved), fall
+// back to the placeholder instead of leaking the id.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 const SelectValue = React.forwardRef<
     HTMLSpanElement,
     React.HTMLAttributes<HTMLSpanElement> & { placeholder?: string }
 >(({ className, children, placeholder, ...props }, ref) => {
     const { value } = React.useContext(SelectContext)
+    const resolved = children || value
+    const display = typeof resolved === "string" && UUID_RE.test(resolved) ? placeholder : resolved
     return (
         <span
             ref={ref}
             className={cn("line-clamp-1", className)}
             {...props}
         >
-            {children || value || placeholder}
+            {display || placeholder}
         </span>
     )
 })

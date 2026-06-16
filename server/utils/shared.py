@@ -11,9 +11,17 @@ def get_bucket():
 
 
 def get_badge_tier(points: int) -> str:
-    """Returns the badge tier based on total points. Single source of truth."""
-    if points > 1000:
-        return "Gold"
-    if points > 500:
-        return "Silver"
-    return "Bronze"
+    """Badge tier from total points. Single source of truth.
+
+    Returns lowercase tiers matching the frontend `BadgeTier` union
+    ("diamond" | "gold" | "silver" | "bronze" | "newcomer").
+    """
+    if points >= 5000:
+        return "diamond"
+    if points >= 1000:
+        return "gold"
+    if points >= 500:
+        return "silver"
+    if points > 0:
+        return "bronze"
+    return "newcomer"

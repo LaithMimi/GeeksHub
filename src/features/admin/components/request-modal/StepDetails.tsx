@@ -3,21 +3,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
+import type { Course, Lecturer, Major, MaterialTypeOption } from "@/types/domain";
 import type { FormState } from "./useRequestForm";
 import { MATERIAL_YEARS } from "./useRequestForm";
 import { SummaryChip } from "./SummaryChip";
 
 interface StepDetailsProps {
     form: FormState;
-    set: (key: keyof FormState, value: any) => void;
-    lecturers: any[] | undefined;
+    set: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
+    lecturers: Lecturer[] | undefined;
     loadingLecturers: boolean;
-    selectedLecturer: any | undefined;
-    types: any[] | undefined;
+    selectedLecturer: Lecturer | undefined;
+    types: MaterialTypeOption[] | undefined;
     loadingTypes: boolean;
-    selectedType: any | undefined;
-    selectedMajor: any | undefined;
-    selectedCourse: any | undefined;
+    selectedType: MaterialTypeOption | undefined;
+    selectedMajor: Major | undefined;
+    selectedCourse: Course | undefined;
 }
 
 export function StepDetails({
@@ -51,7 +52,7 @@ export function StepDetails({
                         <Select value={form.lecturer} onValueChange={(v) => set("lecturer", v)} disabled={loadingLecturers}>
                             <SelectTrigger className="liquid-glass-subtle h-11">
                                 <SelectValue placeholder="Select...">
-                                    {form.lecturer ? selectedLecturer?.name ?? form.lecturer : undefined}
+                                    {selectedLecturer?.name}
                                 </SelectValue>
                             </SelectTrigger>
                             <SelectContent className="max-h-[200px] overflow-y-auto">
@@ -66,7 +67,7 @@ export function StepDetails({
                         <Select value={form.type_id} onValueChange={(v) => set("type_id", v)}>
                             <SelectTrigger className="liquid-glass-subtle h-11">
                                 <SelectValue placeholder="Select...">
-                                    {form.type_id ? selectedType?.displayName ?? form.type_id : undefined}
+                                    {selectedType?.displayName}
                                 </SelectValue>
                             </SelectTrigger>
                             <SelectContent className="max-h-[200px] overflow-y-auto">
