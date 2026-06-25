@@ -110,10 +110,15 @@ export default function ModerationQueue() {
 
     const handleBulkReject = (reason: RejectReason) => {
         const ids = selectedRows.map(r => r.id);
+        if (ids.length > 10) {
+            toast.error(`Select at most 10 files at a time. You selected ${ids.length}. Wait 60s between batches.`);
+            return;
+        }
         bulkRejectMutation.mutate({ requestIds: ids, reason }, {
             onSuccess: () => {
                 setSelectedRows([]);
                 setBulkRejectOpen(false);
+                setCooldownSeconds(60);
             }
         });
     };

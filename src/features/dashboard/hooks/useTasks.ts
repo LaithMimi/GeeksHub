@@ -34,6 +34,9 @@ export const useCreateTask = () => {
                 {
                     id: Math.random().toString(36).substring(7),
                     completed: false,
+                    // The payload carries no createdAt; supply one so a click on the
+                    // optimistic row before refetch doesn't feed Invalid Date to date-fns.
+                    createdAt: new Date().toISOString(),
                     ...newTask,
                 } as Task,
             ]);

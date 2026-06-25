@@ -63,6 +63,15 @@ export function RequestDetailSheet({
 }: RequestDetailSheetProps) {
     const { data: previewData, isLoading: isLoadingPreview } = useRequestPreviewUrl(open && request ? request.id : undefined);
 
+    // getRequestPreviewUrl builds a blob object URL via URL.createObjectURL; revoke
+    // it when it changes or the sheet unmounts so previewed PDFs aren't leaked.
+    React.useEffect(() => {
+        const url = previewData?.url;
+        return () => {
+            if (url) URL.revokeObjectURL(url);
+        };
+    }, [previewData?.url]);
+
     const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
     const [duplicateWarningOpen, setDuplicateWarningOpen] = React.useState(false);
     const [fullscreenOpen, setFullscreenOpen] = React.useState(false);
@@ -250,7 +259,7 @@ export function RequestDetailSheet({
                         {request.status === "approved" && (
                             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3 space-y-1">
                                 <p className="text-sm font-medium text-emerald-300">Approved</p>
-                                {request.pointsAwarded && (
+                                {!!request.pointsAwarded && (
                                     <p className="text-sm text-emerald-400">+{request.pointsAwarded} points awarded</p>
                                 )}
                                 {request.reviewedAt && (

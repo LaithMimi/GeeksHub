@@ -18,9 +18,9 @@ import {
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useMajors } from "@/features/courses/hooks/useCatalog";
 import {
-    useModeratorUsers, useUpdateModeratorUser, useDeleteModeratorUser,
-} from "@/features/moderator/hooks/useModerator";
-import type { ModeratorUser } from "@/features/moderator/api/moderatorService";
+    useDirectoryUsers, useUpdateUser, useDeleteUser,
+} from "@/features/directory/hooks/useDirectory";
+import type { DirectoryUser } from "@/features/directory/api/directoryService";
 import type { Role } from "@/types/domain";
 
 const ROLES: Role[] = ["STUDENT", "MODERATOR", "ADMIN"];
@@ -39,20 +39,20 @@ export default function UsersPage() {
     const [majorFilter, setMajorFilter] = useState<string>(ALL);
     const debouncedSearch = useDebounce(search, 300);
 
-    const [editing, setEditing] = useState<ModeratorUser | null>(null);
-    const [deleting, setDeleting] = useState<ModeratorUser | null>(null);
+    const [editing, setEditing] = useState<DirectoryUser | null>(null);
+    const [deleting, setDeleting] = useState<DirectoryUser | null>(null);
 
     const { data: majors = [] } = useMajors();
-    const { data: users = [], isLoading } = useModeratorUsers({
+    const { data: users = [], isLoading } = useDirectoryUsers({
         search: debouncedSearch || undefined,
         role: roleFilter === ALL ? undefined : roleFilter,
         majorId: majorFilter === ALL ? undefined : majorFilter,
     });
 
-    const updateUser = useUpdateModeratorUser();
-    const deleteUser = useDeleteModeratorUser();
+    const updateUser = useUpdateUser();
+    const deleteUser = useDeleteUser();
 
-    const columns = useMemo<ColumnDef<ModeratorUser>[]>(() => [
+    const columns = useMemo<ColumnDef<DirectoryUser>[]>(() => [
         { accessorKey: "name", header: "Name" },
         { accessorKey: "email", header: "Email" },
         {
@@ -200,10 +200,10 @@ export default function UsersPage() {
 function EditUserDialog({
     user, majors, onClose, onSave, saving,
 }: {
-    user: ModeratorUser | null;
+    user: DirectoryUser | null;
     majors: { id: string; name: string }[];
     onClose: () => void;
-    onSave: (data: { name: string; majorId?: string; role: Role }) => void;
+    onSave: (data: { name: string; majorId?: string | null; role: Role }) => void;
     saving: boolean;
 }) {
     const [name, setName] = useState("");
@@ -227,7 +227,8 @@ function EditUserDialog({
         onSave({
             name: name.trim(),
             role,
-            majorId: majorId === ALL ? undefined : majorId,
+            // Send explicit null (not undefined) so "None" actually clears the major.
+            majorId: majorId === ALL ? null : majorId,
         });
     };
 

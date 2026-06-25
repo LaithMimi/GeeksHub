@@ -76,6 +76,10 @@ export const NotesBoard = forwardRef<NotesBoardRef, NotesBoardProps>(
         
         const debouncedCards = useDebounce(cards, 600);
         const lastSavedJSON = useRef<string | null>(null);
+        // Becomes true only after the server load for the current fileId resolves.
+        // Guards the save effect so the initial empty board (or the previous file's
+        // cards mid-switch) is never persisted over the stored notes.
+        const hydratedRef = useRef(false);
 
         useImperativeHandle(ref, () => ({
             pinNote: (content: string) => {
@@ -103,25 +107,29 @@ export const NotesBoard = forwardRef<NotesBoardRef, NotesBoardProps>(
         useEffect(() => {
             if (!fileId) return;
             let cancelled = false;
+            hydratedRef.current = false;
             getNotes(fileId).then((raw) => {
-                if (cancelled || !raw) return;
+                if (cancelled) return;
                 let parsedCards: StickyNoteCard[] = [];
-                try {
-                    const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) parsedCards = parsed;
-                } catch {
-                    if (raw.trim()) {
-                        parsedCards = [{ id: "legacy", text: raw.trim(), rotation: 0, createdAt: new Date().toISOString() }];
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed)) parsedCards = parsed;
+                    } catch {
+                        if (raw.trim()) {
+                            parsedCards = [{ id: "legacy", text: raw.trim(), rotation: 0, createdAt: new Date().toISOString() }];
+                        }
                     }
                 }
                 setCards(parsedCards);
                 lastSavedJSON.current = JSON.stringify(parsedCards);
+                hydratedRef.current = true;
             });
             return () => { cancelled = true; };
         }, [fileId]);
 
         useEffect(() => {
-            if (!fileId) return;
+            if (!fileId || !hydratedRef.current) return;
             const currentJSON = JSON.stringify(debouncedCards);
             if (currentJSON === lastSavedJSON.current) return;
             

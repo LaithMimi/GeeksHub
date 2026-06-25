@@ -116,8 +116,10 @@ def update_user(
 
     if payload.name is not None:
         user.name = payload.name
-    if payload.majorId is not None:
-        if not session.get(Major, payload.majorId):
+    # Distinguish "field omitted" (leave unchanged) from "field set to null"
+    # (clear the major). A bare `is not None` check makes clearing impossible.
+    if "majorId" in payload.model_fields_set:
+        if payload.majorId is not None and not session.get(Major, payload.majorId):
             raise HTTPException(status_code=400, detail="Major not found.")
         user.major_id = payload.majorId
     if payload.role is not None:

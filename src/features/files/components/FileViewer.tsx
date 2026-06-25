@@ -89,6 +89,14 @@ export default function FileViewer({ onTextSelect, onPinToNotes }: FileViewerPro
 
     const fileTitle = file?.title;
     const fileDownloadUrl = file?.downloadUrl;
+    // Clear the previous file's blob URL/error as soon as the route changes, before
+    // the new file's metadata resolves — otherwise <Document> renders the old,
+    // already-revoked object URL and flashes a spurious "Could not render PDF".
+    useEffect(() => {
+        setPdfBlobUrl(null);
+        setPdfError(false);
+    }, [fileId]);
+
     useEffect(() => {
         if (!fileId || !fileTitle || !isPdf(fileTitle, fileDownloadUrl)) return;
         let objectUrl: string;

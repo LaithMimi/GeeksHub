@@ -75,12 +75,18 @@ export function AssistantChat({ fileId, fileTitle, selectedText, pinToNotes }: A
     const [showChips, setShowChips] = useState(() => messages.length <= 1);
     const scrollRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    // Tracks which file the current `messages` belong to. On a fileId change the
+    // save effect runs (deps include fileId) *before* the re-seed effect with the
+    // previous file's messages still in state; without this guard it would clobber
+    // the new file's stored chat. See re-seed effect below where this is updated.
+    const loadedFileIdRef = useRef(fileId);
 
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isTyping]);
 
     useEffect(() => {
+        if (loadedFileIdRef.current !== fileId) return;
         localStorage.setItem(`geekshub_chat_${fileId}`, JSON.stringify(messages));
     }, [messages, fileId]);
 
@@ -95,13 +101,15 @@ export function AssistantChat({ fileId, fileTitle, selectedText, pinToNotes }: A
                         ...parsed.slice(1),
                     ]);
                     setShowChips(parsed.length <= 1);
+                    loadedFileIdRef.current = fileId;
                     return;
                 }
             }
         } catch (e) {}
-        
+
         setMessages([makeWelcome(fileTitle)]);
         setShowChips(true);
+        loadedFileIdRef.current = fileId;
     }, [fileId, fileTitle]);
 
     useEffect(() => {

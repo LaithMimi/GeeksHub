@@ -47,7 +47,8 @@ export interface UserFilters {
 
 export interface UserUpdateInput {
     name?: string;
-    majorId?: string;
+    // `null` explicitly clears the user's major; omit the key to leave it unchanged.
+    majorId?: string | null;
     role?: Role;
 }
 

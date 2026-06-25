@@ -164,8 +164,10 @@ export const undoReject = async (requestId: string): Promise<void> => {
 };
 
 /**
- * Gets a secure temporary download URL for an unapproved file request via admin endpoint.
- * @backend GET /api/v1/admin/requests/{request_id}/url
+ * Streams an unapproved file request and wraps it in a blob object URL for preview.
+ * NOTE: the returned object URL must be revoked by the caller (URL.revokeObjectURL)
+ * once it is no longer rendered, or the blob leaks for the page's lifetime.
+ * @backend GET /api/v1/admin/requests/{request_id}/preview
  */
 export const getRequestPreviewUrl = async (requestId: string): Promise<{ url: string }> => {
     const res = await apiFetch(`/admin/requests/${requestId}/preview`);

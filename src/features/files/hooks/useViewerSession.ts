@@ -31,13 +31,29 @@ export const useViewerSession = (fileId: string, currentPage: number) => {
     const intervalRef = useRef<number | null>(null);
     const isCompletedRef = useRef(false);
 
-    // Track visited pages
+    // Reset per-file tracking when the viewer switches files without remounting
+    // (route param change). Without this, a previous file's visited pages, active
+    // seconds and "completed" flag leak into the next file's heartbeats — so the
+    // next file never awards its completion points.
+    useEffect(() => {
+        visitedPagesRef.current = new Set();
+        activeSecondsRef.current = 0;
+        isCompletedRef.current = false;
+        setViewerEvents({
+            completed: false,
+            pointsAwarded: 0,
+            courseCompleted: false,
+            motivationalQuote: null,
+        });
+    }, [fileId]);
+
+    // Track visited pages (also re-adds the current page after a fileId reset)
     useEffect(() => {
         if (currentPage > 0) {
             visitedPagesRef.current.add(currentPage);
             lastActivityRef.current = Date.now(); // Page change is activity
         }
-    }, [currentPage, lastActivityRef]);
+    }, [currentPage, fileId, lastActivityRef]);
 
     // Session lifecycle
     useEffect(() => {

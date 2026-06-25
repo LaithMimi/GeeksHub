@@ -1,6 +1,7 @@
 ﻿import { useParams, Link } from "react-router-dom";
 import { FileText, AlertCircle, FolderOpen, RefreshCw } from "lucide-react";
 import { useFiles } from "@/features/files/hooks/useFiles";
+import { useTypes } from "@/features/courses/hooks/useCatalog";
 
 function FileListSkeleton() {
     return (
@@ -20,9 +21,12 @@ function FileListSkeleton() {
 
 export default function CourseExams() {
     const { courseId } = useParams<{ courseId: string }>();
-    const { data: files, isLoading, error, refetch } = useFiles({ courseId: courseId!, type: "Past Papers" });
+    // The backend filters by type_id, not the display label, so map "Past Papers" -> id.
+    const { data: types = [], isLoading: typesLoading } = useTypes();
+    const typeId = types.find((t) => t.displayName === "Past Papers")?.id;
+    const { data: files, isLoading, error, refetch } = useFiles({ courseId: courseId!, type: typeId });
 
-    if (isLoading) {
+    if (typesLoading || isLoading) {
         return <FileListSkeleton />;
     }
 
