@@ -173,23 +173,20 @@ def list_lecturers(
     mod: User = Depends(get_moderator_user),
 ):
     """All lecturers with how many courses each is assigned to."""
-    count_sub = (
-        select(
-            CourseLecturer.lecturer_id,
-            func.count().label("course_count"),
-        )
-        .group_by(CourseLecturer.lecturer_id)
-        .subquery()
-    )
-    rows = session.exec(
-        select(Lecturer, count_sub.c.course_count)
-        .join(count_sub, count_sub.c.lecturer_id == Lecturer.id, isouter=True)
-        .order_by(Lecturer.name)
-    ).all()
-    return [
-        {"id": lec.id, "name": lec.name, "course_count": count or 0}
-        for lec, count in rows
-    ]
+    try:
+        rows = session.exec(
+            select(Lecturer, func.count(CourseLecturer.course_id))
+            .join(CourseLecturer, CourseLecturer.lecturer_id == Lecturer.id, isouter=True)
+            .group_by(Lecturer.id)
+            .order_by(Lecturer.name)
+        ).all()
+        return [
+            {"id": lec.id, "name": lec.name, "course_count": count or 0}
+            for lec, count in rows
+        ]
+    except Exception as e:
+        print("Error fetching lecturers:", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/lecturers", status_code=201)

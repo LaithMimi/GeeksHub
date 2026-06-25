@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { GraduationCap, Plus, Pencil, Trash2, Search, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,19 +18,25 @@ import {
 import type { LecturerWithCount } from "@/features/directory/api/directoryService";
 import type { Course } from "@/types/domain";
 
+const SKELETON_COUNT = 7;
+
 export default function LecturersPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
+    
+    // Dialog states
     const [creating, setCreating] = useState(false);
-    const [newName, setNewName] = useState("");
     const [renaming, setRenaming] = useState<LecturerWithCount | null>(null);
-    const [renameValue, setRenameValue] = useState("");
     const [deleting, setDeleting] = useState<LecturerWithCount | null>(null);
 
-    const { data: lecturers = [], isLoading } = useDirectoryLecturers();
-    const createLecturer = useCreateLecturer();
-    const updateLecturer = useUpdateLecturer();
-    const deleteLecturer = useDeleteLecturer();
+    const { data: lecturers = [], isLoading, isError, error } = useDirectoryLecturers();
+
+    // Catch any error silently without crashing, or use toast.
+    useEffect(() => {
+        if (isError && error) {
+            toast.error("Failed to fetch lecturers: " + (error as Error).message);
+        }
+    }, [isError, error]);
 
     const selected = lecturers.find((l) => l.id === selectedId) ?? null;
 
@@ -38,25 +44,6 @@ export default function LecturersPage() {
         () => lecturers.filter((l) => l.name.toLowerCase().includes(search.trim().toLowerCase())),
         [lecturers, search],
     );
-
-    const handleCreate = () => {
-        const name = newName.trim();
-        if (!name) { toast.error("Name is required"); return; }
-        createLecturer.mutate(name, {
-            onSuccess: (created) => {
-                setNewName("");
-                setCreating(false);
-                if (created?.id) setSelectedId(created.id);
-            },
-        });
-    };
-
-    const handleRename = () => {
-        if (!renaming) return;
-        const name = renameValue.trim();
-        if (!name) { toast.error("Name is required"); return; }
-        updateLecturer.mutate({ id: renaming.id, name }, { onSuccess: () => setRenaming(null) });
-    };
 
     return (
         <div className="animate-fade-in pb-20">
@@ -98,7 +85,7 @@ export default function LecturersPage() {
 
                     <div className="space-y-1 overflow-auto pr-0.5 max-h-[calc(100vh-280px)] min-h-[200px]">
                         {isLoading ? (
-                            Array.from({ length: 7 }).map((_, i) => (
+                            Array.from({ length: SKELETON_COUNT }).map((_, i) => (
                                 <div key={i} className="flex items-center gap-3 px-2.5 py-2.5">
                                     <Skeleton className="h-10 w-10 rounded-lg" />
                                     <div className="flex-1 space-y-1.5">
@@ -146,7 +133,7 @@ export default function LecturersPage() {
                                         </div>
                                         <div className={`flex items-center gap-0.5 transition-opacity ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"}`}>
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); setRenaming(lec); setRenameValue(lec.name); }}
+                                                onClick={(e) => { e.stopPropagation(); setRenaming(lec); }}
                                                 className="p-1.5 rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-foreground/10 transition-colors"
                                                 aria-label={`Rename ${lec.name}`}
                                             >
@@ -172,7 +159,7 @@ export default function LecturersPage() {
                     {selected ? (
                         <LecturerCoursePanel
                             lecturer={selected}
-                            onRename={() => { setRenaming(selected); setRenameValue(selected.name); }}
+                            onRename={() => setRenaming(selected)}
                             onDelete={() => setDeleting(selected)}
                         />
                     ) : (
@@ -189,77 +176,165 @@ export default function LecturersPage() {
                 </div>
             </div>
 
-            {/* Create dialog */}
-            <Dialog open={creating} onOpenChange={(o) => { if (!o) { setCreating(false); setNewName(""); } }}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>New lecturer</DialogTitle>
-                        <DialogDescription>Add a lecturer to the directory.</DialogDescription>
-                    </DialogHeader>
-                    <Input
-                        autoFocus
-                        placeholder="Dr. Jane Smith"
-                        value={newName}
-                        onChange={(e) => setNewName(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                    />
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => { setCreating(false); setNewName(""); }}>Cancel</Button>
-                        <Button onClick={handleCreate} disabled={createLecturer.isPending}>Create</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <CreateLecturerDialog 
+                open={creating} 
+                onOpenChange={setCreating} 
+                onSuccess={(id) => setSelectedId(id)} 
+            />
 
-            {/* Rename dialog */}
-            <Dialog open={!!renaming} onOpenChange={(o) => !o && setRenaming(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Rename lecturer</DialogTitle>
-                    </DialogHeader>
-                    <Input
-                        autoFocus
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleRename()}
-                    />
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setRenaming(null)}>Cancel</Button>
-                        <Button onClick={handleRename} disabled={updateLecturer.isPending}>Save</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <RenameLecturerDialog 
+                lecturer={renaming} 
+                onClose={() => setRenaming(null)} 
+            />
 
-            {/* Delete dialog */}
-            <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete lecturer?</DialogTitle>
-                        <DialogDescription>
-                            This removes <strong>{deleting?.name}</strong> and their course assignments.
-                            Lecturers referenced by existing materials cannot be deleted.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-                        <Button
-                            variant="destructive"
-                            disabled={deleteLecturer.isPending}
-                            onClick={() => {
-                                if (!deleting) return;
-                                deleteLecturer.mutate(deleting.id, {
-                                    onSuccess: () => {
-                                        if (selectedId === deleting.id) setSelectedId(null);
-                                        setDeleting(null);
-                                    },
-                                });
-                            }}
-                        >
-                            Delete
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <DeleteLecturerDialog 
+                lecturer={deleting} 
+                onClose={() => setDeleting(null)} 
+                onDeleted={(id) => {
+                    if (selectedId === id) setSelectedId(null);
+                }} 
+            />
         </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Dialog Components
+// ---------------------------------------------------------------------------
+
+function CreateLecturerDialog({
+    open,
+    onOpenChange,
+    onSuccess,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSuccess: (id: string) => void;
+}) {
+    const [newName, setNewName] = useState("");
+    const createLecturer = useCreateLecturer();
+
+    useEffect(() => {
+        if (open) setNewName("");
+    }, [open]);
+
+    const handleCreate = () => {
+        const name = newName.trim();
+        if (!name) { toast.error("Name is required"); return; }
+        createLecturer.mutate(name, {
+            onSuccess: (created) => {
+                onOpenChange(false);
+                if (created?.id) onSuccess(created.id);
+            },
+        });
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>New lecturer</DialogTitle>
+                    <DialogDescription>Add a lecturer to the directory.</DialogDescription>
+                </DialogHeader>
+                <Input
+                    autoFocus
+                    placeholder="Dr. Jane Smith"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                />
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleCreate} disabled={createLecturer.isPending}>Create</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function RenameLecturerDialog({
+    lecturer,
+    onClose,
+}: {
+    lecturer: LecturerWithCount | null;
+    onClose: () => void;
+}) {
+    const [renameValue, setRenameValue] = useState("");
+    const updateLecturer = useUpdateLecturer();
+
+    useEffect(() => {
+        if (lecturer) setRenameValue(lecturer.name);
+    }, [lecturer]);
+
+    const handleRename = () => {
+        if (!lecturer) return;
+        const name = renameValue.trim();
+        if (!name) { toast.error("Name is required"); return; }
+        updateLecturer.mutate({ id: lecturer.id, name }, { onSuccess: onClose });
+    };
+
+    return (
+        <Dialog open={!!lecturer} onOpenChange={(o) => !o && onClose()}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Rename lecturer</DialogTitle>
+                </DialogHeader>
+                <Input
+                    autoFocus
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleRename()}
+                />
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>Cancel</Button>
+                    <Button onClick={handleRename} disabled={updateLecturer.isPending}>Save</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function DeleteLecturerDialog({
+    lecturer,
+    onClose,
+    onDeleted,
+}: {
+    lecturer: LecturerWithCount | null;
+    onClose: () => void;
+    onDeleted: (id: string) => void;
+}) {
+    const deleteLecturer = useDeleteLecturer();
+
+    return (
+        <Dialog open={!!lecturer} onOpenChange={(o) => !o && onClose()}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Delete lecturer?</DialogTitle>
+                    <DialogDescription>
+                        This removes <strong>{lecturer?.name}</strong> and their course assignments.
+                        Lecturers referenced by existing materials cannot be deleted.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>Cancel</Button>
+                    <Button
+                        variant="destructive"
+                        disabled={deleteLecturer.isPending}
+                        onClick={() => {
+                            if (!lecturer) return;
+                            deleteLecturer.mutate(lecturer.id, {
+                                onSuccess: () => {
+                                    onDeleted(lecturer.id);
+                                    onClose();
+                                },
+                            });
+                        }}
+                    >
+                        Delete
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
