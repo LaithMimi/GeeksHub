@@ -189,6 +189,12 @@ class CourseUpdate(BaseModel):
     yearId: Optional[int] = Field(default=None, ge=1, le=4)
     semester: Optional[int] = Field(default=None, ge=1, le=3)
 
+class MajorCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+class MajorUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
 
 # --- Material Request Payloads ---
 class MaterialRequestCreate(BaseModel):

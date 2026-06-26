@@ -20,6 +20,7 @@ export const queryKeys = {
     directory:  {
         stats:           () => ["directory", "stats"] as const,
         users:           (f?: object) => ["directory", "users", f ?? {}] as const,
+        majors:          () => ["directory", "majors"] as const,
         lecturers:       () => ["directory", "lecturers"] as const,
         lecturerCourses: (id?: string) => ["directory", "lecturer", id, "courses"] as const,
         courseLecturers: (id?: string) => ["directory", "course", id, "lecturers"] as const,

@@ -11,7 +11,7 @@
  */
 
 import { api } from "@/lib/apiClient";
-import type { Course, Lecturer, Role } from "@/types/domain";
+import type { Course, Lecturer, Major, Role } from "@/types/domain";
 
 // -- Types ---------------------------------------------------------------------
 
@@ -36,6 +36,13 @@ export interface DirectoryUser {
 export interface LecturerWithCount {
     id: string;
     name: string;
+    courseCount: number;
+}
+
+export interface MajorWithCount {
+    id: string;
+    name: string;
+    slug: string;
     courseCount: number;
 }
 
@@ -80,6 +87,19 @@ export const updateUser = (id: string, data: UserUpdateInput) =>
 
 export const deleteUser = (id: string) =>
     api<void>(`/directory/users/${id}`, { method: "DELETE" });
+
+// -- Majors --------------------------------------------------------------------
+
+export const listMajors = () => api<MajorWithCount[]>("/directory/majors");
+
+export const createMajor = (name: string) =>
+    api<Major>("/directory/majors", { method: "POST", body: JSON.stringify({ name }) });
+
+export const updateMajor = (id: string, name: string) =>
+    api<Major>(`/directory/majors/${id}`, { method: "PUT", body: JSON.stringify({ name }) });
+
+export const deleteMajor = (id: string) =>
+    api<void>(`/directory/majors/${id}`, { method: "DELETE" });
 
 // -- Lecturers -----------------------------------------------------------------
 

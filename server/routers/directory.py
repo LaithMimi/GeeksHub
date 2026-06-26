@@ -6,6 +6,7 @@ directory: users, lecturers, courses, and lecturer<->course assignments. Reuses 
 existing CourseLecturer junction model — no new table.
 """
 
+import re
 from datetime import datetime, timezone, timedelta
 from uuid import UUID
 from typing import Optional
@@ -22,6 +23,8 @@ from schemas import (
     LecturerUpdate,
     CourseCreate,
     CourseUpdate,
+    MajorCreate,
+    MajorUpdate,
 )
 from utils.auth_utils import get_moderator_user
 
@@ -31,6 +34,12 @@ router = APIRouter(prefix="/api/v1/directory", tags=["Directory"])
 def sanitize_like(value: str) -> str:
     """Escape SQL LIKE wildcard characters."""
     return value.replace("%", r"\%").replace("_", r"\_")
+
+
+def slugify(value: str) -> str:
+    """URL-friendly slug from a name, e.g. "Software Engineering" -> "software-engineering"."""
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or "major"
 
 
 # ---------------------------------------------------------------------------
@@ -161,6 +170,97 @@ def delete_user(
         raise HTTPException(
             status_code=409,
             detail="This user has associated data (uploads, points, activity) and cannot be deleted.",
+        )
+    return Response(status_code=204)
+
+
+# ---------------------------------------------------------------------------
+# Majors
+# ---------------------------------------------------------------------------
+
+@router.get("/majors")
+def list_majors(
+    session: Session = Depends(get_session),
+    mod: User = Depends(get_moderator_user),
+):
+    """All majors with how many courses each contains."""
+    rows = session.exec(
+        select(Major, func.count(Course.id))
+        .join(Course, Course.major_id == Major.id, isouter=True)
+        .group_by(Major.id)
+        .order_by(Major.name)
+    ).all()
+    return [
+        {"id": major.id, "name": major.name, "slug": major.slug, "course_count": count or 0}
+        for major, count in rows
+    ]
+
+
+@router.post("/majors", status_code=201)
+def create_major(
+    payload: MajorCreate,
+    session: Session = Depends(get_session),
+    mod: User = Depends(get_moderator_user),
+):
+    name = payload.name.strip()
+    slug = slugify(name)
+    clash = session.exec(
+        select(Major).where((Major.name == name) | (Major.slug == slug))
+    ).first()
+    if clash:
+        raise HTTPException(status_code=409, detail="A major with that name already exists.")
+    major = Major(name=name, slug=slug)
+    session.add(major)
+    session.commit()
+    session.refresh(major)
+    return major
+
+
+@router.put("/majors/{major_id}")
+def update_major(
+    major_id: UUID,
+    payload: MajorUpdate,
+    session: Session = Depends(get_session),
+    mod: User = Depends(get_moderator_user),
+):
+    major = session.get(Major, major_id)
+    if not major:
+        raise HTTPException(status_code=404, detail="Major not found.")
+    name = payload.name.strip()
+    slug = slugify(name)
+    clash = session.exec(
+        select(Major).where(
+            (Major.name == name) | (Major.slug == slug),
+            Major.id != major_id,
+        )
+    ).first()
+    if clash:
+        raise HTTPException(status_code=409, detail="A major with that name already exists.")
+    major.name = name
+    major.slug = slug
+    session.add(major)
+    session.commit()
+    session.refresh(major)
+    return major
+
+
+@router.delete("/majors/{major_id}", status_code=204)
+def delete_major(
+    major_id: UUID,
+    session: Session = Depends(get_session),
+    mod: User = Depends(get_moderator_user),
+):
+    major = session.get(Major, major_id)
+    if not major:
+        raise HTTPException(status_code=404, detail="Major not found.")
+    try:
+        session.delete(major)
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="This major has courses or users and cannot be deleted.",
         )
     return Response(status_code=204)
 

@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import {
-    Home, ClipboardList, FileSearch, BookOpen,
+    Home, ClipboardList, FileSearch, BookOpen, Layers,
     Bell, Search, GraduationCap,
     PanelLeftClose, PanelLeftOpen, Menu, Settings, ArrowLeft,
 } from "lucide-react";
@@ -51,6 +51,7 @@ const adminNavItems = [
 ];
 
 const directoryNavItems = [
+    { label: "Majors", icon: Layers, href: "/admin/majors" },
     { label: "Lecturers", icon: GraduationCap, href: "/admin/lecturers" },
     { label: "Courses", icon: BookOpen, href: "/admin/courses" },
 ];
@@ -59,6 +60,7 @@ const adminLabelMap: Record<string, string> = {
     admin: "Admin",
     requests: "Queue",
     audit: "Audit Log",
+    majors: "Majors",
     lecturers: "Lecturers",
     courses: "Courses",
 };

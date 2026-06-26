@@ -248,7 +248,7 @@ class UserSettings(SQLModel, table=True):
     language: str = Field(default="en")
     default_major_id: Optional[UUID] = Field(default=None)
     default_year_id: Optional[int] = Field(default=None)
-    notify_new_materials: bool = Field(default=False)
+    notify_new_materials: bool = Field(default=True)  # opt-out: on by default, user disables in Settings
     notify_admin_updates: bool = Field(default=False)
     reduce_motion: bool = Field(default=False)
     compact_mode: bool = Field(default=False)

@@ -18,6 +18,10 @@ import {
     listUsers,
     updateUser,
     deleteUser,
+    listMajors,
+    createMajor,
+    updateMajor,
+    deleteMajor,
     listLecturers,
     createLecturer,
     updateLecturer,
@@ -73,6 +77,54 @@ export const useDeleteUser = () => {
             toast.success("User deleted");
         },
         onError: (err) => toast.error(errMessage(err, "Failed to delete user")),
+    });
+};
+
+// -- Majors --------------------------------------------------------------------
+
+/** Refresh the directory major list, the public catalog majors list, and stats. */
+const invalidateMajors = (qc: ReturnType<typeof useQueryClient>) => {
+    qc.invalidateQueries({ queryKey: k.majors() });
+    qc.invalidateQueries({ queryKey: ["majors"] }); // shared public catalog dropdowns
+    qc.invalidateQueries({ queryKey: k.stats() });
+};
+
+export const useDirectoryMajors = () =>
+    useQuery({ queryKey: k.majors(), queryFn: listMajors });
+
+export const useCreateMajor = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (name: string) => createMajor(name),
+        onSuccess: () => {
+            invalidateMajors(qc);
+            toast.success("Major created");
+        },
+        onError: (err) => toast.error(errMessage(err, "Failed to create major")),
+    });
+};
+
+export const useUpdateMajor = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, name }: { id: string; name: string }) => updateMajor(id, name),
+        onSuccess: () => {
+            invalidateMajors(qc);
+            toast.success("Major renamed");
+        },
+        onError: (err) => toast.error(errMessage(err, "Failed to rename major")),
+    });
+};
+
+export const useDeleteMajor = () => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deleteMajor(id),
+        onSuccess: () => {
+            invalidateMajors(qc);
+            toast.success("Major deleted");
+        },
+        onError: (err) => toast.error(errMessage(err, "Failed to delete major")),
     });
 };
 

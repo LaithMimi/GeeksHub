@@ -43,6 +43,7 @@ const ModerationQueue = Loadable(React.lazy(() => import("@/features/admin/pages
 const AuditLog = Loadable(React.lazy(() => import("@/features/admin/pages/AuditLog")));
 const LecturersPage = Loadable(React.lazy(() => import("@/features/admin/pages/LecturersPage")));
 const CoursesPage = Loadable(React.lazy(() => import("@/features/admin/pages/CoursesPage")));
+const MajorsPage = Loadable(React.lazy(() => import("@/features/admin/pages/MajorsPage")));
 
 // Moderator Pages
 const ModeratorShell = Loadable(React.lazy(() => import("@/app/layouts/ModeratorShell")));
@@ -165,6 +166,10 @@ export const router = createBrowserRouter([
                     {
                         path: "courses",
                         element: <CoursesPage />,
+                    },
+                    {
+                        path: "majors",
+                        element: <MajorsPage />,
                     },
                 ],
             },

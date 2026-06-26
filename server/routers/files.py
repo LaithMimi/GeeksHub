@@ -291,15 +291,20 @@ def request_course_files(
         requested_by=current_user.id,
     ))
 
-    # Audience: same major, Settings default-year == course year, opted in, not the requester.
+    # Audience: same major, not the requester, opted in. Notifications are opt-out, so
+    # users with no settings row (never opened Settings) are treated as opted-in — hence
+    # an OUTER join and IS NULL fallbacks. A null year only matches when no row exists;
+    # an explicit notify_new_materials == False excludes deliberate opt-outs.
     recipients = session.exec(
         select(User)
-        .join(UserSettings, UserSettings.user_id == User.id)
+        .join(UserSettings, UserSettings.user_id == User.id, isouter=True)
         .where(
             User.major_id == course.major_id,
-            UserSettings.default_year_id == course.year_id,
-            UserSettings.notify_new_materials == True,  # noqa: E712
             User.id != current_user.id,
+            (UserSettings.user_id == None)  # noqa: E711
+            | (UserSettings.default_year_id == course.year_id),
+            (UserSettings.notify_new_materials == None)  # noqa: E711
+            | (UserSettings.notify_new_materials == True),  # noqa: E712
         )
     ).all()
 

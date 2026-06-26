@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import RequestFileModal from "@/features/admin/components/RequestFileModal";
+import { RequestFilesDialog } from "@/features/courses/components/RequestFilesDialog";
+import { useRequestMaterials } from "@/features/files/hooks/useMaterialRequests";
 
 import { useMajors, useCourses, useLecturers, useTypes } from "@/features/courses/hooks/useCatalog";
 import { useFiles, useTopContributors } from "@/features/files/hooks/useFiles";
@@ -47,6 +49,8 @@ export default function Courses() {
     }, [user?.majorId, selections.major, initialCourseId]);
 
     const [isRequestOpen, setIsRequestOpen] = useState(false);
+    const [requestFilesOpen, setRequestFilesOpen] = useState(false);
+    const requestMaterials = useRequestMaterials();
     const { pinnedIds, togglePin, isPinned } = usePinnedCourses();
 
     // -- Queries --
@@ -209,10 +213,11 @@ export default function Courses() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 {selectFields.map((field) => {
                     const isDisabled = field.step >= 0 ? !isStepEnabled(field.step) || !!field.loading : false;
+                    const hasValue = !!selections[field.key as keyof typeof selections];
 
                     return (
                         <div key={field.key} className="space-y-2">
-                            <label className="text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider flex items-center gap-2">
+                            <label className={`text-[11px] font-display font-bold uppercase tracking-wider flex items-center gap-2 transition-colors ${hasValue ? "text-blue-300" : "text-foreground/80"}`}>
                                 {field.label} {field.loading && <Loader2 className="h-3 w-3 animate-spin text-blue-400" />}
                             </label>
                             <Select
@@ -220,7 +225,7 @@ export default function Courses() {
                                 onValueChange={(v) => handleSelect(field.key, v)}
                                 disabled={isDisabled}
                             >
-                                <SelectTrigger className={`liquid-glass-subtle border-border text-foreground/70 transition-all [&>span]:text-[13px] h-10 ${isDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-foreground/5"}`}>
+                                <SelectTrigger className={`liquid-glass-subtle font-display transition-all [&>span]:text-[13px] [&>span]:font-semibold h-10 focus:ring-2 focus:ring-blue-500/40 data-[state=open]:ring-2 data-[state=open]:ring-blue-500/50 ${hasValue ? "border-blue-500/40 text-foreground" : "border-border text-foreground/70"} ${isDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-foreground/5"}`}>
                                     <SelectValue placeholder={field.placeholder}>
                                         {selections[field.key as keyof typeof selections] ?
                                             (field.data?.find(d => d.id === selections[field.key as keyof typeof selections])?.label)
@@ -320,9 +325,21 @@ export default function Courses() {
                         <div className="p-12 text-center text-muted-foreground/50">
                             <FolderOpen className="h-10 w-10 mx-auto mb-3 opacity-40" />
                             <p className="font-display font-semibold text-foreground/60 mb-2">We don't have materials for this yet</p>
-                            <button onClick={() => setIsRequestOpen(true)} className="text-blue-400 text-[13px] hover:underline">
+                            <button onClick={() => setRequestFilesOpen(true)} className="text-blue-400 text-[13px] hover:underline">
                                 Want to request them?
                             </button>
+                            <RequestFilesDialog
+                                open={requestFilesOpen}
+                                onOpenChange={setRequestFilesOpen}
+                                pending={requestMaterials.isPending}
+                                typeLabel={types?.find(t => t.id === selections.type)?.displayName ?? "materials"}
+                                onConfirm={() =>
+                                    requestMaterials.mutate(
+                                        { courseId: selections.course, typeId: selections.type || undefined },
+                                        { onSuccess: () => setRequestFilesOpen(false) },
+                                    )
+                                }
+                            />
                         </div>
                     )}
                 </div>
