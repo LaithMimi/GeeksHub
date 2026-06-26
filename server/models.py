@@ -101,6 +101,22 @@ class FileRequest(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc)) # Timestamp of request submission
     lecturer: Lecturer| None = Relationship()
 
+class MaterialRequest(SQLModel, table=True):
+    """
+    A student's request for materials (optionally of a specific type) in a course.
+    Drives the cohort notification broadcast and the bonus-XP reward granted when
+    an approved upload fulfills it.
+    """
+    __tablename__ = "material_requests"
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    course_id: UUID = Field(foreign_key="courses.id", index=True)
+    type_id: Optional[UUID] = Field(default=None, foreign_key="material_types.id")  # None = any material
+    requested_by: UUID = Field(foreign_key="users.id", index=True)
+    status: str = Field(default="open", index=True)  # open | fulfilled
+    fulfilled_by_request_id: Optional[UUID] = Field(default=None, foreign_key="file_requests.id")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    fulfilled_at: Optional[datetime] = Field(default=None)
+
 class PointsTransaction(SQLModel, table=True):
     __tablename__ = "points_transactions"
     

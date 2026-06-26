@@ -10,7 +10,49 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.0 Highlights of Recent Updates (June 7 2026 — Latest)
+## 1.0 Highlights of Recent Updates (June 25–26 2026 — Latest)
+
+- **All-Features Code Review → 10 Bug Fixes (June 25):** A recall-biased review across all 11 `src/features/` modules surfaced and fixed 10 verified bugs. Frontend `tsc --noEmit` clean after.
+
+  **The "file-switch" class (shared root cause of 4 bugs):** components/hooks keyed on `fileId` persist across route-param changes (React Router reuses the instance), so a save/persist effect fires with the *previous* file's state before the load/re-seed runs.
+  - `AssistantChat.tsx` — save effect wrote the old file's messages under the new file's localStorage key (chat corruption). Fixed with a `loadedFileIdRef` guard.
+  - `NotesBoard.tsx` — debounced save POSTed `"[]"` on mount before notes loaded, wiping saved sticky notes. Fixed with a `hydratedRef` gate (save only after load resolves; reset on `fileId` change).
+  - `useViewerSession.ts` — `visitedPages`/`activeSeconds`/`isCompleted` refs never reset on `fileId` change, so the 2nd file viewed never awarded completion points. Fixed with a reset effect on `[fileId]`.
+  - `FileViewer.tsx` — on `fileId` change the old object URL was revoked but `pdfBlobUrl`/`pdfError` weren't cleared → rendered a revoked URL and flashed "Could not render PDF". Fixed with a reset effect on `[fileId]`.
+
+  **Other fixes:**
+  - `CourseNotes.tsx` / `CourseExams.tsx` — passed the display label (`"Notes"`/`"Past Papers"`) as `type_id`; the backend filters by id, so the tabs were always empty. Now resolve the id via `useTypes()` using the **actual seeded type names** ("Lecture Notes", "Exam").
+  - `UsersPage.tsx` + `server/routers/directory.py` — selecting "None" for a user's major sent `majorId: undefined` (dropped by `JSON.stringify`) and the backend used `if majorId is not None`, so a major could never be cleared. Now sends explicit `null`; backend honors it via `model_fields_set` (Pydantic v2). NOTE: directory request bodies are **camelCase by design** (`server/schemas.py`), not a snake_case bug.
+  - `ModerationQueue.tsx` — `handleBulkReject` was missing the 10-item cap + 60s cooldown that bulk-approve enforces. Mirrored the guard.
+  - `useTasks.ts` — the optimistic created task had no `createdAt` → `TaskDetailsDialog` fed Invalid Date to date-fns and crashed. Added `createdAt`.
+  - `RequestDetailSheet.tsx` + `requestService.ts` — the admin preview blob URL (`URL.createObjectURL`) was never revoked (memory leak). Added a revoke-on-change/unmount effect. Also a falsy-zero `{pointsAwarded && …}` rendered a stray "0" → changed to `!!pointsAwarded`. (The `/preview` route is correct — both `/preview` and `/url` exist server-side; only the stale JSDoc was fixed.)
+
+- **Moderator UsersPage Filter Polish (June 26):**
+  - The custom `Select` (`components/ui/select.tsx`, DropdownMenu-based, not Radix) renders `children || value`, so the role/major filters displayed the raw sentinel `__all__`. Passed resolved labels ("All roles" / "All majors" / the major name) into `SelectValue`.
+  - Role options showed the raw uppercase enum (`STUDENT`). Added a `roleLabel()` helper to title-case for display while keeping the enum value for the backend.
+  - Files: `src/features/moderator/pages/UsersPage.tsx`
+
+- **Dashboard & Course-Library UI Tweaks (June 26):**
+  - Removed the "Your Reputation" card from the main Dashboard right column. (`src/features/dashboard/pages/Dashboard.tsx`)
+  - Enlarged + bolded the "Top Contributors" list on the Course Library page — wider container, larger heading/rows/avatars/points. (`src/features/courses/pages/Courses.tsx`)
+
+- **"Homework" Material Type (June 26):** Added `MaterialType(display_name="Homework")` to `server/seed.py`. Takes effect on (re)seed. Seeded type names are now: Summary, Exam, Lecture Notes, Slides, Homework.
+
+- **NEW FEATURE — Request Files → Notify Cohort → Bonus XP (June 26):** Empty course-material tabs now have a "Request …" button that opens a yes/no confirm modal; on confirm the backend notifies the relevant student cohort to upload, and uploaders earn bonus XP when an upload fulfills the request.
+
+  **How it works:**
+  - New `MaterialRequest` table (`models.py`): `course_id`, nullable `type_id` (null = any), `requested_by`, `status` (open|fulfilled), `fulfilled_by_request_id`, timestamps. Auto-created via `create_all` — no migration.
+  - `POST /api/v1/courses/{course_id}/request-files` (`routers/files.py`): de-dupes (one open request per course+type so the cohort can't be spammed), then notifies the cohort — **same major + `UserSettings.default_year_id == course.year_id` + opted into new-material alerts** — via `UserNotification`. Returns `{ notified }`.
+  - Bonus on fulfillment (`routers/admin.py` approve flow): after the existing +25, if the approved upload matches an open request it grants `XP_REQUESTED_UPLOAD_BONUS` (+25), marks the request fulfilled, and notifies the original requester. Idempotent via the existing `PointsTransaction (request_id, action)` unique constraint.
+  - Frontend: `materialRequestService.ts` + `useMaterialRequests.ts` (toast on success / already-requested) + `RequestFilesDialog.tsx` (yes/no confirm), wired into the empty states of `CourseNotes`, `CourseExams`, and `CourseMaterials` (Notes→"Lecture Notes" id, Exams→"Exam" id, Materials→any).
+
+  **Files changed:** `server/models.py`, `server/schemas.py` (`MaterialRequestCreate`), `server/routers/files.py`, `server/routers/admin.py`; new `src/features/files/api/materialRequestService.ts`, `src/features/files/hooks/useMaterialRequests.ts`, `src/features/courses/components/RequestFilesDialog.tsx`; plus `CourseNotes.tsx`, `CourseExams.tsx`, `CourseMaterials.tsx`.
+
+  **⚠️ Note:** `UserSettings.notify_new_materials` defaults to **False**, so on a fresh DB most requests notify 0 users until they opt in (the request is still recorded and bonus-on-fulfillment still works). Flip the default or drop the filter to widen reach. Runtime end-to-end verification is still pending — static checks (tsc + Python import) pass.
+
+---
+
+## 1.1 Highlights of Recent Updates (June 7 2026)
 
 - **OCR Fallback for Image-Heavy PDF/Slide Pages (June 7):**
 
@@ -53,7 +95,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.1 Highlights of Recent Updates (May 30 2026)
+## 1.2 Highlights of Recent Updates (May 30 2026)
 
 - **Admin UI Consistency + CatalogManager Enhancements (May 30):**
 
@@ -70,11 +112,11 @@ A university course materials platform where students **share, browse, and study
   - Added `animate-fade-in max-w-3xl mx-auto pb-20` wrapper and `bg-foreground/10` kbd styling.
   - Files changed: `src/features/admin/pages/AdminHome.tsx`
 
-- **AuditLog Bug Fixes (May 30):** See Bug Fixes table in §1.1 below.
+- **AuditLog Bug Fixes (May 30):** See Bug Fixes table in §1.2 below.
 
 ---
 
-## 1.2 Highlights of Recent Updates (Late May 2026)
+## 1.3 Highlights of Recent Updates (Late May 2026)
 
 - **Frontend Cleanliness Audit + 3-Phase Cleanup (May 22):** Full senior-engineer code review producing a 6.1/10 baseline score, followed by a four-phase incremental refactor. All changes verified via `tsc --noEmit`, `vitest run` (18/18 passing), `eslint .` (45 issues — down from 58 baseline), and `vite build`. No behavior changes intended; pure cleanup.
 
@@ -132,7 +174,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.3 Highlights of Recent Updates (May 29 2026)
+## 1.4 Highlights of Recent Updates (May 29 2026)
 
 - **P4 Backend + Frontend Completed (May 29):** All remaining localStorage-only features migrated to live API endpoints.
 
@@ -160,7 +202,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.4 Highlights of Recent Updates (Mid May 2026 — May 18)
+## 1.5 Highlights of Recent Updates (Mid May 2026 — May 18)
 
 - **Tasks Backend Fully Implemented (May 18):** Full CRUD API for user learning-plan tasks brought live.
   - **`server/models.py`**: Added `UserTask` SQLModel table with fields: `id` (UUID PK), `user_id` (FK → users), `title`, `date` (`"YYYY-MM-DD"` string — avoids TZ issues), `start_hour` (float, 0.5-step resolution), `duration` (float hours), `priority` (`"normal"` | `"high"` | `"urgent"`), `completed` (bool), `created_at`. Composite index on `(user_id, date)` for fast per-user day queries.
@@ -179,7 +221,7 @@ A university course materials platform where students **share, browse, and study
 
 ---
 
-## 1.5 Highlights of Recent Updates (Late March 2026)
+## 1.6 Highlights of Recent Updates (Late March 2026)
 - **Cyber-Neon UI Overhaul:** Rebranded the entire application to a high-contrast Deep Teal and Cyan global aesthetic, deprecating local hardcoded properties and archaic light-mode hacks. 
 - **UUID Exposure Fixes:** Refactored `Dashboard.tsx` and `Recent.tsx` to stop exposing raw Postgres UUIDs to the end user. Implemented a "resolve-on-render" pattern utilizing existing highly-cached TanStack catalog queries (`useMajors`, `useCourses`) to dynamically map UUIDs to human-readable names.
 - **Accessibility & Modal Polish:** Repaired massive breakage on the Dashboard "New Task" modal, stripping legacy `liquid-glass-heavy` hacks destroying Tailwind transform matrices. Achieved full a11y compliance and React render loop optimizations on the modal.
@@ -267,10 +309,11 @@ src/
 │   │   └── pages/                      # AuthPage, ResetPasswordPage
 │   ├── courses/
 │   │   ├── api/catalogService.ts       # ✅ /majors, /types, /years, /semesters, /courses, /lecturers
+│   │   ├── components/RequestFilesDialog.tsx  # Yes/no confirm → request materials from the cohort
 │   │   ├── hooks/
 │   │   │   ├── useCatalog.ts           # useMajors, useYears, useSemesters, useCourses, useLecturers
 │   │   │   └── usePinnedCourses.ts     # ✅ TanStack Query + optimistic updates → /me/pinned-courses (was localStorage)
-│   │   └── pages/                      # Courses, CourseMaterials, CourseNotes, CourseExams
+│   │   └── pages/                      # Courses (Top Contributors list), CourseMaterials, CourseNotes, CourseExams (Notes/Exams resolve type-id via useTypes + "Request files" empty-state button)
 │   ├── dashboard/
 │   │   ├── api/taskService.ts          # ✅ /me/tasks (list, create, update, delete)
 │   │   ├── components/                 # LearningPlan, MiniCalendar, AddTaskModal, TaskDetailsDialog
@@ -281,12 +324,14 @@ src/
 │   ├── files/
 │   │   ├── api/
 │   │   │   ├── fileService.ts          # ✅ /files, /files/{id}, /me/recent-files
-│   │   │   └── requestService.ts       # ✅ /courses/{id}/upload, /me/requests, /admin/requests/*
+│   │   │   ├── requestService.ts       # ✅ /courses/{id}/upload, /me/requests, /admin/requests/*
+│   │   │   └── materialRequestService.ts  # ✅ NEW (Jun 26): /courses/{id}/request-files (request materials from cohort)
 │   │   ├── components/FileViewer.tsx   # react-pdf viewer with text selection → "Ask AI" tooltip
 │   │   ├── hooks/
 │   │   │   ├── useFiles.ts
 │   │   │   ├── useRequests.ts          # approve/reject mutations (no longer fires local addNotification)
-│   │   │   └── useViewerSession.ts     # PDF heartbeat + completion (isCompletedRef avoids stale closure)
+│   │   │   ├── useMaterialRequests.ts  # ✅ NEW (Jun 26): useRequestMaterials mutation
+│   │   │   └── useViewerSession.ts     # PDF heartbeat + completion (resets refs on fileId change)
 │   │   └── pages/                      # FilePage, Recent, UserUploads
 │   ├── gamification/
 │   │   ├── api/                        # gamificationService, learningPathService, reputationService
@@ -319,15 +364,15 @@ src/
 
 server/
 ├── main.py                     # FastAPI app entry point. Registers all routers.
-├── models.py                   # SQLModel ORM: User, Course, Lecturer, UserTask, FileRequest, PinnedCourse, UserSettings, UserNotification, MaterialChunk, etc.
+├── models.py                   # SQLModel ORM: User, Course, Lecturer, UserTask, FileRequest, MaterialRequest, PinnedCourse, UserSettings, UserNotification, MaterialChunk, etc.
 ├── schemas.py                  # Pydantic schemas: TaskCreate/Patch/Response, UserSettings, SettingsPatch, NotificationResponse, etc.
 ├── database.py                 # Neon DB connection + get_session dependency
 ├── routers/
 │   ├── auth.py                 # /signin, /signup, /forgot-password, /reset-password
 │   ├── catalog.py              # /majors, /courses, /lecturers, /years, /semesters, /types + course-lecturer assignment endpoints
-│   ├── files.py                # /files, /files/{id}
+│   ├── files.py                # /files, /files/{id}, /courses/{id}/upload, /courses/{id}/request-files (Jun 26)
 │   ├── tasks.py                # ✅ /me/tasks CRUD (GET, POST, PATCH, DELETE)
-│   ├── admin.py                # /admin/requests/*, /admin/audit-logs, /admin/courses/{id}/lecturers
+│   ├── admin.py                # /admin/requests/* (approve grants +25, plus bonus XP when an upload fulfills a MaterialRequest), /admin/audit-logs, /admin/courses/{id}/lecturers
 │   ├── pinned_courses.py       # ✅ NEW (May 29): /me/pinned-courses (GET, POST /{id}, DELETE /{id})
 │   ├── settings.py             # ✅ NEW (May 29): /me/settings (GET, PATCH)
 │   ├── notifications.py        # ✅ NEW (May 29): /me/notifications, /unread-count, /{id}/read, /read-all

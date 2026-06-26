@@ -492,20 +492,6 @@ export default function Dashboard() {
                             </div>
                         )}
                     </div>
-
-                    {/* Reputation Card */}
-                    {activitySummary && (
-                        <div className="liquid-glass rounded-2xl p-6 border-blue-500/20 shadow-lg shadow-blue-500/5">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Zap className="h-4 w-4 text-blue-400" />
-                                <span className="text-[13px] font-display font-semibold text-foreground/70">Your Reputation</span>
-                            </div>
-                            <div className="text-[32px] font-display font-bold text-foreground leading-none">
-                                {activitySummary.totalPoints}
-                            </div>
-                            <p className="text-[12px] text-muted-foreground/70 mt-1">Points earned</p>
-                        </div>
-                    )}
                 </div>
             </div>
 

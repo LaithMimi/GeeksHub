@@ -190,6 +190,11 @@ class CourseUpdate(BaseModel):
     semester: Optional[int] = Field(default=None, ge=1, le=3)
 
 
+# --- Material Request Payloads ---
+class MaterialRequestCreate(BaseModel):
+    typeId: Optional[UUID] = None  # None = request any material for the course
+
+
 # --- Tasks Payloads ---
 class TaskCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)

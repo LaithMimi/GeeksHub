@@ -329,38 +329,38 @@ export default function Courses() {
             ) : (
                 // Top Contributors Section
                 <div className="flex justify-center pt-6">
-                    <div className="w-full max-w-md">
-                        <h3 className="text-[16px] font-display font-bold text-foreground mb-4 flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-blue-400" />
+                    <div className="w-full max-w-lg">
+                        <h3 className="text-[18px] font-display font-bold text-foreground mb-4 flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-blue-400" />
                             Top Contributors
                         </h3>
                         {isLoadingContributors ? (
                             <div className="space-y-3">
-                                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full rounded-xl bg-foreground/5" />)}
+                                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-14 w-full rounded-xl bg-foreground/5" />)}
                             </div>
                         ) : (
                             <div className="liquid-glass rounded-2xl divide-y divide-border overflow-hidden">
                                 {topContributors?.length === 0 ? (
-                                    <p className="px-5 py-8 text-center text-[13px] text-muted-foreground/60">
+                                    <p className="px-5 py-9 text-center text-[14px] text-muted-foreground/60">
                                         No contributors yet.
                                     </p>
                                 ) : topContributors?.map((c, i) => (
-                                    <div key={c.id} className="px-5 py-3.5 flex items-center gap-3 hover:bg-foreground/5 transition-colors">
-                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-display font-bold shrink-0 ${rankStyle(i)}`}>
+                                    <div key={c.id} className="px-5 py-4 flex items-center gap-3.5 hover:bg-foreground/5 transition-colors">
+                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-display font-bold shrink-0 ${rankStyle(i)}`}>
                                             {i + 1}
                                         </div>
-                                        <div className="h-9 w-9 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-[12px] font-display font-bold shrink-0">
+                                        <div className="h-10 w-10 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center text-[13px] font-display font-bold shrink-0">
                                             {c.avatar}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-[13px] font-medium text-foreground truncate">{c.name}</p>
+                                            <p className="text-[15px] font-semibold text-foreground truncate">{c.name}</p>
                                             <div className="mt-1">
                                                 <BadgeChip tier={c.badge} />
                                             </div>
                                         </div>
-                                        <span className="text-[13px] font-display font-bold text-foreground shrink-0 tabular-nums">
+                                        <span className="text-[16px] font-display font-bold text-foreground shrink-0 tabular-nums">
                                             {c.points}
-                                            <span className="text-[10px] text-muted-foreground/60 font-normal ml-0.5">pts</span>
+                                            <span className="text-[11px] text-muted-foreground/60 font-normal ml-0.5">pts</span>
                                         </span>
                                     </div>
                                 ))}

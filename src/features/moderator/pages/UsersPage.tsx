@@ -25,6 +25,9 @@ import type { Role } from "@/types/domain";
 
 const ROLES: Role[] = ["STUDENT", "MODERATOR", "ADMIN"];
 
+// Humanize the raw role enum for display (value stays uppercase for the backend).
+const roleLabel = (r: Role) => r.charAt(0) + r.slice(1).toLowerCase();
+
 const roleBadgeClass: Record<Role, string> = {
     STUDENT: "border-blue-500/30 text-blue-300",
     MODERATOR: "border-amber-500/30 text-amber-300",
@@ -130,14 +133,20 @@ export default function UsersPage() {
                     />
                 </div>
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
-                    <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Role" /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-[160px]">
+                        <SelectValue placeholder="Role">{roleFilter === ALL ? "All roles" : roleLabel(roleFilter as Role)}</SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                         <SelectItem value={ALL}>All roles</SelectItem>
-                        {ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        {ROLES.map((r) => <SelectItem key={r} value={r}>{roleLabel(r)}</SelectItem>)}
                     </SelectContent>
                 </Select>
                 <Select value={majorFilter} onValueChange={setMajorFilter}>
-                    <SelectTrigger className="w-full sm:w-[200px]"><SelectValue placeholder="Major" /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                        <SelectValue placeholder="Major">
+                            {majorFilter === ALL ? "All majors" : (majors.find((m) => m.id === majorFilter)?.name ?? "All majors")}
+                        </SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                         <SelectItem value={ALL}>All majors</SelectItem>
                         {majors.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}
@@ -247,16 +256,20 @@ function EditUserDialog({
                     <div className="space-y-1.5">
                         <Label>Role</Label>
                         <Select value={role} onValueChange={(v) => setRole(v as Role)}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectTrigger><SelectValue>{roleLabel(role)}</SelectValue></SelectTrigger>
                             <SelectContent>
-                                {ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                                {ROLES.map((r) => <SelectItem key={r} value={r}>{roleLabel(r)}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-1.5">
                         <Label>Major</Label>
                         <Select value={majorId} onValueChange={setMajorId}>
-                            <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                            <SelectTrigger>
+                                <SelectValue placeholder="None">
+                                    {majorId === ALL ? "None" : (majors.find((m) => m.id === majorId)?.name ?? "None")}
+                                </SelectValue>
+                            </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value={ALL}>None</SelectItem>
                                 {majors.map((m) => <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>)}

@@ -6,9 +6,9 @@ from typing import List, Optional
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Depends, Query, Response
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select, func
-from sqlalchemy import update
+from sqlalchemy import update, or_
 from database import get_session, engine
-from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog, Lecturer, MaterialType, UserNotification
+from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog, Lecturer, MaterialType, UserNotification, MaterialRequest
 from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
 from utils.auth_utils import get_admin_user
 from utils.shared import storage_client, BUCKET_NAME
@@ -19,6 +19,7 @@ router = APIRouter(tags=["Admin Moderation"])
 
 # --- Setup ---
 XP_UPLOAD_APPROVAL = 25
+XP_REQUESTED_UPLOAD_BONUS = 25  # extra XP when an approved upload fulfills a student request
 
 # ---------------------------------------------------------------------------
 # Background embedding helpers
@@ -164,6 +165,41 @@ def approve_file(
         update(User).where(User.id == request.user_id)
         .values(total_points=User.total_points + XP_UPLOAD_APPROVAL)
     )
+
+    # Bonus XP if this upload fulfills one or more open material requests for the course.
+    # A request with type_id IS NULL ("any material") is matched by any upload type.
+    open_requests = session.exec(
+        select(MaterialRequest).where(
+            MaterialRequest.course_id == request.course_id,
+            MaterialRequest.status == "open",
+            or_(MaterialRequest.type_id == request.type_id, MaterialRequest.type_id == None),  # noqa: E711
+        )
+    ).all()
+    if open_requests:
+        # The PointsTransaction (request_id, action) unique constraint keeps this idempotent.
+        session.add(PointsTransaction(
+            user_id=request.user_id,
+            amount=XP_REQUESTED_UPLOAD_BONUS,
+            action="requested_upload_bonus",
+            reason=f"Fulfilled a file request: {request.title}",
+            request_id=request.id,
+        ))
+        session.exec(
+            update(User).where(User.id == request.user_id)
+            .values(total_points=User.total_points + XP_REQUESTED_UPLOAD_BONUS)
+        )
+        fulfilled_at = datetime.datetime.now(datetime.timezone.utc)
+        for mr in open_requests:
+            mr.status = "fulfilled"
+            mr.fulfilled_by_request_id = request.id
+            mr.fulfilled_at = fulfilled_at
+            session.add(mr)
+            if mr.requested_by != request.user_id:
+                session.add(UserNotification(
+                    user_id=mr.requested_by,
+                    title="Your request was filled",
+                    message=f"The materials you requested for {course.name} were just added.",
+                ))
 
     request.status = "approved"
 

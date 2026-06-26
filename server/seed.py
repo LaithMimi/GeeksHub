@@ -80,6 +80,7 @@ def seed_database():
             MaterialType( display_name="Exam"),
             MaterialType( display_name="Lecture Notes"),
             MaterialType( display_name="Slides"),
+            MaterialType( display_name="Homework"),
         ]
 
         for mt in m_types:

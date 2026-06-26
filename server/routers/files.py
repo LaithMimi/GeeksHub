@@ -10,8 +10,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Form, UploadFile, 
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 from database import get_session
-from models import Material, FileRequest, Course, Lecturer, User, PointsTransaction
-from schemas import FileRequestEnriched
+from models import Material, FileRequest, Course, Lecturer, User, PointsTransaction, MaterialRequest, MaterialType, UserSettings, UserNotification
+from schemas import FileRequestEnriched, MaterialRequestCreate
 from utils.auth_utils import get_verified_user
 from utils.upload_utils import validate_uploaded_file
 from utils.shared import storage_client, BUCKET_NAME
@@ -247,6 +247,75 @@ async def upload_course_file(
     session.refresh(new_request)
 
     return new_request
+
+@router.post("/api/v1/courses/{course_id}/request-files")
+def request_course_files(
+    course_id: UUID,
+    payload: MaterialRequestCreate,
+    current_user: User = Depends(get_verified_user),
+    session: Session = Depends(get_session),
+):
+    """
+    A student asks for materials (optionally of a specific type) to be uploaded for a
+    course. Notifies the relevant cohort — same major, whose Settings 'default year'
+    matches the course's year, who opted into new-material alerts — inviting them to
+    upload and earn XP. De-duplicated: only the first open request per (course, type)
+    broadcasts, so the cohort can't be spammed.
+    """
+    course = session.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found.")
+
+    type_id = payload.typeId
+    type_label = "materials"
+    if type_id is not None:
+        mtype = session.get(MaterialType, type_id)
+        if not mtype:
+            raise HTTPException(status_code=400, detail="Material type not found.")
+        type_label = mtype.display_name
+
+    # De-dupe: if an open request for this (course, type) already exists, don't re-broadcast.
+    existing = session.exec(
+        select(MaterialRequest).where(
+            MaterialRequest.course_id == course_id,
+            MaterialRequest.type_id == type_id,
+            MaterialRequest.status == "open",
+        )
+    ).first()
+    if existing:
+        return {"notified": 0, "already_requested": True}
+
+    session.add(MaterialRequest(
+        course_id=course_id,
+        type_id=type_id,
+        requested_by=current_user.id,
+    ))
+
+    # Audience: same major, Settings default-year == course year, opted in, not the requester.
+    recipients = session.exec(
+        select(User)
+        .join(UserSettings, UserSettings.user_id == User.id)
+        .where(
+            User.major_id == course.major_id,
+            UserSettings.default_year_id == course.year_id,
+            UserSettings.notify_new_materials == True,  # noqa: E712
+            User.id != current_user.id,
+        )
+    ).all()
+
+    message = (
+        f"A student requested {type_label} for {course.name}. "
+        f"Upload yours to help out and earn XP!"
+    )
+    for u in recipients:
+        session.add(UserNotification(
+            user_id=u.id,
+            title="Materials requested",
+            message=message,
+        ))
+
+    session.commit()
+    return {"notified": len(recipients)}
 
 @router.delete("/api/v1/me/requests/{request_id}")
 def withdraw_request(

@@ -1,7 +1,10 @@
-﻿import { useParams, Link } from "react-router-dom";
-import { FileText, AlertCircle, FolderOpen, RefreshCw } from "lucide-react";
+﻿import { useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { FileText, AlertCircle, FolderOpen, RefreshCw, FilePlus } from "lucide-react";
 import { useFiles } from "@/features/files/hooks/useFiles";
 import { useTypes } from "@/features/courses/hooks/useCatalog";
+import { useRequestMaterials } from "@/features/files/hooks/useMaterialRequests";
+import { RequestFilesDialog } from "@/features/courses/components/RequestFilesDialog";
 
 function FileListSkeleton() {
     return (
@@ -21,10 +24,14 @@ function FileListSkeleton() {
 
 export default function CourseNotes() {
     const { courseId } = useParams<{ courseId: string }>();
-    // The backend filters by type_id, not the display label, so map "Notes" -> id.
+    // The backend filters by type_id, not the display label, so map the type
+    // name (per server/seed.py) -> id.
     const { data: types = [], isLoading: typesLoading } = useTypes();
-    const typeId = types.find((t) => t.displayName === "Notes")?.id;
+    const typeId = types.find((t) => t.displayName === "Lecture Notes")?.id;
     const { data: files, isLoading, error, refetch } = useFiles({ courseId: courseId!, type: typeId });
+
+    const [requestOpen, setRequestOpen] = useState(false);
+    const requestMaterials = useRequestMaterials();
 
     if (typesLoading || isLoading) {
         return <FileListSkeleton />;
@@ -53,15 +60,36 @@ export default function CourseNotes() {
 
     if (!files || files.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-foreground/5 flex items-center justify-center">
-                    <FolderOpen className="h-6 w-6 text-muted-foreground/30" />
+            <>
+                <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+                    <div className="w-14 h-14 rounded-2xl bg-foreground/5 flex items-center justify-center">
+                        <FolderOpen className="h-6 w-6 text-muted-foreground/30" />
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-[15px] font-medium text-foreground">No notes uploaded yet</p>
+                        <p className="text-[13px] text-muted-foreground">Be the first — or ask classmates to share theirs.</p>
+                    </div>
+                    <button
+                        onClick={() => setRequestOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] text-blue-400 hover:bg-blue-500/10 transition-all"
+                    >
+                        <FilePlus className="h-3.5 w-3.5" />
+                        Request these notes
+                    </button>
                 </div>
-                <div className="space-y-1">
-                    <p className="text-[15px] font-medium text-foreground">No notes uploaded yet</p>
-                    <p className="text-[13px] text-muted-foreground">Check back later or request notes be added.</p>
-                </div>
-            </div>
+                <RequestFilesDialog
+                    open={requestOpen}
+                    onOpenChange={setRequestOpen}
+                    pending={requestMaterials.isPending}
+                    typeLabel="lecture notes"
+                    onConfirm={() =>
+                        requestMaterials.mutate(
+                            { courseId: courseId!, typeId },
+                            { onSuccess: () => setRequestOpen(false) },
+                        )
+                    }
+                />
+            </>
         );
     }
 
