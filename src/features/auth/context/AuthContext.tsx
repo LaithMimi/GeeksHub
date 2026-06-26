@@ -165,10 +165,5 @@ export function useAuth(): AuthContextValue {
 
 export function useIsAdmin(): boolean {
     const { user } = useAuth();
-    return user?.role === "admin" || user?.role === "super_admin";
-}
-
-export function useIsSuperAdmin(): boolean {
-    const { user } = useAuth();
-    return user?.role === "super_admin";
+    return user?.role === "ADMIN";
 }

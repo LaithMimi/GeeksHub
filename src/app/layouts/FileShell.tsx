@@ -1,5 +1,5 @@
 import { Outlet, useParams } from "react-router-dom";
-import { Loader2, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useFile } from "@/features/files/hooks/useFiles";
 import { FileViewerSkeleton } from "@/features/files/components/FileViewer";
 

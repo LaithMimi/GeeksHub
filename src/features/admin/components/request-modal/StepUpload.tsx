@@ -3,7 +3,7 @@ import type { Course, Lecturer, Major, MaterialTypeOption } from "@/types/domain
 import type { FormState } from "./useRequestForm";
 import { validateFile } from "./useRequestForm";
 import { SummaryChip } from "./SummaryChip";
-import { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 
 interface StepUploadProps {
     form: FormState;

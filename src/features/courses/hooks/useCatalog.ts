@@ -50,7 +50,6 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import type { Course, Lecturer, Major, Semester } from "@/types/domain";
 import { queryKeys } from "@/lib/queryKeys";
 import { listMajors, listYears, listSemesters, listCourses, listLecturers, getCourse, listTypes } from "@/features/courses/api/catalogService";
 

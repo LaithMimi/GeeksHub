@@ -86,7 +86,6 @@ export function CommandPalette() {
                                     <FileText className="mr-2 h-4 w-4" />
                                     <div className="flex flex-col">
                                         <span>{file.title}</span>
-                                        <span className="text-xs text-muted-foreground">{file.type}</span>
                                     </div>
                                 </CommandItem>
                             ))}

@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useDashboardData } from "../useDashboardData";
-import type { Course, Major, FileRequest } from "@/types/domain";
+import type { FileRequest } from "@/types/domain";
 
 describe("useDashboardData", () => {
     beforeEach(() => {

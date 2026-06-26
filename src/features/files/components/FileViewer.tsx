@@ -115,12 +115,7 @@ export default function FileViewer({ onTextSelect, onPinToNotes }: FileViewerPro
     // ── Recent files ──────────────────────────────────────────────────────────
     useEffect(() => {
         if (file && courseId) {
-            addToRecent({
-                id: file.id,
-                title: file.title,
-                courseId,
-                type: file.type,
-            });
+            addToRecent({ id: file.id });
         }
     }, [file, courseId, addToRecent]);
 

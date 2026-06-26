@@ -72,9 +72,6 @@ export default function Recent() {
                                     <p className="font-medium text-foreground truncate text-[14px] group-hover:text-blue-300 transition-colors">
                                         {file.title}
                                     </p>
-                                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-foreground/5 text-muted-foreground shrink-0">
-                                        {file.type}
-                                    </span>
                                 </div>
                                 <p className="text-[12px] text-muted-foreground/70 flex items-center gap-2">
                                     <BookOpen className="h-3 w-3" />

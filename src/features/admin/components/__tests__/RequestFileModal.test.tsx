@@ -28,7 +28,7 @@ describe('RequestFileModal', () => {
         (useCreateRequest as any).mockReturnValue({ mutate: mockMutate, isPending: false });
 
         // Radix UI requirements for Pointer Events & Focus
-        if (!global.PointerEvent) {
+        if (!globalThis.PointerEvent) {
             class PointerEvent extends MouseEvent {
                 public pointerId?: number;
                 public pointerType?: string;
@@ -40,7 +40,7 @@ describe('RequestFileModal', () => {
                     this.isPrimary = params.isPrimary;
                 }
             }
-            global.PointerEvent = PointerEvent as any;
+            globalThis.PointerEvent = PointerEvent as any;
         }
         Object.assign(window.HTMLElement.prototype, {
             scrollIntoView: vi.fn(),
