@@ -7,6 +7,8 @@ Dockerfile
 server/venv
 server/.env
 server/__pycache__
+server/gcp_key.json
+gcp_key.json
 .vscode
 .vercel
 .claude

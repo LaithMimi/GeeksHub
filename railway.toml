@@ -1,0 +1,19 @@
+# Railway deployment config for the GeeksHub FastAPI backend.
+#
+# The app lives in server/ (entrypoint server/main.py -> `app`), but
+# requirements.txt is at the repo root, so Nixpacks auto-detects Python and
+# builds from root. We point uvicorn at the package dir with --app-dir (see
+# start.sh) and let Railway inject $PORT.
+
+[build]
+# Use an explicit backend Dockerfile; otherwise Railway auto-detects the root
+# frontend Dockerfile (node -> nginx) and builds the SPA by mistake.
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.backend"
+
+[deploy]
+startCommand = "bash start.sh"
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 120
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

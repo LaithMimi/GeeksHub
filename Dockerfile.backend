@@ -1,0 +1,24 @@
+# Backend image for the GeeksHub FastAPI service (deployed on Railway).
+#
+# The repo root also has a frontend Dockerfile (node -> nginx). Railway is
+# pointed here explicitly via railway.toml `dockerfilePath`, so it builds the
+# Python backend instead of the SPA.
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# Install Python deps first for better layer caching.
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# App source + boot script. .dockerignore keeps venv/.env/gcp_key.json out.
+COPY server ./server
+COPY start.sh ./start.sh
+
+# start.sh materializes the GCP key from $GCP_KEY_JSON, then execs
+# `uvicorn main:app --app-dir server` on Railway's $PORT.
+CMD ["bash", "start.sh"]

@@ -1,0 +1,8 @@
+# Keep the backend build/upload lean — only server/ + requirements.txt are
+# needed to build the FastAPI service.
+server/venv/
+node_modules/
+dist/
+.vercel/
+**/__pycache__/
+*.pyc
