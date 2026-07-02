@@ -13,14 +13,15 @@ export const MATERIAL_YEARS = Array.from({ length: currentYear - 2016 + 1 }, (_,
     return { id: y, label: y };
 });
 
-// Must match the backend cap (server/utils/upload_utils.py MAX_FILE_SIZE_MB = 15).
+// Must match the backend (server/utils/upload_utils.py): MAX_FILE_SIZE_MB = 15
+// and ALLOWED_TYPES (.pdf/.pptx/.jpg/.jpeg/.png — no .ppt or .docx).
 export const MAX_FILE_SIZE = 15 * 1024 * 1024;
-export const ALLOWED_EXTENSIONS = [".pdf", ".pptx", ".ppt", ".docx", ".jpg", ".jpeg", ".png"];
+export const ALLOWED_EXTENSIONS = [".pdf", ".pptx", ".jpg", ".jpeg", ".png"];
 
 export function validateFile(file: File): string | null {
     const name = file.name.toLowerCase();
     if (!ALLOWED_EXTENSIONS.some((ext) => name.endsWith(ext))) {
-        return "Unsupported file type. Use PDF, PPTX, DOCX, JPG, or PNG.";
+        return "Unsupported file type. Use PDF, PPTX, JPG, or PNG.";
     }
     if (file.size > MAX_FILE_SIZE) {
         return `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 15 MB.`;

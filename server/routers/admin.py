@@ -238,6 +238,15 @@ def reject_request(
     if not request:
         raise HTTPException(status_code=404, detail="Request not found.")
 
+    # Only pending requests may be rejected. Rejecting an approved one would leave
+    # its Material live in the catalog and the XP awarded while the request reads
+    # "rejected" — an approved request must go through undo-approve first.
+    if request.status != "pending":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Only pending requests can be rejected (current status: {request.status})."
+        )
+
     # MOVE TO TRASH INSTEAD OF DELETING
     filename = request.file_url.split('/')[-1]
     trash_path = f"trash_bin/{filename}"
@@ -467,28 +476,46 @@ def undo_approve(
     if request.status != "approved":
         raise HTTPException(status_code=400, detail="Only approved requests can be undone.")
 
-    # 1. Revoke the 10 XP Gamification points
-    xp_transaction = session.exec(
+    # 1. Revoke ALL XP awarded for this request — both the approval XP and any
+    # requested-upload bonus (a single .first() here used to leave the bonus behind).
+    xp_transactions = session.exec(
         select(PointsTransaction).where(PointsTransaction.request_id == request.id)
-    ).first()
-    if xp_transaction:
+    ).all()
+    for xp_transaction in xp_transactions:
         session.exec(
             update(User).where(User.id == xp_transaction.user_id)
             .values(total_points=User.total_points - xp_transaction.amount)
         )
         session.delete(xp_transaction)
 
-    # 2. Find and delete the published Material from the catalog
+    # 2. Re-open any material requests this approval had fulfilled
+    fulfilled_requests = session.exec(
+        select(MaterialRequest).where(MaterialRequest.fulfilled_by_request_id == request.id)
+    ).all()
+    for mr in fulfilled_requests:
+        mr.status = "open"
+        mr.fulfilled_by_request_id = None
+        mr.fulfilled_at = None
+        session.add(mr)
+
+    # 3. Find and delete the published Material from the catalog
     # Material.id == FileRequest.id (set explicitly at approval time)
     material = session.get(Material, request.id)
     if material:
+        # Move the file back to pending_uploads/ so preview and re-approval work.
+        # For PPTX uploads the approved blob is the converted PDF, so request.file_url
+        # must follow the blob to its new pending path.
+        pending_path = f"pending_uploads/{material.file_url.split('/')[-1]}"
+        try:
+            bucket = storage_client.bucket(BUCKET_NAME)
+            bucket.rename_blob(bucket.blob(material.file_url), pending_path)
+            request.file_url = pending_path
+        except Exception as e:
+            print(f"GCS move back to pending failed: {e}")
         session.delete(material)
 
-    # 3. Change status back to PENDING
+    # 4. Change status back to PENDING
     request.status = "pending"
-    
-    # Note: For a true enterprise app, you would also move the file back from 
-    # 'approved_materials/' to 'pending_uploads/' in Google Cloud here.
 
     audit = AuditLog(
         actor_id=admin.id,

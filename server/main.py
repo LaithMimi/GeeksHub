@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
-from slowapi import Limiter
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends, Request
@@ -35,6 +36,11 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 app = FastAPI(title="GeeksHub API", lifespan=lifespan)
+
+# slowapi wiring: without the registered exception handler, a tripped
+# @limiter.limit decorator surfaces as an unstyled error instead of a clean 429.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(SecurityHeadersMiddleware)
 

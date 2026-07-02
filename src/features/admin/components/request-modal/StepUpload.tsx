@@ -30,7 +30,7 @@ export function StepUpload({
         <div className="space-y-5">
             <div className="space-y-1">
                 <p className="text-foreground text-[15px] font-semibold">Upload your file</p>
-                <p className="text-muted-foreground/70 text-[12px]">PDF, PPTX, DOCX, JPG or PNG — max 15 MB.</p>
+                <p className="text-muted-foreground/70 text-[12px]">PDF, PPTX, JPG or PNG — max 15 MB.</p>
             </div>
             {/* Full summary before committing */}
             <div className="flex flex-wrap gap-2">
@@ -52,7 +52,7 @@ export function StepUpload({
             `}>
                 <input
                     type="file"
-                    accept=".pdf,.pptx,.ppt,.docx,.jpg,.jpeg,.png"
+                    accept=".pdf,.pptx,.jpg,.jpeg,.png"
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     onChange={(e) => {
                         const f = e.target.files?.[0];
@@ -86,7 +86,7 @@ export function StepUpload({
                         </div>
                         <div className="text-center">
                             <p className="text-[13px] text-foreground/60">Drag & drop or click to browse</p>
-                            <p className="text-[11px] text-muted-foreground/50 mt-0.5">PDF, PPTX, DOCX, JPG, PNG</p>
+                            <p className="text-[11px] text-muted-foreground/50 mt-0.5">PDF, PPTX, JPG, PNG</p>
                         </div>
                     </>
                 )}

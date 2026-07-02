@@ -115,32 +115,40 @@ def viewer_heartbeat(
     # 4. THE MAGIC MOMENT: Did they hit 85%?
     if view_session.completion_score >= 0.85:
         view_session.is_complete = True
-        
-        # A. Write the receipt to the Ledger (+10 XP)
-        reward = PointsTransaction(
-            user_id=current_user.id,
-            amount=10,
-            action="file_completed",
-            reason="Completed studying a file",
-            source_id=f"view_{view_session.id}" # Prevents cheating/double-awarding!
-        )
-        session.add(reward)
-        
-        # B. Update the fast User Cache
-        session.exec(
-            update(User).where(User.id == current_user.id)
-            .values(total_points=User.total_points + 10)
-        )
-        
-        # C. Update the Course Progress Bar Cache
-        activity = session.get(UserCourseActivity, (current_user.id, view_session.course_id))
-        if not activity:
-            activity = UserCourseActivity(user_id=current_user.id, course_id=view_session.course_id)
-            session.add(activity)
-            
-        activity.files_completed += 1
-        if activity.status == "not_started":
-            activity.status = "exploring"
+
+        # Dedupe per user+file, NOT per session — a per-session source_id let users
+        # farm +10 XP repeatedly by starting a fresh session on an already-read file.
+        source_id = f"view_{current_user.id}_{view_session.file_id}"
+        already_awarded = session.exec(
+            select(PointsTransaction).where(PointsTransaction.source_id == source_id)
+        ).first()
+
+        if not already_awarded:
+            # A. Write the receipt to the Ledger (+10 XP)
+            reward = PointsTransaction(
+                user_id=current_user.id,
+                amount=10,
+                action="file_completed",
+                reason="Completed studying a file",
+                source_id=source_id # Prevents cheating/double-awarding!
+            )
+            session.add(reward)
+
+            # B. Update the fast User Cache
+            session.exec(
+                update(User).where(User.id == current_user.id)
+                .values(total_points=User.total_points + 10)
+            )
+
+            # C. Update the Course Progress Bar Cache
+            activity = session.get(UserCourseActivity, (current_user.id, view_session.course_id))
+            if not activity:
+                activity = UserCourseActivity(user_id=current_user.id, course_id=view_session.course_id)
+                session.add(activity)
+
+            activity.files_completed += 1
+            if activity.status == "not_started":
+                activity.status = "exploring"
 
     try:
         session.commit()

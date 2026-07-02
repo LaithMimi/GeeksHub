@@ -132,7 +132,7 @@ describe('RequestFileModal', () => {
         expect(screen.getByText(/Unsupported file type/)).toBeInTheDocument();
         expect(submitBtn).toBeDisabled();
         
-        // Test file too large (> 25MB)
+        // Test file too large (backend cap is 15MB)
         const largeFile = new File(['dummy'], 'large.pdf', { type: 'application/pdf' });
         Object.defineProperty(largeFile, 'size', { value: 26 * 1024 * 1024 });
         fireEvent.change(fileInput, { target: { files: [largeFile] } });

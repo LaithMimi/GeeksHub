@@ -41,6 +41,12 @@ export function extractAuthErrorMessage(err: unknown, fallback: string): string 
         return err instanceof Error ? err.message : fallback;
     }
 
+    // slowapi's rate-limit handler responds with { error: "Rate limit exceeded: …" }
+    // (no `detail` key), so match on the status code rather than the body shape.
+    if (err.status === 429) {
+        return "Too many failed attempts. Please try again later.";
+    }
+
     const data = err.data as
         | { detail?: string | ValidationErrorItem | ValidationErrorItem[]; error_description?: string; message?: string }
         | undefined;

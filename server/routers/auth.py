@@ -51,7 +51,8 @@ def get_auth0_admin():
         return None
 
 @router.post("/api/v1/signup")
-def sign_up(payload: UserSignUp, session: Session = Depends(get_session)):
+@limiter.limit("5/minute")  # Rate limit to prevent automated account-creation spam
+def sign_up(request: Request, payload: UserSignUp, session: Session = Depends(get_session)):
     clean_email = payload.email.lower().strip()
     
     # --- DOMAIN CHECK ---
@@ -111,7 +112,9 @@ def sign_in(request: Request, payload: UserSignIn, response: Response, session: 
     clean_email = payload.email.lower().strip()
     user = session.exec(select(User).where(User.email == clean_email)).first()
     if not user:
-        raise HTTPException(status_code=404, detail="No account found. Please sign up.")
+        # Same message as a wrong password — a distinct "no account" reply would let
+        # attackers enumerate registered emails (mirrors forgot-password's design).
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     domain = os.getenv("AUTH0_DOMAIN")
     try:
@@ -155,7 +158,11 @@ def sign_in(request: Request, payload: UserSignIn, response: Response, session: 
             max_age=cookie_lifespan # 24 hours
         )
         return {"user": user}
-    
+
+    except HTTPException:
+        # Deliberate rejections (e.g. 403 email-not-verified) must reach the client
+        # as-is, not be masked as a wrong-password 401 by the handler below.
+        raise
     except Exception as e:
         print(f"Auth0 Login Error: {e}")  # Keep for server logs
         raise HTTPException(status_code=401, detail="Invalid email or password.")
