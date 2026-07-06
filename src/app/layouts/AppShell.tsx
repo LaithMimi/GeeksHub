@@ -115,7 +115,7 @@ const Breadcrumbs = () => {
                         <div key={to} className="flex items-center gap-1.5 sm:gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
                             <BreadcrumbItem>
                                 {isLast || isNonCl ? (
-                                    <BreadcrumbPage className={`px-2 py-1 rounded-md text-xs sm:text-sm ${isNonCl ? "text-muted-foreground" : "text-foreground font-semibold bg-foreground/10"}`}>
+                                    <BreadcrumbPage className={`px-2 py-1 rounded-md text-xs sm:text-sm ${isNonCl ? "text-muted-foreground" : "text-primary font-semibold bg-primary/10"}`}>
                                         {label}
                                     </BreadcrumbPage>
                                 ) : (

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import type { WheelEvent as ReactWheelEvent } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import {
     Loader2, AlertCircle, Download, FileText,
@@ -161,6 +162,33 @@ export default function FileViewer({ onTextSelect, onPinToNotes }: FileViewerPro
     const zoomOut = () => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1)));
     const rotate = () => setRotation(r => (r + 90) % 360);
 
+    // Scroll-to-turn-page: when the page fits the viewport, any wheel scroll turns
+    // it immediately; when zoomed in and the content overflows, normal scrolling
+    // happens first and only crossing the top/bottom edge flips the page. The
+    // cooldown ref (not state) stops one scroll gesture from skipping several pages.
+    const wheelCooldownRef = useRef(false);
+    const handleWheel = (e: ReactWheelEvent<HTMLDivElement>) => {
+        const el = containerRef.current;
+        if (!el || Math.abs(e.deltaY) < 2 || wheelCooldownRef.current) return;
+
+        const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 2;
+        const atTop = el.scrollTop <= 2;
+
+        if (e.deltaY > 0 && atBottom && pageNumber < (numPages ?? 1)) {
+            e.preventDefault();
+            wheelCooldownRef.current = true;
+            setPageNumber(p => Math.min(numPages ?? 1, p + 1));
+            el.scrollTop = 0;
+            setTimeout(() => { wheelCooldownRef.current = false; }, 500);
+        } else if (e.deltaY < 0 && atTop && pageNumber > 1) {
+            e.preventDefault();
+            wheelCooldownRef.current = true;
+            setPageNumber(p => Math.max(1, p - 1));
+            el.scrollTop = 0;
+            setTimeout(() => { wheelCooldownRef.current = false; }, 500);
+        }
+    };
+
     // ── Loading ───────────────────────────────────────────────────────────────
     if (isLoading) {
         return <FileViewerSkeleton />;
@@ -296,7 +324,7 @@ export default function FileViewer({ onTextSelect, onPinToNotes }: FileViewerPro
             </div>
 
             {/* PDF canvas */}
-            <div ref={containerRef} className="flex-1 overflow-auto flex justify-center py-6 px-4 relative">
+            <div ref={containerRef} onWheel={handleWheel} className="flex-1 overflow-auto flex justify-center py-6 px-4 relative">
 
                 <SelectionPopup
                     containerRef={containerRef}
