@@ -26,14 +26,10 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import type { RejectReason } from "@/types/domain";
+import { REJECT_REASON_LABELS } from "@/lib/constants";
 
-const REJECT_REASONS: { value: RejectReason; label: string }[] = [
-    { value: "DUPLICATE", label: "Duplicate content" },
-    { value: "OUTDATED", label: "Outdated material" },
-    { value: "INCORRECT_COURSE", label: "Incorrect course/category" },
-    { value: "BAD_QUALITY", label: "Poor quality" },
-    { value: "OTHER", label: "Other reason" },
-];
+const REJECT_REASONS = (Object.entries(REJECT_REASON_LABELS) as [RejectReason, string][])
+    .map(([value, label]) => ({ value, label }));
 
 interface RejectDialogProps {
     open: boolean;
