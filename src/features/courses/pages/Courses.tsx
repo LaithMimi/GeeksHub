@@ -13,6 +13,7 @@ import { useFiles, useTopContributors } from "@/features/files/hooks/useFiles";
 import { BadgeChip } from "@/features/gamification/components/BadgeChip";
 import { usePinnedCourses } from "@/features/courses/hooks/usePinnedCourses";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { rejectReasonLabel } from "@/lib/constants";
 
 /** Rank-circle styling — gold/silver/bronze for the top three, muted otherwise. */
 const rankStyle = (index: number): string => {
@@ -305,8 +306,8 @@ export default function Courses() {
                                             </p>
                                             <div className="flex items-center gap-2 text-[12px] text-muted-foreground/70 mt-0.5">
                                                 <span>{file.materialYear}</span>
-                                                {file.status === "rejected" && (
-                                                    <span className="text-red-400">• {file.rejectionReason}</span>
+                                                {file.status === "rejected" && file.rejectionReason && (
+                                                    <span className="text-red-400">• {rejectReasonLabel(file.rejectionReason)}</span>
                                                 )}
                                             </div>
                                         </div>

@@ -186,7 +186,17 @@ def sign_out(request: Request, response: Response):
         except Exception:
             pass  # revocation is best-effort; always clear the cookie regardless
 
-    response.delete_cookie("auth_token")
+    # The deletion Set-Cookie must carry the same secure/samesite attributes as
+    # the signin cookie: in production the cookie is SameSite=None; Secure, and
+    # browsers reject a cross-site deletion header that lacks those flags,
+    # leaving the user logged in.
+    is_production = os.getenv("ENVIRONMENT", "development") == "production"
+    response.delete_cookie(
+        "auth_token",
+        httponly=True,
+        secure=is_production,
+        samesite="lax" if not is_production else "none",
+    )
     return {"message": "Logged out successfully"}
 
 @router.post("/api/v1/forgot-password")

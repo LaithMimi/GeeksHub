@@ -36,10 +36,23 @@ export default function Settings() {
     const [reduceMotion, setReduceMotion] = useState(false);
     const [compactMode, setCompactMode] = useState(false);
 
+    // Race guards: `dirtyRef` flips when the user touches a control, `hydrated`
+    // when the initial load settles. Hydration must not clobber an edit made
+    // while the request was in flight, and no PATCH may fire pre-hydration
+    // (it would write default values over the user's stored settings).
+    const dirtyRef = useRef(false);
+    const [hydrated, setHydrated] = useState(false);
+
+    /** Wraps a state setter so user-driven changes mark the form dirty. */
+    function touch<T>(setter: (v: T) => void) {
+        return (v: T) => { dirtyRef.current = true; setter(v); };
+    }
+
     // Load from API once on mount; fall back to localStorage if the request fails.
     useEffect(() => {
         getSettings()
             .then(s => {
+                if (dirtyRef.current) return; // user already edited — don't clobber
                 setLanguage(s.language);
                 setDefaultMajor(s.defaultMajorId ?? "none");
                 setDefaultYear(s.defaultYearId != null ? String(s.defaultYearId) : "none");
@@ -48,6 +61,7 @@ export default function Settings() {
                 setCompactMode(s.compactMode);
             })
             .catch(() => {
+                if (dirtyRef.current) return;
                 // Offline / not logged in — keep localStorage defaults
                 setLanguage(localStorage.getItem("language") || "en");
                 setDefaultMajor(localStorage.getItem("geekshub-default-major") || "none");
@@ -58,16 +72,19 @@ export default function Settings() {
                 } catch { /* ignore */ }
                 setReduceMotion(localStorage.getItem("geekshub-reduce-motion") === "true");
                 setCompactMode(localStorage.getItem("geekshub-compact-mode") === "true");
-            });
+            })
+            .finally(() => setHydrated(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Debounced API sync — fires 600 ms after the last change.
+    // Debounced API sync — fires 600 ms after the last change. Only saves once
+    // hydrated (so a pre-load PATCH can't overwrite stored settings) and only
+    // when the user actually changed something (hydration itself never echoes
+    // the loaded values back to the server).
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const isFirstRender = useRef(true);
 
     useEffect(() => {
-        if (isFirstRender.current) { isFirstRender.current = false; return; }
+        if (!hydrated || !dirtyRef.current) return;
 
         const patch: SettingsPatch = {
             language,
@@ -83,7 +100,7 @@ export default function Settings() {
         debounceRef.current = setTimeout(() => updateSettings(patch).catch(() => {}), 600);
 
         return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-    }, [language, defaultMajor, defaultYear, notifications, reduceMotion, compactMode]);
+    }, [hydrated, language, defaultMajor, defaultYear, notifications, reduceMotion, compactMode]);
 
     // Apply CSS classes when toggles change
     useEffect(() => {
@@ -217,7 +234,7 @@ export default function Settings() {
                         </div>
                         <div className="flex items-center gap-3">
                             <Globe className="h-4 w-4 text-muted-foreground" />
-                            <Select value={language} onValueChange={setLanguage}>
+                            <Select value={language} onValueChange={touch(setLanguage)}>
                                 <SelectTrigger aria-label="Language selection" className="w-[180px] liquid-glass-subtle text-foreground h-10 [&>span]:text-[13px]">
                                     <SelectValue placeholder="Select Language" />
                                 </SelectTrigger>
@@ -241,13 +258,13 @@ export default function Settings() {
                         label="Compact Mode"
                         desc="Reduce spacing to show more content on screen."
                         checked={compactMode}
-                        onCheckedChange={setCompactMode}
+                        onCheckedChange={touch(setCompactMode)}
                     />
                     <GlassToggle
                         label="Reduce Motion"
                         desc="Minimize animations across the app."
                         checked={reduceMotion}
-                        onCheckedChange={setReduceMotion}
+                        onCheckedChange={touch(setReduceMotion)}
                     />
                 </GlassSection>
 
@@ -258,8 +275,8 @@ export default function Settings() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <GlassSelect 
                             label="Default Major" 
-                            value={defaultMajor} 
-                            onValueChange={setDefaultMajor}
+                            value={defaultMajor}
+                            onValueChange={touch(setDefaultMajor)}
                             displayValue={majors.find(m => m.id === defaultMajor)?.name || (defaultMajor === "none" ? "None" : "Loading...")}
                         >
                             <SelectItem value="none">None</SelectItem>
@@ -267,8 +284,8 @@ export default function Settings() {
                         </GlassSelect>
                         <GlassSelect 
                             label="Default Year" 
-                            value={defaultYear} 
-                            onValueChange={setDefaultYear}
+                            value={defaultYear}
+                            onValueChange={touch(setDefaultYear)}
                             displayValue={years.find(y => y.id.toString() === defaultYear)?.label || (defaultYear === "none" ? "None" : "Loading...")}
                         >
                             <SelectItem value="none">None</SelectItem>
@@ -283,13 +300,13 @@ export default function Settings() {
                         label="New Materials"
                         desc="Notify when files are added to my courses."
                         checked={notifications.newMaterials}
-                        onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, newMaterials: v }))}
+                        onCheckedChange={touch((v: boolean) => setNotifications(prev => ({ ...prev, newMaterials: v })))}
                     />
                     <GlassToggle
                         label="Request Updates"
                         desc="Notify status changes for my uploads."
                         checked={notifications.adminUpdates}
-                        onCheckedChange={(v: boolean) => setNotifications(prev => ({ ...prev, adminUpdates: v }))}
+                        onCheckedChange={touch((v: boolean) => setNotifications(prev => ({ ...prev, adminUpdates: v })))}
                     />
                 </GlassSection>
 

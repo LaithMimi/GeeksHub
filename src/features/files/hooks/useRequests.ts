@@ -76,7 +76,7 @@ export const useCreateRequest = () => {
         mutationFn: createFileRequest,
         onSuccess: () => {
             // Stable key — no userId segment needed anymore
-            queryClient.invalidateQueries({ queryKey: ["my-requests"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.requests.mine() });
             toast.success("File submitted successfully");
         },
         onError: (err) => {
@@ -96,7 +96,7 @@ export const useWithdrawRequest = () => {
         mutationFn: ({ requestId }: { requestId: string }) =>
             withdrawRequest(requestId),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["my-requests"] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.requests.mine() });
             toast.success("Request withdrawn");
         },
         onError: () => {
@@ -157,9 +157,9 @@ export const useApproveRequest = () => {
     const queryClient = useQueryClient();
 
     const invalidateAdmin = () => {
-        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
-        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
-        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.requests.all() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.requests.stats() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.audit.all() });
     };
 
     return useMutation({
@@ -195,9 +195,9 @@ export const useRejectRequest = () => {
     const queryClient = useQueryClient();
 
     const invalidateAdmin = () => {
-        queryClient.invalidateQueries({ queryKey: ["admin-requests"] });
-        queryClient.invalidateQueries({ queryKey: ["admin-request-stats"] });
-        queryClient.invalidateQueries({ queryKey: ["audit-logs"] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.requests.all() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.requests.stats() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.audit.all() });
     };
 
     return useMutation({

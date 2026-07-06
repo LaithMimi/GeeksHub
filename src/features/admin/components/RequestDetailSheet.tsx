@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/collapsible";
 import { RejectDialog } from "./RejectDialog";
 import type { FileRequest, RejectReason } from "@/types/domain";
+import { rejectReasonLabel } from "@/lib/constants";
 
 interface RequestDetailSheetProps {
     request: FileRequest | null;
@@ -248,7 +249,7 @@ export function RequestDetailSheet({
                         {request.status === "rejected" && request.rejectionReason && (
                             <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 space-y-1">
                                 <p className="text-sm font-medium text-red-300">Rejection Reason</p>
-                                <p className="text-sm text-red-400">{request.rejectionReason}</p>
+                                <p className="text-sm text-red-400">{rejectReasonLabel(request.rejectionReason)}</p>
                                 {request.rejectionNote && (
                                     <p className="text-sm text-red-400/80 mt-2">{request.rejectionNote}</p>
                                 )}

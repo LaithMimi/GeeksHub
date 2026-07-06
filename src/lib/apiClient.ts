@@ -7,14 +7,13 @@
  * Provides:
  *   - Typed responses via generics
  *   - Automatic JSON content-type headers
- *   - Token injection from localStorage (until HTTP-only cookies are ready)
  *   - Typed error handling via ApiError class
- *   - credentials: "include" for cookie-based auth (future)
+ *   - credentials: "include" so the HttpOnly auth_token cookie rides along
  *   - Automatic snake_case → camelCase key conversion on responses
  *
- * @backend When HTTP-only cookies are implemented, remove the
- *          Authorization header logic — the browser will send cookies
- *          automatically via credentials: "include".
+ * Auth is cookie-based: the backend sets an HttpOnly auth_token cookie on
+ * signin. No token ever touches JS — localStorage/sessionStorage only cache
+ * the user profile object (SESSION_KEY) for instant boot.
  * ============================================================================
  */
 

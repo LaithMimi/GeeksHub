@@ -31,6 +31,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { listFiles, getFile, listTopContributors, listRecentFiles, addRecentFile, clearRecentFiles } from "@/features/files/api/fileService";
 import type { FileFilters } from "@/features/files/api/fileService";
 
@@ -39,7 +40,7 @@ import type { FileFilters } from "@/features/files/api/fileService";
  * @param filters - Filter by courseId, lecturerId, type
  */
 export const useFiles = (filters: FileFilters) => useQuery({
-    queryKey: ['files', filters],
+    queryKey: queryKeys.files.list(filters),
     queryFn: () => listFiles(filters),
     enabled: !!filters.courseId
 });
@@ -49,7 +50,7 @@ export const useFiles = (filters: FileFilters) => useQuery({
  * @param fileId - The file ID to fetch
  */
 export const useFile = (fileId: string) => useQuery({
-    queryKey: ['file', fileId],
+    queryKey: queryKeys.files.detail(fileId),
     queryFn: () => getFile(fileId),
     enabled: !!fileId
 });
@@ -59,7 +60,7 @@ export const useFile = (fileId: string) => useQuery({
  * Cached for 10 minutes as this data doesn't need frequent updates.
  */
 export const useTopContributors = () => useQuery({
-    queryKey: ['top-contributors'],
+    queryKey: queryKeys.files.topContributors(),
     queryFn: listTopContributors,
     staleTime: 1000 * 60 * 10 // 10 minutes
 });
@@ -69,7 +70,7 @@ export const useTopContributors = () => useQuery({
  * @backend When authenticated, backend filters by current user automatically
  */
 export const useRecentFiles = () => useQuery({
-    queryKey: ['recent-files'],
+    queryKey: queryKeys.myFiles.recent(),
     queryFn: listRecentFiles,
 });
 
@@ -82,7 +83,7 @@ export const useAddRecentFile = () => {
     return useMutation({
         mutationFn: addRecentFile,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recent-files'] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.myFiles.recent() });
         }
     });
 };
@@ -96,7 +97,7 @@ export const useClearRecentFiles = () => {
     return useMutation({
         mutationFn: clearRecentFiles,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['recent-files'] });
+            queryClient.invalidateQueries({ queryKey: queryKeys.myFiles.recent() });
         }
     });
 };

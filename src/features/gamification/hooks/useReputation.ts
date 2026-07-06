@@ -48,6 +48,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/queryKeys";
 import { getMyReputation } from "@/features/gamification/api/reputationService";
 
 /**
@@ -56,7 +57,7 @@ import { getMyReputation } from "@/features/gamification/api/reputationService";
  * @backend When authenticated, backend uses session user automatically
  */
 export const useReputation = (userId: string) => useQuery({
-    queryKey: ['reputation', userId],
+    queryKey: queryKeys.reputation.user(userId),
     queryFn: () => getMyReputation(userId),
     enabled: !!userId
 });

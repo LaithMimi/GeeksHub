@@ -156,7 +156,7 @@ export default function UserProfile() {
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <div className="flex items-baseline gap-1.5 cursor-default group w-fit">
-                                                <span className="text-4xl font-light font-display text-foreground tracking-tight group-hover:text-amber-500 transition-colors">{user.totalPoints || reputation?.totalPoints || 0}</span>
+                                                <span className="text-4xl font-light font-display text-foreground tracking-tight group-hover:text-amber-500 transition-colors">{reputation?.totalPoints ?? user.totalPoints ?? 0}</span>
                                                 <span className="text-sm font-medium text-muted-foreground flex items-center gap-1 relative">
                                                     XP
                                                     <Sparkles size={14} className="text-amber-500 opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all absolute -right-5" />

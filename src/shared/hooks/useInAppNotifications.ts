@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import { queryKeys } from "@/lib/queryKeys";
 
 export type InAppNotification = {
     id: string;
@@ -29,12 +30,12 @@ export function useInAppNotifications() {
     const qc = useQueryClient();
 
     const { data: notifications = [] } = useQuery({
-        queryKey: ["notifications"],
+        queryKey: queryKeys.notifications.list(),
         queryFn: fetchNotifications,
     });
 
     const { data: unreadData } = useQuery({
-        queryKey: ["notifications-unread-count"],
+        queryKey: queryKeys.notifications.unreadCount(),
         queryFn: fetchUnreadCount,
         refetchInterval: 30_000,
     });
@@ -42,16 +43,16 @@ export function useInAppNotifications() {
     const { mutate: markAsRead } = useMutation({
         mutationFn: patchRead,
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["notifications"] });
-            qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+            qc.invalidateQueries({ queryKey: queryKeys.notifications.list() });
+            qc.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount() });
         },
     });
 
     const { mutate: markAllAsRead } = useMutation({
         mutationFn: patchReadAll,
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["notifications"] });
-            qc.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+            qc.invalidateQueries({ queryKey: queryKeys.notifications.list() });
+            qc.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount() });
         },
     });
 
