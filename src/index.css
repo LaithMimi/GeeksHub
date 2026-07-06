@@ -92,23 +92,24 @@
    ============================================ */
 .light {
   color-scheme: light;
-  --glass-bg: rgba(255, 255, 255, 0.65);
-  --glass-bg-hover: rgba(255, 255, 255, 0.80);
-  --glass-bg-active: rgba(255, 255, 255, 0.90);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-border-strong: rgba(0, 0, 0, 0.14);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
-  --glass-shadow-lg: 0 24px 80px rgba(0, 0, 0, 0.08);
-  --glass-heavy-bg: rgba(255, 255, 255, 0.85);
-  --glass-subtle-bg: rgba(0, 0, 0, 0.03);
-  --glass-subtle-border: rgba(0, 0, 0, 0.06);
-  --glass-inset-highlight: rgba(255, 255, 255, 0.5);
-  --glass-inset-highlight-hover: rgba(255, 255, 255, 0.7);
+  /* Indigo-tinted glass instead of flat grayscale — gives cards/popups real color */
+  --glass-bg: rgba(237, 242, 255, 0.75);
+  --glass-bg-hover: rgba(224, 233, 255, 0.88);
+  --glass-bg-active: rgba(210, 223, 255, 0.95);
+  --glass-border: rgba(37, 99, 235, 0.16);
+  --glass-border-strong: rgba(37, 99, 235, 0.32);
+  --glass-shadow: 0 8px 32px rgba(37, 99, 235, 0.10), 0 2px 8px rgba(15, 21, 53, 0.06);
+  --glass-shadow-lg: 0 24px 70px rgba(37, 99, 235, 0.16), 0 4px 16px rgba(15, 21, 53, 0.08);
+  --glass-heavy-bg: rgba(255, 255, 255, 0.92);
+  --glass-subtle-bg: rgba(37, 99, 235, 0.05);
+  --glass-subtle-border: rgba(37, 99, 235, 0.10);
+  --glass-inset-highlight: rgba(255, 255, 255, 0.8);
+  --glass-inset-highlight-hover: rgba(255, 255, 255, 0.9);
 
-  --glow-blue: 0 0 20px rgba(37, 99, 235, 0.1);
-  --glow-blue-soft: 0 0 30px rgba(37, 99, 235, 0.06);
-  --glow-green: 0 0 16px rgba(16, 185, 129, 0.1), 0 0 32px rgba(16, 185, 129, 0.05);
-  --glow-red: 0 0 16px rgba(244, 63, 94, 0.1), 0 0 32px rgba(244, 63, 94, 0.05);
+  --glow-blue: 0 0 24px rgba(37, 99, 235, 0.18);
+  --glow-blue-soft: 0 0 30px rgba(37, 99, 235, 0.1);
+  --glow-green: 0 0 18px rgba(16, 185, 129, 0.16), 0 0 32px rgba(16, 185, 129, 0.08);
+  --glow-red: 0 0 18px rgba(244, 63, 94, 0.16), 0 0 32px rgba(244, 63, 94, 0.08);
 
   --text-primary: rgba(10, 15, 40, 0.9);
   --text-secondary: rgba(10, 15, 40, 0.6);
@@ -235,8 +236,8 @@ body {
   }
 
   .light {
-    --background: 0 0% 100%;
-    /* Pure white background */
+    /* Pale indigo-gray page bg so white cards/popovers actually pop off it */
+    --background: 222 45% 97%;
     --foreground: 225 40% 10%;
     --card: 0 0% 100%;
     --card-foreground: 225 40% 10%;
@@ -246,11 +247,11 @@ body {
     --primary: 220 85% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 15% 93%;
+    --secondary: 222 35% 92%;
     --secondary-foreground: 225 40% 20%;
 
-    --muted: 220 15% 93%;
-    --muted-foreground: 225 15% 45%;
+    --muted: 222 30% 93%;
+    --muted-foreground: 225 20% 40%;
 
     --accent: 220 85% 55%;
     --accent-foreground: 0 0% 100%;
@@ -265,8 +266,8 @@ body {
     --destructive: 345 75% 52%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 12% 90%;
-    --input: 220 12% 90%;
+    --border: 222 25% 85%;
+    --input: 222 25% 87%;
     --ring: 220 85% 55%;
 
     /* Sidebar */
@@ -604,35 +605,31 @@ body {
 
 /* ---- Status badge backgrounds ---- */
 .light .bg-blue-500\/10 {
-  background-color: rgba(37, 99, 235, 0.08);
+  background-color: rgba(37, 99, 235, 0.14);
 }
 
 .light .bg-blue-500\/15 {
-  background-color: rgba(37, 99, 235, 0.10);
-}
-
-.light .bg-blue-500\/10 {
-  background-color: rgba(59, 130, 246, 0.08);
+  background-color: rgba(37, 99, 235, 0.18);
 }
 
 .light .bg-emerald-500\/10 {
-  background-color: rgba(16, 185, 129, 0.08);
+  background-color: rgba(16, 185, 129, 0.14);
 }
 
 .light .bg-emerald-500\/15 {
-  background-color: rgba(16, 185, 129, 0.10);
+  background-color: rgba(16, 185, 129, 0.18);
 }
 
 .light .bg-yellow-500\/15 {
-  background-color: rgba(234, 179, 8, 0.10);
+  background-color: rgba(234, 179, 8, 0.18);
 }
 
 .light .bg-red-500\/10 {
-  background-color: rgba(239, 68, 68, 0.08);
+  background-color: rgba(239, 68, 68, 0.14);
 }
 
 .light .bg-red-500\/15 {
-  background-color: rgba(239, 68, 68, 0.10);
+  background-color: rgba(239, 68, 68, 0.18);
 }
 
 /* ---- Input text in light mode ---- */
