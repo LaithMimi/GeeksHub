@@ -67,7 +67,7 @@ export const useMajors = () => useQuery({
  * @param majorId - Optional filter (for future use)
  */
 export const useYears = (majorId?: string) => useQuery({
-    queryKey: ['years', majorId],
+    queryKey: queryKeys.catalog.years(majorId),
     queryFn: () => listYears(majorId),
     enabled: true,
     staleTime: Infinity,
@@ -78,7 +78,7 @@ export const useYears = (majorId?: string) => useQuery({
  * @param majorId - Filter by major (enables cascading dropdown)
  */
 export const useSemesters = (majorId?: string) => useQuery({
-    queryKey: ['semesters', majorId],
+    queryKey: queryKeys.catalog.semesters(majorId),
     queryFn: () => listSemesters(majorId),
     enabled: !!majorId
 });
@@ -98,7 +98,7 @@ export const useCourses = (filters: Parameters<typeof listCourses>[0]) => useQue
  * @param courseId - The course ID to fetch
  */
 export const useCourse = (courseId: string) => useQuery({
-    queryKey: ['course', courseId],
+    queryKey: queryKeys.catalog.course(courseId),
     queryFn: () => getCourse(courseId),
     enabled: !!courseId
 });

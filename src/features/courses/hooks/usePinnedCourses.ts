@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import { queryKeys } from "@/lib/queryKeys";
 
 function listPinnedCourses(): Promise<string[]> {
     return api<string[]>("/me/pinned-courses");
@@ -17,7 +18,7 @@ export function usePinnedCourses() {
     const qc = useQueryClient();
 
     const { data: pinnedIds = [] } = useQuery({
-        queryKey: ["pinned-courses"],
+        queryKey: queryKeys.pinnedCourses.all(),
         queryFn: listPinnedCourses,
     });
 
@@ -25,18 +26,18 @@ export function usePinnedCourses() {
         mutationFn: ({ courseId, pinned }: { courseId: string; pinned: boolean }) =>
             pinned ? unpinCourse(courseId) : pinCourse(courseId),
         onMutate: async ({ courseId, pinned }) => {
-            await qc.cancelQueries({ queryKey: ["pinned-courses"] });
-            const prev = qc.getQueryData<string[]>(["pinned-courses"]) ?? [];
+            await qc.cancelQueries({ queryKey: queryKeys.pinnedCourses.all() });
+            const prev = qc.getQueryData<string[]>(queryKeys.pinnedCourses.all()) ?? [];
             qc.setQueryData<string[]>(
-                ["pinned-courses"],
+                queryKeys.pinnedCourses.all(),
                 pinned ? prev.filter(id => id !== courseId) : [...prev, courseId]
             );
             return { prev };
         },
         onError: (_err, _vars, ctx) => {
-            if (ctx?.prev) qc.setQueryData(["pinned-courses"], ctx.prev);
+            if (ctx?.prev) qc.setQueryData(queryKeys.pinnedCourses.all(), ctx.prev);
         },
-        onSettled: () => qc.invalidateQueries({ queryKey: ["pinned-courses"] }),
+        onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.pinnedCourses.all() }),
     });
 
     const togglePin = (courseId: string) =>

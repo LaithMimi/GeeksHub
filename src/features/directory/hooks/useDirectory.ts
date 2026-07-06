@@ -59,7 +59,7 @@ export const useUpdateUser = () => {
     return useMutation({
         mutationFn: ({ id, data }: { id: string; data: UserUpdateInput }) => updateUser(id, data),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["directory", "users"] });
+            qc.invalidateQueries({ queryKey: k.usersRoot() });
             qc.invalidateQueries({ queryKey: k.stats() });
             toast.success("User updated");
         },
@@ -72,7 +72,7 @@ export const useDeleteUser = () => {
     return useMutation({
         mutationFn: (id: string) => deleteUser(id),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ["directory", "users"] });
+            qc.invalidateQueries({ queryKey: k.usersRoot() });
             qc.invalidateQueries({ queryKey: k.stats() });
             toast.success("User deleted");
         },
@@ -85,7 +85,7 @@ export const useDeleteUser = () => {
 /** Refresh the directory major list, the public catalog majors list, and stats. */
 const invalidateMajors = (qc: ReturnType<typeof useQueryClient>) => {
     qc.invalidateQueries({ queryKey: k.majors() });
-    qc.invalidateQueries({ queryKey: ["majors"] }); // shared public catalog dropdowns
+    qc.invalidateQueries({ queryKey: queryKeys.catalog.majors() }); // shared public catalog dropdowns
     qc.invalidateQueries({ queryKey: k.stats() });
 };
 
