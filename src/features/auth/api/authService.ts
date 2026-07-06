@@ -95,11 +95,11 @@ export interface SignUpPayload {
 }
 
 export const authService = {
-    signIn: async ({ email, password }: SignInPayload): Promise<SignInResponse> => {
+    signIn: async ({ email, password, rememberMe = false }: SignInPayload): Promise<SignInResponse> => {
         try {
             const data = await api<SignInResponse>("/signin", {
                 method: "POST",
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, remember_me: rememberMe }),
             });
             return { user: data.user };
         } catch (err: unknown) {
