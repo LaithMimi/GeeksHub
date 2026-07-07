@@ -257,11 +257,15 @@ def delete_user(
         blob_paths = _purge_user_data(session, user)
         session.delete(user)
         session.commit()
-    except IntegrityError:
+    except IntegrityError as e:
         session.rollback()
+        # Only reachable if the live DB has a users reference that models.py
+        # doesn't define — name the constraint so it can be added to the purge.
+        origin = getattr(e, "orig", None)
+        print(f"User delete blocked by integrity error: {origin or e}")
         raise HTTPException(
             status_code=409,
-            detail="This user has associated data that could not be removed automatically.",
+            detail=f"Deletion blocked by a database constraint: {origin or 'unknown'}",
         )
 
     # Storage cleanup is best-effort AFTER the commit: a failed blob delete
