@@ -102,7 +102,7 @@ export function useRequestForm(open: boolean, initialData?: { major?: string; co
     const canProceed = () => {
         if (step === 1) return !!form.major && !!form.program_year;
         if (step === 2) return !!form.course;
-        if (step === 3) return !!form.lecturer && !!form.type_id && !!form.title && !!form.material_year;
+        if (step === 3) return !!form.lecturer && !!form.type_id && !!form.title && !!form.material_year && !!form.description;
         if (step === 4) return !!form.file && !fileError;
         return false;
     };
@@ -116,7 +116,7 @@ export function useRequestForm(open: boolean, initialData?: { major?: string; co
             title: form.title,
             academic_year: parseInt(form.program_year),
             material_year: parseInt(form.material_year),
-            notes: form.description || undefined,
+            notes: form.description,
             file: form.file,
         };
     };

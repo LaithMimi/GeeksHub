@@ -47,7 +47,7 @@ export function StepDetails({
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                         <Label className="text-foreground/60 text-[12px]">
-                            Lecturer {loadingLecturers && <Loader2 className="h-3 w-3 animate-spin inline" />}
+                            Lecturer <span className="text-red-400">*</span> {loadingLecturers && <Loader2 className="h-3 w-3 animate-spin inline" />}
                         </Label>
                         <Select value={form.lecturer} onValueChange={(v) => set("lecturer", v)} disabled={loadingLecturers}>
                             <SelectTrigger className="liquid-glass-subtle h-11">
@@ -62,7 +62,7 @@ export function StepDetails({
                     </div>
                     <div className="space-y-2">
                         <Label className="text-foreground/60 text-[12px]">
-                            Type {loadingTypes && <Loader2 className="h-3 w-3 animate-spin inline" />}
+                            Type <span className="text-red-400">*</span> {loadingTypes && <Loader2 className="h-3 w-3 animate-spin inline" />}
                         </Label>
                         <Select value={form.type_id} onValueChange={(v) => set("type_id", v)}>
                             <SelectTrigger className="liquid-glass-subtle h-11">
@@ -78,7 +78,7 @@ export function StepDetails({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                        <Label className="text-foreground/60 text-[12px]">Title</Label>
+                        <Label className="text-foreground/60 text-[12px]">Title <span className="text-red-400">*</span></Label>
                         <Input
                             placeholder="e.g. Midterm Solutions"
                             value={form.title}
@@ -103,7 +103,7 @@ export function StepDetails({
                 </div>
                 <div className="space-y-2">
                     <Label className="text-foreground/60 text-[12px]">
-                        Description <span className="text-muted-foreground/50 font-normal">(optional)</span>
+                        Description <span className="text-red-400">*</span>
                     </Label>
                     <Textarea
                         placeholder="e.g. Week 5 Lecture Slides — covers chapters 3 and 4"

@@ -192,7 +192,7 @@ async def upload_course_file(
     material_year: int = Form(...),
     type_id: UUID = Form(...), 
     lecturer_id: UUID = Form(...),
-    notes: str = Form(None),
+    notes: str = Form(...),
     file: UploadFile = File(...),
     current_user: User = Depends(get_verified_user),
     session: Session = Depends(get_session)
