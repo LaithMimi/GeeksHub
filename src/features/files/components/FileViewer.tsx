@@ -219,7 +219,7 @@ export default function FileViewer({ onTextSelect, onPinToNotes }: FileViewerPro
                 </div>
                 <h2 className="text-lg font-display font-bold text-foreground">Preview not available for this file type</h2>
                 <p className="text-muted-foreground mt-2 text-[14px] max-w-sm">
-                    This file ({file.type}) cannot be previewed. You can download it to view locally.
+                    This file cannot be previewed. You can download it to view locally.
                 </p>
                 {file.downloadUrl ? (
                     <a href={file.downloadUrl} target="_blank" rel="noopener noreferrer"

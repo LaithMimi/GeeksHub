@@ -305,6 +305,10 @@ export default function Courses() {
                                                 {file.title}
                                             </p>
                                             <div className="flex items-center gap-2 text-[12px] text-muted-foreground/70 mt-0.5">
+                                                <span>{types?.find(t => t.id === file.typeId)?.displayName || "Unknown type"}</span>
+                                                <span>•</span>
+                                                <span>{lecturers?.find(l => l.id === file.lecturerId)?.name || "Unknown lecturer"}</span>
+                                                <span>•</span>
                                                 <span>{file.materialYear}</span>
                                                 {file.status === "rejected" && file.rejectionReason && (
                                                     <span className="text-red-400">• {rejectReasonLabel(file.rejectionReason)}</span>

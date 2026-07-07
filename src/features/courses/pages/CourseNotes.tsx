@@ -2,7 +2,7 @@
 import { useParams, Link } from "react-router-dom";
 import { FileText, AlertCircle, FolderOpen, RefreshCw, FilePlus } from "lucide-react";
 import { useFiles } from "@/features/files/hooks/useFiles";
-import { useTypes } from "@/features/courses/hooks/useCatalog";
+import { useTypes, useLecturers } from "@/features/courses/hooks/useCatalog";
 import { useRequestMaterials } from "@/features/files/hooks/useMaterialRequests";
 import { RequestFilesDialog } from "@/features/courses/components/RequestFilesDialog";
 
@@ -29,6 +29,9 @@ export default function CourseNotes() {
     const { data: types = [], isLoading: typesLoading } = useTypes();
     const typeId = types.find((t) => t.displayName === "Lecture Notes")?.id;
     const { data: files, isLoading, error, refetch } = useFiles({ courseId: courseId!, type: typeId });
+    const { data: lecturers = [] } = useLecturers({ courseId: courseId! });
+    const lecturerNameById = new Map(lecturers.map((lecturer) => [lecturer.id, lecturer.name]));
+    const typeNameById = new Map(types.map((type) => [type.id, type.displayName]));
 
     const [requestOpen, setRequestOpen] = useState(false);
     const requestMaterials = useRequestMaterials();
@@ -109,7 +112,7 @@ export default function CourseNotes() {
                             {file.title}
                         </p>
                         <p className="text-[12px] text-muted-foreground/70 mt-0.5">
-                            {file.materialYear}
+                            {typeNameById.get(file.typeId) ?? "Unknown type"} · {lecturerNameById.get(file.lecturerId) ?? "Unknown lecturer"} · {file.materialYear}
                         </p>
                     </div>
                 </Link>

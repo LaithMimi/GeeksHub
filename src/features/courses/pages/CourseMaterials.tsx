@@ -2,6 +2,7 @@
 import { useParams, Link } from "react-router-dom";
 import { FileText, AlertCircle, FolderOpen, RefreshCw, FilePlus } from "lucide-react";
 import { useFiles } from "@/features/files/hooks/useFiles";
+import { useLecturers, useTypes } from "@/features/courses/hooks/useCatalog";
 import { useRequestMaterials } from "@/features/files/hooks/useMaterialRequests";
 import { RequestFilesDialog } from "@/features/courses/components/RequestFilesDialog";
 import type { File as CourseFile } from "@/types/domain";
@@ -13,7 +14,7 @@ const typeBadgeColors: Record<string, string> = {
     "Past Papers": "bg-blue-500/15 text-blue-400 border-blue-500/20",
 };
 
-function FileCard({ file, courseId }: { file: CourseFile; courseId: string }) {
+function FileCard({ file, courseId, typeName, lecturerName }: { file: CourseFile; courseId: string; typeName: string; lecturerName?: string }) {
     return (
         <Link
             to={`/courses/${courseId}/files/${file.id}`}
@@ -27,13 +28,13 @@ function FileCard({ file, courseId }: { file: CourseFile; courseId: string }) {
                     {file.title}
                 </p>
                 <p className="text-[12px] text-muted-foreground/70 mt-0.5">
-                    {file.materialYear}
+                    {typeName} · {lecturerName ?? "Unknown lecturer"} · {file.materialYear}
                 </p>
             </div>
             <span
-                className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border shrink-0 ${typeBadgeColors[file.type] ?? "bg-foreground/5 text-muted-foreground border-border"}`}
+                className={`text-[11px] font-medium px-2.5 py-1 rounded-lg border shrink-0 ${typeBadgeColors[typeName] ?? "bg-foreground/5 text-muted-foreground border-border"}`}
             >
-                {file.type}
+                {typeName}
             </span>
         </Link>
     );
@@ -59,6 +60,10 @@ function FileListSkeleton() {
 export default function CourseMaterials() {
     const { courseId } = useParams<{ courseId: string }>();
     const { data: files, isLoading, error, refetch } = useFiles({ courseId: courseId! });
+    const { data: lecturers = [] } = useLecturers({ courseId: courseId! });
+    const { data: types = [] } = useTypes();
+    const lecturerNameById = new Map(lecturers.map((lecturer) => [lecturer.id, lecturer.name]));
+    const typeNameById = new Map(types.map((type) => [type.id, type.displayName]));
 
     const [requestOpen, setRequestOpen] = useState(false);
     const requestMaterials = useRequestMaterials();
@@ -126,7 +131,13 @@ export default function CourseMaterials() {
     return (
         <div className="space-y-3 animate-fade-in">
             {files.map((file) => (
-                <FileCard key={file.id} file={file} courseId={courseId!} />
+                <FileCard
+                    key={file.id}
+                    file={file}
+                    courseId={courseId!}
+                    typeName={typeNameById.get(file.typeId) ?? "Unknown type"}
+                    lecturerName={lecturerNameById.get(file.lecturerId)}
+                />
             ))}
         </div>
     );

@@ -180,7 +180,7 @@ export interface MaterialTypeOption {
 export interface File {
     id: string;
     title: string;
-    type: MaterialType;
+    typeId: string;
     lecturerId: string;
     courseId: string;
     materialYear: number;
