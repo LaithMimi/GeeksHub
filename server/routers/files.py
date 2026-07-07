@@ -197,7 +197,7 @@ async def upload_course_file(
     current_user: User = Depends(get_verified_user),
     session: Session = Depends(get_session)
 ):
-    # 0. RATE LIMIT — max 10 uploads per hour per student (L5 from security audit)
+    # 0. RATE LIMIT — max 30 uploads per hour per student (L5 from security audit)
     one_hour_ago = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
     recent_uploads = session.exec(
         select(func.count(FileRequest.id)).where(
@@ -205,10 +205,10 @@ async def upload_course_file(
             FileRequest.created_at >= one_hour_ago
         )
     ).one()
-    if recent_uploads >= 10:
+    if recent_uploads >= 30:
         raise HTTPException(
             status_code=429,
-            detail="Upload limit reached. You can submit up to 10 files per hour."
+            detail="Upload limit reached. You can submit up to 30 files per hour."
         )
 
     # 1. THE SECURITY BOUNCER
