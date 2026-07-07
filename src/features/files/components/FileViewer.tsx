@@ -19,10 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs', // path to the worker file inside node_modules
-    import.meta.url, // resolved relative to THIS file's URL
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 // Malformed-but-recoverable PDFs (e.g. scanner output with broken xref tables or
 // binary bytes in hex strings) spam the console with non-actionable warnings like

@@ -211,6 +211,7 @@ function RenameMajorDialog({
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Rename major</DialogTitle>
+                    <DialogDescription className="sr-only">Rename the major</DialogDescription>
                 </DialogHeader>
                 <Input
                     autoFocus
