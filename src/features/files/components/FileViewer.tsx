@@ -24,6 +24,13 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     import.meta.url, // resolved relative to THIS file's URL
 ).toString();
 
+// Malformed-but-recoverable PDFs (e.g. scanner output with broken xref tables or
+// binary bytes in hex strings) spam the console with non-actionable warnings like
+// "getHexString - ignoring invalid character". pdf.js still renders them fine, so
+// drop its log level to errors only. Module-level constant keeps the reference
+// stable — react-pdf reloads the document if `options` changes identity each render.
+const PDF_OPTIONS = { verbosity: pdfjs.VerbosityLevel.ERRORS } as const;
+
 function isPdf(title: string, downloadUrl?: string): boolean {
     if (title.toLowerCase().endsWith('.pdf')) return true;
     if (downloadUrl) {
@@ -334,6 +341,7 @@ export default function FileViewer({ onTextSelect, onPinToNotes }: FileViewerPro
 
                 <Document
                     file={pdfBlobUrl}
+                    options={PDF_OPTIONS}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onLoadError={onDocumentLoadError}
                     loading={

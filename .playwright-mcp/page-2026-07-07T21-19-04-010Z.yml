@@ -1,0 +1,166 @@
+- generic [ref=e2]:
+  - generic [ref=e67]:
+    - link "Skip to main content" [ref=e68] [cursor=pointer]:
+      - /url: "#main-content"
+    - generic [ref=e69]:
+      - banner [ref=e70]:
+        - button "Open mobile menu" [ref=e72] [cursor=pointer]:
+          - img [ref=e73]
+        - navigation "breadcrumb" [ref=e74]:
+          - list [ref=e75]:
+            - listitem [ref=e76]:
+              - link "Home" [ref=e77] [cursor=pointer]:
+                - /url: /
+                - img [ref=e78]
+                - generic [ref=e81]: Home
+        - generic [ref=e82]:
+          - button "Search" [ref=e83] [cursor=pointer]:
+            - img [ref=e84]
+            - generic [ref=e87]: Search
+            - generic [ref=e88]: Ctrl+K
+          - button "Notifications" [ref=e89] [cursor=pointer]:
+            - img [ref=e90]
+      - main [ref=e93]:
+        - generic [ref=e95]:
+          - generic [ref=e98]:
+            - heading "Dashboard" [level=1] [ref=e99]
+            - paragraph [ref=e100]: Good morning, Laith Mimi. Here's your learning overview.
+          - generic [ref=e101]:
+            - generic [ref=e104]:
+              - img [ref=e105]
+              - generic [ref=e108]: Study Hours
+            - generic [ref=e113]:
+              - img [ref=e114]
+              - generic [ref=e116]: Courses Active
+            - generic [ref=e119]:
+              - generic [ref=e120]:
+                - generic [ref=e121]:
+                  - img [ref=e122]
+                  - generic [ref=e125]: Tasks Done
+                - generic [ref=e126]: 0/0
+              - generic [ref=e127]: 0%
+            - generic [ref=e130]:
+              - img [ref=e131]
+              - generic [ref=e133]: XP Earned
+          - generic [ref=e136]:
+            - generic [ref=e137]:
+              - generic [ref=e138]:
+                - generic [ref=e139]:
+                  - generic [ref=e140]:
+                    - heading "Learning Plan" [level=3] [ref=e141]
+                    - paragraph [ref=e142]: Drag on a row to add a task — drag a block to move it
+                  - generic [ref=e143]:
+                    - button "Previous days" [ref=e144] [cursor=pointer]:
+                      - img [ref=e145]
+                    - button "Today" [ref=e147] [cursor=pointer]
+                    - button "Next days" [ref=e148] [cursor=pointer]:
+                      - img [ref=e149]
+                - generic [ref=e152]:
+                  - generic [ref=e153]:
+                    - generic [ref=e155]: 7:00 am
+                    - generic [ref=e156]: 8:00 am
+                    - generic [ref=e157]: 9:00 am
+                    - generic [ref=e158]: 10:00 am
+                    - generic [ref=e159]: 11:00 am
+                    - generic [ref=e160]: 12:00 pm
+                    - generic [ref=e161]: 1:00 pm
+                    - generic [ref=e162]: 2:00 pm
+                    - generic [ref=e163]: 3:00 pm
+                    - generic [ref=e164]: 4:00 pm
+                    - generic [ref=e165]: 5:00 pm
+                    - generic [ref=e166]: 6:00 pm
+                    - generic [ref=e167]: 7:00 pm
+                    - generic [ref=e168]: 8:00 pm
+                    - generic [ref=e169]: 9:00 pm
+                  - generic [ref=e171]: Wed 8
+                  - generic [ref=e174]: Thu 9
+                  - generic [ref=e177]: Fri 10
+                  - generic [ref=e180]: Sat 11
+                  - generic [ref=e183]: Sun 12
+                  - generic [ref=e186]: Mon 13
+                  - generic [ref=e189]: Tue 14
+              - generic [ref=e192]:
+                - heading "Recent Courses" [level=2] [ref=e193]
+                - link "View all" [ref=e194] [cursor=pointer]:
+                  - /url: /courses
+                  - text: View all
+                  - img [ref=e195]
+              - generic [ref=e202]:
+                - heading "Recent Files" [level=2] [ref=e203]
+                - link "View all" [ref=e204] [cursor=pointer]:
+                  - /url: /recent
+                  - text: View all
+                  - img [ref=e205]
+            - generic [ref=e212]:
+              - generic [ref=e213]:
+                - generic [ref=e214]:
+                  - heading "July 2026" [level=3] [ref=e215]
+                  - generic [ref=e216]:
+                    - button "Previous month" [ref=e217] [cursor=pointer]:
+                      - img [ref=e218]
+                    - button "Next month" [ref=e220] [cursor=pointer]:
+                      - img [ref=e221]
+                - generic [ref=e223]:
+                  - generic [ref=e224]: Su
+                  - generic [ref=e225]: Mo
+                  - generic [ref=e226]: Tu
+                  - generic [ref=e227]: We
+                  - generic [ref=e228]: Th
+                  - generic [ref=e229]: Fr
+                  - generic [ref=e230]: Sa
+                - generic [ref=e231]:
+                  - button "1" [ref=e235] [cursor=pointer]
+                  - button "2" [ref=e236] [cursor=pointer]
+                  - button "3" [ref=e237] [cursor=pointer]
+                  - button "4" [ref=e238] [cursor=pointer]
+                  - button "5" [ref=e239] [cursor=pointer]
+                  - button "6" [ref=e240] [cursor=pointer]
+                  - button "7" [ref=e241] [cursor=pointer]
+                  - button "8" [ref=e242] [cursor=pointer]
+                  - button "9" [ref=e243] [cursor=pointer]
+                  - button "10" [ref=e244] [cursor=pointer]
+                  - button "11" [ref=e245] [cursor=pointer]
+                  - button "12" [ref=e246] [cursor=pointer]
+                  - button "13" [ref=e247] [cursor=pointer]
+                  - button "14" [ref=e248] [cursor=pointer]
+                  - button "15" [ref=e249] [cursor=pointer]
+                  - button "16" [ref=e250] [cursor=pointer]
+                  - button "17" [ref=e251] [cursor=pointer]
+                  - button "18" [ref=e252] [cursor=pointer]
+                  - button "19" [ref=e253] [cursor=pointer]
+                  - button "20" [ref=e254] [cursor=pointer]
+                  - button "21" [ref=e255] [cursor=pointer]
+                  - button "22" [ref=e256] [cursor=pointer]
+                  - button "23" [ref=e257] [cursor=pointer]
+                  - button "24" [ref=e258] [cursor=pointer]
+                  - button "25" [ref=e259] [cursor=pointer]
+                  - button "26" [ref=e260] [cursor=pointer]
+                  - button "27" [ref=e261] [cursor=pointer]
+                  - button "28" [ref=e262] [cursor=pointer]
+                  - button "29" [ref=e263] [cursor=pointer]
+                  - button "30" [ref=e264] [cursor=pointer]
+                  - button "31" [ref=e265] [cursor=pointer]
+              - generic [ref=e266]:
+                - generic [ref=e267]:
+                  - heading "Upcoming Tasks" [level=3] [ref=e268]
+                  - generic [ref=e269]:
+                    - button "Show Done" [ref=e270] [cursor=pointer]
+                    - button "Add task" [ref=e271] [cursor=pointer]:
+                      - img [ref=e272]
+                - generic [ref=e273]:
+                  - img [ref=e274]
+                  - paragraph [ref=e276]: No tasks yet
+                  - button "Add a task" [ref=e277] [cursor=pointer]
+              - generic [ref=e278]:
+                - generic [ref=e279]:
+                  - heading "Weekly Activity" [level=3] [ref=e280]
+                  - generic [ref=e281]: This Week
+                - generic [ref=e282]:
+                  - generic [ref=e285]: Sun
+                  - generic [ref=e288]: Mon
+                  - generic [ref=e291]: Tue
+                  - generic [ref=e294]: Wed
+                  - generic [ref=e297]: Thu
+                  - generic [ref=e300]: Fri
+                  - generic [ref=e303]: Sat
+  - region "Notifications alt+T"

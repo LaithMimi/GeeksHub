@@ -1,0 +1,47 @@
+- generic [ref=e2]:
+  - generic [ref=e8]:
+    - generic [ref=e11]:
+      - heading "Create Account" [level=1] [ref=e12]
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - textbox "Full name" [ref=e16]
+          - textbox "University email" [ref=e17]
+          - button "Failed to load majors" [disabled] [ref=e18]:
+            - generic [ref=e19]: Failed to load majors
+            - img [ref=e20]
+          - generic [ref=e22]:
+            - textbox "Password" [ref=e23]
+            - button [ref=e24] [cursor=pointer]:
+              - img [ref=e25]
+          - generic [ref=e28]:
+            - textbox "Confirm password" [ref=e29]
+            - button [ref=e30] [cursor=pointer]:
+              - img [ref=e31]
+        - button "Sign Up" [ref=e34] [cursor=pointer]
+    - generic [ref=e37]:
+      - heading "Sign in" [level=1] [ref=e38]
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - textbox "Email" [ref=e42]: laithme@post.jce.ac.il
+          - generic [ref=e43]:
+            - textbox "Password" [ref=e44]: Abulmimi@&2003
+            - button [ref=e45] [cursor=pointer]:
+              - img [ref=e46]
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - checkbox [ref=e51] [cursor=pointer]
+            - checkbox
+            - generic [ref=e52] [cursor=pointer]: Remember me
+          - button "Forgot your password?" [ref=e53] [cursor=pointer]
+        - button "Sign In" [ref=e54] [cursor=pointer]
+        - paragraph [ref=e67]: API error 501
+    - generic [ref=e56]:
+      - generic [ref=e58]:
+        - heading "Welcome Back!" [level=1] [ref=e59]
+        - paragraph [ref=e60]: To keep connected with us please login with your personal info
+        - button "Sign In" [ref=e61] [cursor=pointer]
+      - generic [ref=e63]:
+        - heading "Hello, Friend!" [level=1] [ref=e64]
+        - paragraph [ref=e65]: Enter your personal details and start journey with us
+        - button "Sign Up" [ref=e66] [cursor=pointer]
+  - region "Notifications alt+T"

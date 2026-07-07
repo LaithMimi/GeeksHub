@@ -19,6 +19,12 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     "pdfjs-dist/build/pdf.worker.min.mjs",
     import.meta.url
 ).toString();
+
+// Recoverable-but-malformed PDFs flood the console with non-actionable warnings
+// ("getHexString - ignoring invalid character", "Indexing all PDF objects").
+// pdf.js renders them anyway, so cap its log level at errors. Module-level constant
+// keeps a stable reference so react-pdf doesn't reload the document each render.
+const PDF_OPTIONS = { verbosity: pdfjs.VerbosityLevel.ERRORS } as const;
 import { useRequestPreviewUrl } from "@/features/files/hooks/useRequests";
 import {
     Sheet,
@@ -30,6 +36,7 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -204,6 +211,7 @@ export function RequestDetailSheet({
                                 >
                                     <Document
                                         file={previewData.url}
+                                        options={PDF_OPTIONS}
                                         loading={<p className="text-sm text-muted-foreground py-4">Loading PDF...</p>}
                                         error={<p className="text-sm text-red-400 py-4">Failed to load preview. Ensure the file stream is valid.</p>}
                                     >
@@ -298,7 +306,13 @@ export function RequestDetailSheet({
             {/* Fullscreen PDF Preview */}
             {previewData?.url && (
                 <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
-                    <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] p-0 flex flex-col bg-[#1a1a2e] border-border/50">
+                    <DialogContent
+                        aria-describedby={undefined}
+                        className="max-w-[95vw] w-[95vw] h-[95vh] p-0 flex flex-col bg-[#1a1a2e] border-border/50"
+                    >
+                        <DialogTitle className="sr-only">
+                            Fullscreen preview: {request.title}
+                        </DialogTitle>
                         {/* Toolbar */}
                         <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-foreground/5 shrink-0">
                             <div className="flex items-center gap-3">
@@ -365,6 +379,7 @@ export function RequestDetailSheet({
                         <div className="flex-1 overflow-auto flex justify-center py-6 px-4">
                             <Document
                                 file={previewData.url}
+                                options={PDF_OPTIONS}
                                 onLoadSuccess={({ numPages: n }) => { setNumPages(n); }}
                                 loading={
                                     <div className="flex items-center gap-3 text-muted-foreground mt-20">
