@@ -1,4 +1,14 @@
 import os
+import sys
+
+# Force UTF-8 stdout/stderr. Windows consoles default to the cp1252 codepage,
+# which can't encode Hebrew/non-Latin characters in course names or filenames —
+# any print() containing one crashes the process (this killed embed_single /
+# embed_batch mid-flight, silently dropping chunking for approved files).
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 from pathlib import Path
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
