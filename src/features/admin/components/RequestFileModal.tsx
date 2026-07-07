@@ -9,6 +9,7 @@ import {
 
 import { useMajors, useCourses, useLecturers, useTypes } from "@/features/courses/hooks/useCatalog";
 import { useCreateRequest } from "@/features/files/hooks/useRequests";
+import { SEMESTER_LABELS } from "@/lib/catalog";
 
 import { useRequestForm, validateFile } from "./request-modal/useRequestForm";
 import { StepMajor } from "./request-modal/StepMajor";
@@ -121,12 +122,7 @@ export default function RequestFileModal({ open, onOpenChange, initialData }: Re
     const { data: lecturers, isLoading: loadingLecturers } = useLecturers({ courseId: form.course });
     const { mutate: submitRequest, isPending: isSubmitting } = useCreateRequest();
 
-    const availableSemesters = allMajorCourses
-        ? Array.from(new Set(allMajorCourses.map((c) => c.semester).filter(Boolean) as number[]))
-        : [];
-    const semesterData = availableSemesters
-        .map((s) => ({ id: s.toString(), label: `Semester ${s === 1 ? "A" : "B"}` }))
-        .sort((a, b) => Number(a.id) - Number(b.id));
+    const semesterData = Object.entries(SEMESTER_LABELS).map(([val, lbl]) => ({ id: val, label: lbl }));
 
     const filteredCourses = form.semester
         ? allMajorCourses?.filter((c) => c.semester === parseInt(form.semester))

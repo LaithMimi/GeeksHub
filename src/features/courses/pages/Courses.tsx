@@ -14,6 +14,7 @@ import { BadgeChip } from "@/features/gamification/components/BadgeChip";
 import { usePinnedCourses } from "@/features/courses/hooks/usePinnedCourses";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { rejectReasonLabel } from "@/lib/constants";
+import { ACADEMIC_YEARS, SEMESTER_LABELS } from "@/lib/catalog";
 
 /** Rank-circle styling — gold/silver/bronze for the top three, muted otherwise. */
 const rankStyle = (index: number): string => {
@@ -78,13 +79,11 @@ export default function Courses() {
     const { data: topContributors, isLoading: isLoadingContributors } = useTopContributors();
 
     // -- Derived Hierarchical Data --
-    const availableYears = allMajorCourses ? Array.from(new Set(allMajorCourses.map(c => c.yearId).filter(Boolean) as number[])) : [];
-    const yearData = availableYears.map(y => ({ id: y.toString(), label: `Year ${y}` })).sort((a, b) => Number(a.id) - Number(b.id));
+    const yearData = ACADEMIC_YEARS.map(y => ({ id: y.toString(), label: `Year ${y}` }));
 
     const coursesInYear = selections.year ? allMajorCourses?.filter(c => c.yearId === parseInt(selections.year)) : allMajorCourses;
 
-    const availableSemesters = coursesInYear ? Array.from(new Set(coursesInYear.map(c => c.semester).filter(Boolean) as number[])) : [];
-    const semesterData = availableSemesters.map(s => ({ id: s.toString(), label: `Semester ${s === 1 ? 'A' : 'B'}` })).sort((a, b) => Number(a.id) - Number(b.id));
+    const semesterData = Object.entries(SEMESTER_LABELS).map(([val, lbl]) => ({ id: val, label: lbl }));
 
     const filteredCourses = selections.semester ? coursesInYear?.filter(c => c.semester === parseInt(selections.semester)) : coursesInYear;
     const courseData = filteredCourses?.map(c => ({ id: c.id, label: `${c.code} - ${c.name}` }));
