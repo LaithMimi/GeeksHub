@@ -1,10 +1,11 @@
-﻿import { useMutation } from "@tanstack/react-query";
+﻿import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     startViewerSession,
     sendViewerHeartbeat,
     endViewerSession,
 } from "@/features/gamification/api/gamificationService";
 import type { ViewerHeartbeatResponse } from "@/types/domain";
+import { queryKeys } from "@/lib/queryKeys";
 
 /**
  * ============================================================================
@@ -19,6 +20,7 @@ export const useViewerSessionStart = () => {
 };
 
 export const useViewerHeartbeat = () => {
+    const queryClient = useQueryClient();
     return useMutation({
         mutationFn: ({
             sessionId,
@@ -30,6 +32,14 @@ export const useViewerHeartbeat = () => {
             activeSeconds: number;
         }): Promise<ViewerHeartbeatResponse> =>
             sendViewerHeartbeat(sessionId, visitedPages, activeSeconds),
+        onSuccess: (data) => {
+            // A heartbeat can cross the 85% completion threshold and bump the course's
+            // status to "engaged"/"completed" server-side — refresh the dashboard's
+            // Courses Active / files-completed counters right away when that happens.
+            if (data.isComplete) {
+                queryClient.invalidateQueries({ queryKey: queryKeys.activity.summary() });
+            }
+        },
     });
 };
 

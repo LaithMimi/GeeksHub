@@ -84,6 +84,9 @@ export const useAddRecentFile = () => {
         mutationFn: addRecentFile,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.myFiles.recent() });
+            // Opening a file can mark its course "exploring" server-side (see
+            // activity.py add_recent_file) — refresh the dashboard's Courses Active count.
+            queryClient.invalidateQueries({ queryKey: queryKeys.activity.summary() });
         }
     });
 };

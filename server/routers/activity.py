@@ -116,7 +116,18 @@ def add_recent_file(
         # If it's their first time viewing it, create a new record
         recent = UserRecentFile(user_id=current_user.id, file_id=file_id)
         session.add(recent)
-        
+
+    # Mark the course as "exploring" so it counts toward Courses Active as soon as a
+    # file is opened, instead of only once viewer_heartbeat crosses the 85% completion
+    # threshold. Never downgrade a course already "engaged"/"completed".
+    activity = session.get(UserCourseActivity, (current_user.id, material.course_id))
+    if not activity:
+        session.add(UserCourseActivity(
+            user_id=current_user.id,
+            course_id=material.course_id,
+            status="exploring",
+        ))
+
     session.commit()
     return {"message": "Recent file logged"}
 
