@@ -3,6 +3,7 @@ from pathlib import Path
 from sqlmodel import create_engine, Session, SQLModel
 from dotenv import load_dotenv
 
+
 # Load the Neon connection string from the .env file next to this script
 load_dotenv(Path(__file__).parent / ".env")
 DATABASE_URL = os.getenv("DATABASE_URL")
