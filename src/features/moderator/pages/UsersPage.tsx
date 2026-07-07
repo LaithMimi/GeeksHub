@@ -179,8 +179,9 @@ export default function UsersPage() {
                     <DialogHeader>
                         <DialogTitle>Delete user?</DialogTitle>
                         <DialogDescription>
-                            This permanently removes <strong>{deleting?.name}</strong> ({deleting?.email}).
-                            Accounts with uploads or activity cannot be deleted.
+                            This permanently removes <strong>{deleting?.name}</strong> ({deleting?.email}) and
+                            everything they own: uploaded files, pending requests, points, notes, tasks, and
+                            activity history. This cannot be undone.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>

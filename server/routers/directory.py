@@ -13,10 +13,33 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlmodel import Session, select, func
+from sqlalchemy import delete, update
 from sqlalchemy.exc import IntegrityError
 
 from database import get_session
-from models import User, Major, Course, Lecturer, CourseLecturer
+from models import (
+    User,
+    Major,
+    Course,
+    Lecturer,
+    CourseLecturer,
+    Material,
+    MaterialChunk,
+    FileRequest,
+    MaterialRequest,
+    PointsTransaction,
+    UserRecentFile,
+    UserPlatformSession,
+    UserCourseActivity,
+    FileViewingSession,
+    UserNote,
+    AuditLog,
+    UserNotification,
+    PinnedCourse,
+    UserSettings,
+    UserTask,
+)
+from utils.shared import get_bucket
 from schemas import (
     ModeratorUserUpdate,
     LecturerCreate,
@@ -148,6 +171,74 @@ def update_user(
     }
 
 
+def _purge_user_data(session: Session, user: User) -> set[str]:
+    """
+    Deletes every row that references the user so the account itself can go:
+    uploads (materials + pending requests), points, activity, notes, settings,
+    tasks, notifications, pins, and audit entries. Other users' recents/notes/
+    viewing sessions on the deleted uploads are removed too (the material is
+    gone), but their points and fulfilled material-requests are detached, not
+    deleted, so nobody else loses history.
+
+    Returns the GCS blob paths of the user's uploads for post-commit cleanup.
+    """
+    materials = session.exec(
+        select(Material.id, Material.file_url).where(Material.uploader_id == user.id)
+    ).all()
+    requests = session.exec(
+        select(FileRequest.id, FileRequest.file_url).where(FileRequest.user_id == user.id)
+    ).all()
+    material_ids = [m[0] for m in materials]
+    request_ids = [r[0] for r in requests]
+    blob_paths = {m[1] for m in materials} | {r[1] for r in requests}
+
+    if material_ids:
+        # Any user's rows hanging off the materials being removed
+        for model, col in (
+            (MaterialChunk, MaterialChunk.material_id),
+            (UserRecentFile, UserRecentFile.file_id),
+            (UserNote, UserNote.file_id),
+            (FileViewingSession, FileViewingSession.file_id),
+        ):
+            session.execute(delete(model).where(col.in_(material_ids)))
+
+    if request_ids:
+        # Detach instead of delete: other users keep their XP history and
+        # their material-requests stay fulfilled, just without the pointer.
+        session.execute(
+            update(PointsTransaction)
+            .where(PointsTransaction.request_id.in_(request_ids))
+            .values(request_id=None)
+        )
+        session.execute(
+            update(MaterialRequest)
+            .where(MaterialRequest.fulfilled_by_request_id.in_(request_ids))
+            .values(fulfilled_by_request_id=None)
+        )
+
+    # The user's own rows in every table with a users.id foreign key
+    for model, col in (
+        (PointsTransaction, PointsTransaction.user_id),
+        (UserRecentFile, UserRecentFile.user_id),
+        (UserPlatformSession, UserPlatformSession.user_id),
+        (UserCourseActivity, UserCourseActivity.user_id),
+        (FileViewingSession, FileViewingSession.user_id),
+        (UserNote, UserNote.user_id),
+        (UserNotification, UserNotification.user_id),
+        (PinnedCourse, PinnedCourse.user_id),
+        (UserSettings, UserSettings.user_id),
+        (UserTask, UserTask.user_id),
+        (MaterialRequest, MaterialRequest.requested_by),
+        (AuditLog, AuditLog.actor_id),
+    ):
+        session.execute(delete(model).where(col == user.id))
+
+    session.execute(delete(Material).where(Material.uploader_id == user.id))
+    session.execute(delete(FileRequest).where(FileRequest.user_id == user.id))
+
+    return blob_paths
+
+
 @router.delete("/users/{user_id}", status_code=204)
 def delete_user(
     user_id: UUID,
@@ -163,14 +254,31 @@ def delete_user(
         raise HTTPException(status_code=403, detail="Only an admin can delete an admin.")
 
     try:
+        blob_paths = _purge_user_data(session, user)
         session.delete(user)
         session.commit()
     except IntegrityError:
         session.rollback()
         raise HTTPException(
             status_code=409,
-            detail="This user has associated data (uploads, points, activity) and cannot be deleted.",
+            detail="This user has associated data that could not be removed automatically.",
         )
+
+    # Storage cleanup is best-effort AFTER the commit: a failed blob delete
+    # must not resurrect the user, and the DB is the source of truth.
+    if blob_paths:
+        try:
+            bucket = get_bucket()
+            for path in blob_paths:
+                if not path:
+                    continue
+                try:
+                    bucket.blob(path).delete()
+                except Exception as e:
+                    print(f"GCS Delete failed for {path}: {e}")
+        except Exception as e:
+            print(f"GCS cleanup skipped: {e}")
+
     return Response(status_code=204)
 
 
