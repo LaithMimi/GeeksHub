@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { Monitor, Globe, CheckCircle, Sun, Moon, Laptop, Palette, Sparkles, BookOpen, Bell } from "lucide-react";
+import { Monitor, Globe, CheckCircle, Sun, Moon, Laptop, Palette, BookOpen, Bell } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/shared/hooks/useTheme";
