@@ -67,6 +67,7 @@ export interface CourseInput {
     majorId: string;
     yearId: number;
     semester: number;
+    lecturerIds: string[];
 }
 
 // -- Stats ---------------------------------------------------------------------

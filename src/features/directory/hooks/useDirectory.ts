@@ -227,6 +227,8 @@ export const useCreateCourse = () => {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: k.stats() });
             qc.invalidateQueries({ queryKey: k.courses() });
+            qc.invalidateQueries({ queryKey: k.lecturers() });
+            qc.invalidateQueries({ queryKey: ["directory", "course"] });  // all courseLecturers
             toast.success("Course created");
         },
         onError: (err) => toast.error(errMessage(err, "Failed to create course")),
@@ -239,6 +241,8 @@ export const useUpdateCourse = () => {
         mutationFn: ({ id, data }: { id: string; data: Partial<CourseInput> }) => updateCourse(id, data),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: k.courses() });
+            qc.invalidateQueries({ queryKey: k.lecturers() });
+            qc.invalidateQueries({ queryKey: ["directory", "course"] });  // all courseLecturers
             toast.success("Course updated");
         },
         onError: (err) => toast.error(errMessage(err, "Failed to update course")),

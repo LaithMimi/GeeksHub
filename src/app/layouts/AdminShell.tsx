@@ -155,7 +155,7 @@ function AdminGlassSidebar({
         <TooltipProvider delayDuration={0}>
             <aside
                 className={`
-                    min-h-screen liquid-glass-heavy flex flex-col border-r border-border
+                    h-full overflow-y-auto liquid-glass-heavy flex flex-col border-r border-border
                     relative z-20 transition-[width,background-color] duration-300 ease-in-out
                     ${collapsed ? "w-[68px]" : "w-[260px]"}
                 `}

@@ -181,6 +181,26 @@ class CourseCreate(BaseModel):
     majorId: UUID
     yearId: int = Field(ge=1, le=4)
     semester: int = Field(ge=1, le=3)
+    lecturerIds: List[UUID] = Field(min_length=1)
+
+    @field_validator("code", "name", mode="before")
+    @classmethod
+    def strip_whitespace(cls, v: str) -> str:
+        stripped = v.strip() if isinstance(v, str) else v
+        if isinstance(stripped, str) and not stripped:
+            raise ValueError("Field must not be blank")
+        return stripped
+
+    @field_validator("lecturerIds", mode="before")
+    @classmethod
+    def deduplicate_lecturers(cls, v: list) -> list:
+        seen: set = set()
+        unique: list = []
+        for lid in v:
+            if lid not in seen:
+                seen.add(lid)
+                unique.append(lid)
+        return unique
 
 class CourseUpdate(BaseModel):
     code: Optional[str] = Field(default=None, min_length=1, max_length=40)
@@ -188,6 +208,30 @@ class CourseUpdate(BaseModel):
     majorId: Optional[UUID] = None
     yearId: Optional[int] = Field(default=None, ge=1, le=4)
     semester: Optional[int] = Field(default=None, ge=1, le=3)
+    lecturerIds: Optional[List[UUID]] = Field(default=None, min_length=1)
+
+    @field_validator("code", "name", mode="before")
+    @classmethod
+    def strip_whitespace(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        stripped = v.strip() if isinstance(v, str) else v
+        if isinstance(stripped, str) and not stripped:
+            raise ValueError("Field must not be blank")
+        return stripped
+
+    @field_validator("lecturerIds", mode="before")
+    @classmethod
+    def deduplicate_lecturers(cls, v: list | None) -> list | None:
+        if v is None:
+            return v
+        seen: set = set()
+        unique: list = []
+        for lid in v:
+            if lid not in seen:
+                seen.add(lid)
+                unique.append(lid)
+        return unique
 
 class MajorCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)

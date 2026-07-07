@@ -529,6 +529,10 @@ def create_course(
         raise HTTPException(status_code=400, detail="Major not found.")
     if session.exec(select(Course).where(Course.code == payload.code)).first():
         raise HTTPException(status_code=409, detail="A course with that code already exists.")
+    # Validate all lecturer IDs up-front.
+    for lid in payload.lecturerIds:
+        if not session.get(Lecturer, lid):
+            raise HTTPException(status_code=400, detail=f"Lecturer {lid} not found.")
     course = Course(
         code=payload.code,
         name=payload.name,
@@ -537,7 +541,14 @@ def create_course(
         semester=payload.semester,
     )
     session.add(course)
-    session.commit()
+    session.flush()  # get course.id before inserting junction rows
+    for lid in payload.lecturerIds:
+        session.add(CourseLecturer(course_id=course.id, lecturer_id=lid))
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="A course with that code already exists.")
     session.refresh(course)
     return course
 
@@ -567,9 +578,25 @@ def update_course(
         course.year_id = payload.yearId
     if payload.semester is not None:
         course.semester = payload.semester
+    # Sync lecturer assignments when provided.
+    if payload.lecturerIds is not None:
+        for lid in payload.lecturerIds:
+            if not session.get(Lecturer, lid):
+                raise HTTPException(status_code=400, detail=f"Lecturer {lid} not found.")
+        # Remove old assignments and insert new ones.
+        for row in session.exec(
+            select(CourseLecturer).where(CourseLecturer.course_id == course_id)
+        ).all():
+            session.delete(row)
+        for lid in payload.lecturerIds:
+            session.add(CourseLecturer(course_id=course_id, lecturer_id=lid))
 
     session.add(course)
-    session.commit()
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(status_code=409, detail="A course with that code already exists.")
     session.refresh(course)
     return course
 

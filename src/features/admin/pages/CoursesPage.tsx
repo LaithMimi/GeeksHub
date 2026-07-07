@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
     BookOpen, Plus, Pencil, Trash2, ChevronRight, ChevronDown, Loader2, Search,
 } from "lucide-react";
@@ -13,6 +13,7 @@ import {
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ACADEMIC_YEARS, SEMESTER_LABELS } from "@/lib/catalog";
 import { useCourses, useMajors } from "@/features/courses/hooks/useCatalog";
 import { AssignmentManager } from "@/features/directory/components/AssignmentManager";
@@ -213,15 +214,45 @@ function CourseFormDialog({
     const [majorId, setMajorId] = useState(course?.majorId ?? "");
     const [yearId, setYearId] = useState(course?.yearId ?? 1);
     const [semester, setSemester] = useState(course?.semester ?? 1);
+    const [selectedLecturerIds, setSelectedLecturerIds] = useState<string[]>([]);
+    const [lecturerSearch, setLecturerSearch] = useState("");
 
     const createCourse = useCreateCourse();
     const updateCourse = useUpdateCourse();
+    const { data: allLecturers = [] } = useDirectoryLecturers();
+    const { data: assignedLecturers = [] } = useCourseLecturers(course?.id);
     const saving = createCourse.isPending || updateCourse.isPending;
+
+    // Pre-fill assigned lecturers when editing.
+    const initializedRef = useRef(false);
+    useEffect(() => {
+        if (course && assignedLecturers.length > 0 && !initializedRef.current) {
+            setSelectedLecturerIds(assignedLecturers.map((l) => l.id));
+            initializedRef.current = true;
+        }
+    }, [course, assignedLecturers]);
+
+    const toggleLecturer = (id: string) => {
+        setSelectedLecturerIds((prev) =>
+            prev.includes(id) ? prev.filter((lid) => lid !== id) : [...prev, id]
+        );
+    };
+
+    // Memoize filtered list and lookup map to avoid recomputing on unrelated state changes.
+    const filteredLecturers = useMemo(
+        () => allLecturers.filter((l) => l.name.toLowerCase().includes(lecturerSearch.toLowerCase())),
+        [allLecturers, lecturerSearch],
+    );
+    const lecturerMap = useMemo(
+        () => new Map(allLecturers.map((l) => [l.id, l])),
+        [allLecturers],
+    );
 
     const handleSave = () => {
         if (!code.trim() || !name.trim()) { toast.error("Code and name are required"); return; }
         if (!majorId) { toast.error("Select a major"); return; }
-        const payload: CourseInput = { code: code.trim(), name: name.trim(), majorId, yearId, semester };
+        if (selectedLecturerIds.length === 0) { toast.error("Assign at least one lecturer"); return; }
+        const payload: CourseInput = { code: code.trim(), name: name.trim(), majorId, yearId, semester, lecturerIds: selectedLecturerIds };
         if (course) {
             updateCourse.mutate({ id: course.id, data: payload }, { onSuccess: onClose });
         } else {
@@ -238,20 +269,23 @@ function CourseFormDialog({
                         {course ? "Update the course details." : "Add a course to the catalog."}
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-2">
-                    <div className="grid grid-cols-[140px_1fr] gap-3">
+                <form
+                    onSubmit={(e) => { e.preventDefault(); handleSave(); }}
+                    className="space-y-4 py-2"
+                >
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
                         <div className="space-y-1.5">
-                            <Label htmlFor="course-code">Code</Label>
-                            <Input id="course-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="CS101" />
+                            <Label htmlFor="course-code">Code <span className="text-destructive">*</span></Label>
+                            <Input id="course-code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="CS101" required aria-required="true" />
                         </div>
                         <div className="space-y-1.5">
-                            <Label htmlFor="course-name">Name</Label>
-                            <Input id="course-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Intro to Programming" />
+                            <Label htmlFor="course-name">Name <span className="text-destructive">*</span></Label>
+                            <Input id="course-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Intro to Programming" required aria-required="true" />
                         </div>
                     </div>
                     <div className="space-y-1.5">
-                        <Label>Major</Label>
-                        <Select value={majorId} onValueChange={setMajorId}>
+                        <Label>Major <span className="text-destructive">*</span></Label>
+                        <Select value={majorId} onValueChange={setMajorId} aria-required="true">
                             <SelectTrigger>
                                 <SelectValue>
                                     <span className={`truncate ${majorId ? "" : "text-muted-foreground"}`}>
@@ -268,8 +302,8 @@ function CourseFormDialog({
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <Label>Year</Label>
-                            <Select value={String(yearId)} onValueChange={(v) => setYearId(Number(v))}>
+                            <Label>Year <span className="text-destructive">*</span></Label>
+                            <Select value={String(yearId)} onValueChange={(v) => setYearId(Number(v))} aria-required="true">
                                 <SelectTrigger><SelectValue>Year {yearId}</SelectValue></SelectTrigger>
                                 <SelectContent>
                                     {ACADEMIC_YEARS.map((y) => <SelectItem key={y} value={String(y)}>Year {y}</SelectItem>)}
@@ -277,8 +311,8 @@ function CourseFormDialog({
                             </Select>
                         </div>
                         <div className="space-y-1.5">
-                            <Label>Semester</Label>
-                            <Select value={String(semester)} onValueChange={(v) => setSemester(Number(v))}>
+                            <Label>Semester <span className="text-destructive">*</span></Label>
+                            <Select value={String(semester)} onValueChange={(v) => setSemester(Number(v))} aria-required="true">
                                 <SelectTrigger><SelectValue>{SEMESTER_LABELS[semester] ?? "—"}</SelectValue></SelectTrigger>
                                 <SelectContent>
                                     {Object.entries(SEMESTER_LABELS).map(([val, lbl]) => (
@@ -288,14 +322,96 @@ function CourseFormDialog({
                             </Select>
                         </div>
                     </div>
-                </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSave} disabled={saving}>
-                        {course ? "Save changes" : "Create course"}
-                    </Button>
-                </DialogFooter>
+                    {/* Lecturer multi-select */}
+                    <div className="space-y-1.5">
+                        <Label>Lecturers <span className="text-destructive">*</span></Label>
+                        {selectedLecturerIds.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                {selectedLecturerIds.map((id) => {
+                                    const lecturer = lecturerMap.get(id);
+                                    return (
+                                        <span
+                                            key={id}
+                                            className="inline-flex items-center gap-1 rounded-md bg-primary/10 text-primary px-2 py-0.5 text-[12px] font-medium"
+                                        >
+                                            {lecturer?.name ?? id}
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleLecturer(id)}
+                                                className="text-primary/60 hover:text-primary ml-0.5 min-w-[24px] min-h-[24px] inline-flex items-center justify-center"
+                                                aria-label={`Remove ${lecturer?.name ?? "lecturer"}`}
+                                            >
+                                                ×
+                                            </button>
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        <Input
+                            placeholder="Search lecturers…"
+                            value={lecturerSearch}
+                            onChange={(e) => setLecturerSearch(e.target.value)}
+                            className="mb-1"
+                            aria-label="Search lecturers"
+                        />
+                        <div
+                            className="max-h-[160px] overflow-y-auto rounded-md border border-border p-1.5 space-y-0.5"
+                            role="listbox"
+                            aria-label="Available lecturers"
+                            aria-multiselectable="true"
+                        >
+                            {allLecturers.length === 0 ? (
+                                <p className="text-[12px] text-muted-foreground px-2 py-3 text-center">
+                                    No lecturers yet — add them on the Lecturers page.
+                                </p>
+                            ) : filteredLecturers.length === 0 ? (
+                                <p className="text-[12px] text-muted-foreground px-2 py-3 text-center">
+                                    No lecturers match &ldquo;{lecturerSearch}&rdquo;.
+                                </p>
+                            ) : (
+                                filteredLecturers.map((l) => {
+                                    const isSelected = selectedLecturerIds.includes(l.id);
+                                    return (
+                                        <button
+                                            key={l.id}
+                                            type="button"
+                                            role="option"
+                                            aria-selected={isSelected}
+                                            onClick={() => toggleLecturer(l.id)}
+                                            className={`w-full flex items-center gap-2.5 rounded-md px-2 py-2.5 min-h-[44px] text-[13px] text-left transition-colors ${
+                                                isSelected
+                                                    ? "bg-primary/10 text-primary font-medium"
+                                                    : "text-foreground hover:bg-muted"
+                                            }`}
+                                        >
+                                            <Checkbox
+                                                checked={isSelected}
+                                                tabIndex={-1}
+                                                aria-hidden="true"
+                                                className="pointer-events-none"
+                                            />
+                                            {l.name}
+                                        </button>
+                                    );
+                                })
+                            )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                            {selectedLecturerIds.length === 0
+                                ? "Select at least one lecturer"
+                                : `${selectedLecturerIds.length} lecturer${selectedLecturerIds.length > 1 ? "s" : ""} selected`}
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                        <Button type="submit" disabled={saving}>
+                            {course ? "Save changes" : "Create course"}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );
 }
+
