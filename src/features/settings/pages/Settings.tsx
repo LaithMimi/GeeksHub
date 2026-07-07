@@ -309,11 +309,6 @@ export default function Settings() {
                         onCheckedChange={touch((v: boolean) => setNotifications(prev => ({ ...prev, adminUpdates: v })))}
                     />
                 </GlassSection>
-
-                {/* 6. About */}
-                <GlassSection icon={Sparkles} iconColor="text-blue-500" title="About GeeksHub" desc="Platform version: 1.0.0-beta">
-                    <p className="text-[13px] text-muted-foreground">GeeksHub is built with React, Vite, and the Liquid Glass design system.</p>
-                </GlassSection>
             </div>
         </div>
     );

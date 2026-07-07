@@ -324,14 +324,7 @@ export default function UserProfile() {
                             </Dialog>
                         </div>
                     </ProfileSection>
-                </div>
-
-                {/* Footer disclaimer */}
-                <div className="text-center pb-8 pt-4">
-                    <p className="text-xs text-muted-foreground">
-                        GeeksHub account securely managed via Auth0. Certain profile elements cannot be changed directly.
-                    </p>
-                </div>
+                </div>                
             </div>
         </div>
     );
