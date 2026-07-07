@@ -90,7 +90,7 @@ export default function AuditLog() {
                             </p>
                         </div>
                     ) : (
-                        <div className="rounded-md border border-border bg-black/20">
+                        <div className="rounded-md border border-border bg-card">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
