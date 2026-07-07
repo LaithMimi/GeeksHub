@@ -38,7 +38,7 @@ export function StepCourse({
             <div className="space-y-3">
                 {semesterData.length > 0 && (
                     <div className="space-y-2">
-                        <Label className="text-foreground/60 text-[12px]">Semester <span className="text-muted-foreground/50 font-normal">(optional)</span></Label>
+                        <Label className="text-foreground/60 text-[12px]">Semester <span className="text-red-400">*</span></Label>
                         <div className="flex gap-2">
                             {semesterData.map((s) => (
                                 <button
