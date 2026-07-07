@@ -139,7 +139,7 @@ export const router = createBrowserRouter([
     // Protected admin routes
     {
         path: "/admin",
-        element: <ProtectedRoute requiredRoles={["ADMIN"]} />,
+        element: <ProtectedRoute requiredRoles={["ADMIN", "MODERATOR"]} />,
         errorElement: <RouteError name="Admin Auth" />,
         children: [
             {
@@ -178,7 +178,7 @@ export const router = createBrowserRouter([
     // Protected moderator routes
     {
         path: "/moderator",
-        element: <ProtectedRoute requiredRoles={["ADMIN", "MODERATOR"]} />,
+        element: <ProtectedRoute requiredRoles={["MODERATOR"]} />,
         errorElement: <RouteError name="Moderator Auth" />,
         children: [
             {

@@ -1,9 +1,11 @@
 """
 Directory management.
 
-Exposes /api/v1/directory/* for MODERATOR (and ADMIN) users to manage the platform
-directory: users, lecturers, courses, and lecturer<->course assignments. Reuses the
-existing CourseLecturer junction model — no new table.
+Exposes /api/v1/directory/*. Role hierarchy: STUDENT < ADMIN < MODERATOR.
+- /stats and /users/* are MODERATOR-only (user management is moderator work).
+- Majors, lecturers, courses, and lecturer<->course assignments are ADMIN-level
+  (moderators inherit admin privileges). Reuses the existing CourseLecturer
+  junction model — no new table.
 """
 
 import re
@@ -49,7 +51,7 @@ from schemas import (
     MajorCreate,
     MajorUpdate,
 )
-from utils.auth_utils import get_moderator_user
+from utils.auth_utils import get_admin_user, get_moderator_user
 
 router = APIRouter(prefix="/api/v1/directory", tags=["Directory"])
 
@@ -139,12 +141,10 @@ def update_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
 
-    # Only ADMINs may grant the ADMIN role or modify an existing admin.
-    if mod.role != "ADMIN":
-        if payload.role == "ADMIN":
-            raise HTTPException(status_code=403, detail="Only an admin can grant the ADMIN role.")
-        if user.role == "ADMIN":
-            raise HTTPException(status_code=403, detail="Only an admin can modify another admin.")
+    # A moderator may not change their own role — prevents accidentally
+    # demoting the last moderator and locking user management.
+    if user.id == mod.id and payload.role is not None and payload.role != user.role:
+        raise HTTPException(status_code=400, detail="You cannot change your own role.")
 
     if payload.name is not None:
         user.name = payload.name
@@ -250,8 +250,6 @@ def delete_user(
         raise HTTPException(status_code=404, detail="User not found.")
     if user.id == mod.id:
         raise HTTPException(status_code=400, detail="You cannot delete your own account.")
-    if user.role == "ADMIN" and mod.role != "ADMIN":
-        raise HTTPException(status_code=403, detail="Only an admin can delete an admin.")
 
     try:
         blob_paths = _purge_user_data(session, user)
@@ -289,7 +287,7 @@ def delete_user(
 @router.get("/majors")
 def list_majors(
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     """All majors with how many courses each contains."""
     rows = session.exec(
@@ -308,7 +306,7 @@ def list_majors(
 def create_major(
     payload: MajorCreate,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     name = payload.name.strip()
     slug = slugify(name)
@@ -329,7 +327,7 @@ def update_major(
     major_id: UUID,
     payload: MajorUpdate,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     major = session.get(Major, major_id)
     if not major:
@@ -356,7 +354,7 @@ def update_major(
 def delete_major(
     major_id: UUID,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     major = session.get(Major, major_id)
     if not major:
@@ -380,7 +378,7 @@ def delete_major(
 @router.get("/lecturers")
 def list_lecturers(
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     """All lecturers with how many courses each is assigned to."""
     try:
@@ -403,7 +401,7 @@ def list_lecturers(
 def create_lecturer(
     payload: LecturerCreate,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     if session.exec(select(Lecturer).where(Lecturer.name == payload.name)).first():
         raise HTTPException(status_code=409, detail="A lecturer with that name already exists.")
@@ -419,7 +417,7 @@ def update_lecturer(
     lecturer_id: UUID,
     payload: LecturerUpdate,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     lecturer = session.get(Lecturer, lecturer_id)
     if not lecturer:
@@ -440,7 +438,7 @@ def update_lecturer(
 def delete_lecturer(
     lecturer_id: UUID,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     lecturer = session.get(Lecturer, lecturer_id)
     if not lecturer:
@@ -472,7 +470,7 @@ def delete_lecturer(
 def list_lecturer_courses(
     lecturer_id: UUID,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     if not session.get(Lecturer, lecturer_id):
         raise HTTPException(status_code=404, detail="Lecturer not found.")
@@ -489,7 +487,7 @@ def assign_course(
     lecturer_id: UUID,
     course_id: UUID,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     if not session.get(Lecturer, lecturer_id):
         raise HTTPException(status_code=404, detail="Lecturer not found.")
@@ -507,7 +505,7 @@ def unassign_course(
     lecturer_id: UUID,
     course_id: UUID,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     row = session.get(CourseLecturer, (course_id, lecturer_id))
     if not row:
@@ -525,7 +523,7 @@ def unassign_course(
 def create_course(
     payload: CourseCreate,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     if not session.get(Major, payload.majorId):
         raise HTTPException(status_code=400, detail="Major not found.")
@@ -549,7 +547,7 @@ def update_course(
     course_id: UUID,
     payload: CourseUpdate,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     course = session.get(Course, course_id)
     if not course:
@@ -580,7 +578,7 @@ def update_course(
 def delete_course(
     course_id: UUID,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     course = session.get(Course, course_id)
     if not course:
@@ -608,7 +606,7 @@ def delete_course(
 def list_course_lecturers(
     course_id: UUID,
     session: Session = Depends(get_session),
-    mod: User = Depends(get_moderator_user),
+    mod: User = Depends(get_admin_user),
 ):
     if not session.get(Course, course_id):
         raise HTTPException(status_code=404, detail="Course not found.")

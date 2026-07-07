@@ -5,8 +5,10 @@
  *
  * API calls for managing the platform directory — users, lecturers, courses,
  * and lecturer↔course assignment. Used by both the moderator (Users) and admin
- * (Lecturers, Courses) sections; the backend gates `/directory/*` to ADMIN and
- * MODERATOR roles. Request bodies are camelCase; responses are auto-camelCased.
+ * (Lecturers, Courses) sections. Hierarchy: STUDENT < ADMIN < MODERATOR — the
+ * backend gates `/directory/users` and `/directory/stats` to MODERATOR only,
+ * while majors/lecturers/courses are ADMIN-level (moderators inherit).
+ * Request bodies are camelCase; responses are auto-camelCased.
  * ============================================================================
  */
 

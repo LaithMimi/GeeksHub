@@ -19,6 +19,7 @@ import {
     Settings,
     LogOut,
     Shield,
+    ShieldCheck,
     FileText
 } from "lucide-react"
 
@@ -96,10 +97,16 @@ export function CommandPalette() {
                 <CommandSeparator />
 
                 <CommandGroup heading="Account">
-                    {user?.role === "ADMIN" && (
+                    {(user?.role === "ADMIN" || user?.role === "MODERATOR") && (
                         <CommandItem onSelect={() => runCommand(() => navigate("/admin"))}>
                             <Shield className="mr-2 h-4 w-4" />
                             Admin Dashboard
+                        </CommandItem>
+                    )}
+                    {user?.role === "MODERATOR" && (
+                        <CommandItem onSelect={() => runCommand(() => navigate("/moderator"))}>
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            Moderator Dashboard
                         </CommandItem>
                     )}
                     <CommandItem onSelect={() => runCommand(() => signOut())}>
