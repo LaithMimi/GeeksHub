@@ -20,8 +20,10 @@
  *    GET /api/v1/me/notifications/unread-count ? { count: number }
  *    Poll every 30s. Wire into the Bell button when endpoint is ready.
  *
- * 3. Conditional Admin Link:
- *    Admin nav item is shown only when user.role === "ADMIN".
+ * 3. Conditional Admin/Moderator Links:
+ *    Hierarchy: STUDENT < ADMIN < MODERATOR. The Admin nav item is shown to
+ *    ADMIN and MODERATOR (moderators inherit admin); the Moderator nav item
+ *    is shown to MODERATOR only.
  *
  * 4. Language preference:
  *    Currently reads from localStorage. After Settings backend is connected,
@@ -146,8 +148,8 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
         ? user.displayName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
         : "?";
 
-    const isAdmin = user?.role === "ADMIN";
-    const isModerator = user?.role === "MODERATOR" || isAdmin;
+    const isModerator = user?.role === "MODERATOR";
+    const isAdmin = user?.role === "ADMIN" || isModerator;
 
     return (
         <TooltipProvider delayDuration={0}>
@@ -244,7 +246,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                             return linkContent;
                         })}
 
-                        {/* Admin link only shown to admins */}
+                        {/* Admin link shown to admins and moderators */}
                         {isAdmin && (() => {
                             const adminLink = (
                                 <Link
@@ -274,7 +276,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                             return adminLink;
                         })()}
 
-                        {/* Moderator link shown to moderators and admins */}
+                        {/* Moderator link shown to moderators only */}
                         {isModerator && (() => {
                             const moderatorLink = (
                                 <Link

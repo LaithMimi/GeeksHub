@@ -55,7 +55,7 @@
 // ENUMS / UNION TYPES
 // ============================================================================
 
-/** User roles for authorization */
+/** User roles for authorization. Hierarchy: STUDENT < ADMIN < MODERATOR (moderators inherit admin privileges). */
 export type Role = "STUDENT" | "ADMIN" | "MODERATOR";
 
 /** Status of a file or file request */

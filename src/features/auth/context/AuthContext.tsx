@@ -163,7 +163,14 @@ export function useAuth(): AuthContextValue {
     return ctx;
 }
 
+/** Admin-level privileges. Hierarchy: STUDENT < ADMIN < MODERATOR — moderators inherit admin. */
 export function useIsAdmin(): boolean {
     const { user } = useAuth();
-    return user?.role === "ADMIN";
+    return user?.role === "ADMIN" || user?.role === "MODERATOR";
+}
+
+/** Moderator-only privileges (the top role). */
+export function useIsModerator(): boolean {
+    const { user } = useAuth();
+    return user?.role === "MODERATOR";
 }

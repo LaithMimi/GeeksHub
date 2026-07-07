@@ -67,12 +67,13 @@ def get_verified_user(request: Request,
         raise HTTPException(status_code=401, detail="Authentication failed.")
     
 def get_admin_user(current_user: User = Depends(get_verified_user)):
-    if current_user.role != "ADMIN":
+    """Admin-level gate. Hierarchy: STUDENT < ADMIN < MODERATOR — moderators inherit admin privileges."""
+    if current_user.role not in ("ADMIN", "MODERATOR"):
         raise HTTPException(status_code=403, detail=f"Admin privileges required. Your role: {current_user.role}")
     return current_user
 
 def get_moderator_user(current_user: User = Depends(get_verified_user)):
-    """Allows both MODERATOR and ADMIN — admins inherit moderator privileges."""
-    if current_user.role not in ("ADMIN", "MODERATOR"):
+    """Moderator-only gate — the top role. Admins are NOT allowed."""
+    if current_user.role != "MODERATOR":
         raise HTTPException(status_code=403, detail="Moderator privileges required.")
     return current_user
