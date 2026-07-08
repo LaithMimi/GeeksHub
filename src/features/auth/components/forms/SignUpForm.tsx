@@ -3,12 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMajors } from "@/features/courses/hooks/useCatalog";
 import { toast } from "sonner";
 import { FieldError, FormErrorSummary } from "@/shared/components/errors";
 import type { AuthError } from "@/features/auth/api/authService";
+import { cn } from "@/lib/utils";
 
 type FieldErrors = Partial<Record<"name" | "email" | "major" | "password" | "confirmPassword", string>>;
 
@@ -18,8 +19,19 @@ export default function SignUpForm() {
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [passwordStrength, setPasswordStrength] = useState(0);
     const [majorId, setMajorId] = useState("");
     const { data: majors, isLoading: isMajorsLoading, isError: isMajorsError } = useMajors();
+
+    const getPasswordStrength = (pw: string): number => {
+        if (!pw) return 0;
+        let score = 0;
+        if (pw.length >= 8) score++;
+        if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+        if (/\d/.test(pw)) score++;
+        if (/[^A-Za-z0-9]/.test(pw)) score++;
+        return Math.min(score, 4);
+    };
 
     const { signUp } = useAuth();
     const navigate = useNavigate();
@@ -78,19 +90,21 @@ export default function SignUpForm() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8" noValidate>
+        <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8 auth-focus-glow rounded-xl" noValidate>
 
             <div className="w-full space-y-3 mt-4">
                 <div>
-                    <label htmlFor="signup-name" className="sr-only">Full name</label>
+                    <label htmlFor="signup-name" className="text-sm font-medium text-foreground mb-1.5 block">Full name</label>
                     <Input
                         id="signup-name"
                         name="name"
                         type="text"
-                        placeholder="Full name"
-                        className="h-10"
+                        placeholder="Your full name"
+                        className="h-11"
                         required
                         autoFocus
+                        maxLength={100}
+                        dir="auto"
                         disabled={isLoading}
                         aria-invalid={!!fieldErrors.name || undefined}
                         aria-describedby={fieldErrors.name ? "signup-name-error" : undefined}
@@ -99,13 +113,13 @@ export default function SignUpForm() {
                 </div>
 
                 <div>
-                    <label htmlFor="signup-email" className="sr-only">University email</label>
+                    <label htmlFor="signup-email" className="text-sm font-medium text-foreground mb-1.5 block">University email</label>
                     <Input
                         id="signup-email"
                         name="email"
                         type="email"
-                        placeholder="University email"
-                        className="h-10"
+                        placeholder="you@post.jce.ac.il"
+                        className="h-11"
                         required
                         disabled={isLoading}
                         aria-invalid={!!fieldErrors.email || undefined}
@@ -115,8 +129,9 @@ export default function SignUpForm() {
                 </div>
 
                 <div>
+                    <label className="text-sm font-medium text-foreground mb-1.5 block">Major</label>
                     <Select value={majorId} onValueChange={(v) => { setMajorId(v); setFieldErrors((p) => ({ ...p, major: undefined })); }} disabled={isMajorsLoading || isMajorsError || isLoading}>
-                        <SelectTrigger className="h-10" aria-invalid={!!fieldErrors.major || undefined} aria-describedby={fieldErrors.major ? "signup-major-error" : undefined}>
+                        <SelectTrigger className="h-11" aria-invalid={!!fieldErrors.major || undefined} aria-describedby={fieldErrors.major ? "signup-major-error" : undefined}>
                             <SelectValue placeholder={isMajorsLoading ? "Loading majors..." : isMajorsError ? "Couldn't load majors — refresh to try again" : "Select Major"}>
                                 {majors?.find((m) => m.id === majorId)?.name}
                             </SelectValue>
@@ -133,42 +148,54 @@ export default function SignUpForm() {
                 </div>
 
                 <div>
-                    <label htmlFor="signup-password" className="sr-only">Password</label>
+                    <label htmlFor="signup-password" className="text-sm font-medium text-foreground mb-1.5 block">Password</label>
                     <div className="relative">
                         <Input
                             id="signup-password"
                             name="password"
                             type={showPassword ? "text" : "password"}
-                            placeholder="Password (at least 8 characters)"
-                            className="h-10 pr-10"
+                            placeholder="At least 8 characters"
+                            className="h-11 pr-10"
                             required
                             minLength={8}
                             disabled={isLoading}
+                            onChange={(e) => setPasswordStrength(getPasswordStrength(e.target.value))}
                             aria-invalid={!!fieldErrors.password || undefined}
-                            aria-describedby={fieldErrors.password ? "signup-password-error" : undefined}
+                            aria-describedby={fieldErrors.password ? "signup-password-error" : "password-strength-hint"}
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword((prev) => !prev)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                             disabled={isLoading}
                             aria-label={showPassword ? "Hide password" : "Show password"}
                         >
-                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
+                    </div>
+                    <div className="strength-meter" role="meter" aria-valuenow={passwordStrength} aria-valuemin={0} aria-valuemax={4} aria-label="Password strength" id="password-strength-hint">
+                        {[1, 2, 3, 4].map((level) => (
+                            <div
+                                key={level}
+                                className={cn(
+                                    "strength-meter-segment",
+                                    passwordStrength >= level && (passwordStrength <= 1 ? "weak" : passwordStrength <= 2 ? "medium" : "strong")
+                                )}
+                            />
+                        ))}
                     </div>
                     <FieldError id="signup-password-error">{fieldErrors.password}</FieldError>
                 </div>
 
                 <div>
-                    <label htmlFor="signup-confirm" className="sr-only">Confirm password</label>
+                    <label htmlFor="signup-confirm" className="text-sm font-medium text-foreground mb-1.5 block">Confirm password</label>
                     <div className="relative">
                         <Input
                             id="signup-confirm"
                             name="confirmPassword"
                             type={showConfirmPassword ? "text" : "password"}
-                            placeholder="Confirm password"
-                            className="h-10 pr-10"
+                            placeholder="Re-enter your password"
+                            className="h-11 pr-10"
                             required
                             minLength={8}
                             disabled={isLoading}
@@ -178,11 +205,11 @@ export default function SignUpForm() {
                         <button
                             type="button"
                             onClick={() => setShowConfirmPassword((prev) => !prev)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                             disabled={isLoading}
                             aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                         >
-                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                     </div>
                     <FieldError id="signup-confirm-error">{fieldErrors.confirmPassword}</FieldError>
@@ -192,11 +219,11 @@ export default function SignUpForm() {
             <FormErrorSummary message={formError} autoFocus className="w-full mt-4" />
 
             <Button
-                className="rounded-full w-full px-12 py-6 mt-6 font-bold uppercase text-xs tracking-wider transition-transform active:scale-95"
+                className="rounded-full w-full px-12 py-6 mt-6 font-semibold uppercase text-sm tracking-wider transition-all active:scale-95 group"
                 type="submit"
                 disabled={isLoading}
             >
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Sign Up"}
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <><span>Sign Up</span><ArrowRight className="ml-2 h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" /></>}
             </Button>
         </form>
     );
