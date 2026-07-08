@@ -139,7 +139,8 @@ def approve_file(
             final_gcs_path = f"{safe_course_name}/{filename}"
             bucket.rename_blob(bucket.blob(request.file_url), final_gcs_path)
     except RuntimeError as e:
-        raise HTTPException(status_code=500, detail=f"PPTX conversion failed: {e}")
+        print(f"PPTX conversion failed: {e}")
+        raise HTTPException(status_code=500, detail="We couldn't process that presentation file. Please try uploading it again, or convert it to PDF first.")
     except Exception as e:
         print(f"GCS Move failed: {e}")
         raise HTTPException(status_code=500, detail="Cloud storage error.")

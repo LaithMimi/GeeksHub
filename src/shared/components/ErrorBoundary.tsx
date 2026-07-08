@@ -1,5 +1,6 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface Props {
     children: ReactNode;
@@ -21,7 +22,8 @@ export default class ErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: Error, info: ErrorInfo) {
-        console.error("[ErrorBoundary]", error, info.componentStack);
+        // Developer-only — silent in production so internals never leak to DevTools.
+        logger.error("[ErrorBoundary]", error, info.componentStack);
     }
 
     handleReset = () => {
@@ -31,17 +33,19 @@ export default class ErrorBoundary extends Component<Props, State> {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="min-h-screen bg-background flex items-center justify-center p-8">
+                <div className="min-h-screen bg-background flex items-center justify-center p-8" role="alert">
                     <div className="text-center max-w-md">
                         <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-6">
-                            <AlertTriangle className="h-7 w-7 text-red-400" />
+                            <AlertTriangle className="h-7 w-7 text-red-400" aria-hidden="true" />
                         </div>
                         <h1 className="text-[24px] font-display font-bold text-foreground">Something went wrong</h1>
                         <p className="text-[14px] text-muted-foreground mt-2 max-w-sm mx-auto">
-                            An unexpected error occurred. Try refreshing, or contact support if the problem persists.
+                            The app hit an unexpected problem — this is on us, not you. Try again, and if it keeps
+                            happening, please contact support.
                         </p>
-                        {this.state.error && (
-                            <pre className="mt-4 p-3 rounded-xl bg-foreground/5 border border-border text-[12px] text-red-400/80 text-left overflow-auto max-h-32">
+                        {/* Raw error is shown only in development, never to real users. */}
+                        {import.meta.env.DEV && this.state.error && (
+                            <pre className="mt-4 p-3 rounded-xl bg-foreground/5 border border-border text-[12px] text-muted-foreground text-left overflow-auto max-h-32">
                                 {this.state.error.message}
                             </pre>
                         )}
@@ -49,8 +53,8 @@ export default class ErrorBoundary extends Component<Props, State> {
                             onClick={this.handleReset}
                             className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl gradient-bg text-foreground text-[14px] font-medium hover:opacity-90 transition-opacity"
                         >
-                            <RefreshCw className="h-4 w-4" />
-                            Try Again
+                            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                            Try again
                         </button>
                     </div>
                 </div>

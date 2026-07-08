@@ -3,9 +3,10 @@ import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { authService } from "@/features/auth/api/authService";
+import { authService, type AuthError } from "@/features/auth/api/authService";
 import { Loader2, CheckCircle2, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FieldError, FormErrorSummary } from "@/shared/components/errors";
 
 /**
  * Prefer the token from the URL fragment (#token=...) over the query string.
@@ -26,33 +27,39 @@ export default function ResetPasswordForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirmPassword?: string }>({});
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
         setError("");
+        setFieldErrors({});
 
-        const formData = new FormData(e.target as HTMLFormElement);
+        const form = e.target as HTMLFormElement;
+        const formData = new FormData(form);
         const password = formData.get("password") as string;
         const confirmPassword = formData.get("confirmPassword") as string;
 
+        const errors: { password?: string; confirmPassword?: string } = {};
         if (password.length < 8) {
-            setError("Password must be at least 8 characters.");
-            setIsLoading(false);
-            return;
+            errors.password = "Your password must be at least 8 characters.";
         }
-
         if (password !== confirmPassword) {
-            setError("Passwords do not match.");
-            setIsLoading(false);
+            errors.confirmPassword = "Both passwords need to match. Re-enter them to be sure.";
+        }
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            const firstInvalid = errors.password ? "password" : "confirmPassword";
+            form.querySelector<HTMLInputElement>(`[name="${firstInvalid}"]`)?.focus();
             return;
         }
 
+        setIsLoading(true);
         try {
             await authService.confirmPasswordReset({ token, password });
             setSuccess(true);
-        } catch (err: any) {
-            setError(err.message || "Failed to reset password.");
+        } catch (err) {
+            const authErr = err as AuthError;
+            setError(authErr?.message || "We couldn't reset your password. The link may have expired — request a new one.");
         } finally {
             setIsLoading(false);
         }
@@ -95,7 +102,7 @@ export default function ResetPasswordForm() {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 animate-in fade-in duration-300 w-full max-w-sm mx-auto p-6 bg-card rounded-xl shadow-lg border">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 animate-in fade-in duration-300 w-full max-w-sm mx-auto p-6 bg-card rounded-xl shadow-lg border">
             <div className="text-center mb-2">
                 <h2 className="text-2xl font-bold">Reset Password</h2>
                 <p className="text-sm text-muted-foreground">Enter a new secure password</p>
@@ -112,7 +119,10 @@ export default function ResetPasswordForm() {
                         required
                         autoFocus
                         disabled={isLoading}
+                        aria-invalid={!!fieldErrors.password || undefined}
+                        aria-describedby={fieldErrors.password ? "reset-password-error" : undefined}
                     />
+                    <FieldError id="reset-password-error">{fieldErrors.password}</FieldError>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -123,11 +133,14 @@ export default function ResetPasswordForm() {
                         className="h-10"
                         required
                         disabled={isLoading}
+                        aria-invalid={!!fieldErrors.confirmPassword || undefined}
+                        aria-describedby={fieldErrors.confirmPassword ? "reset-confirm-error" : undefined}
                     />
+                    <FieldError id="reset-confirm-error">{fieldErrors.confirmPassword}</FieldError>
                 </div>
             </div>
 
-            {error && <p className="text-red-500 text-xs">{error}</p>}
+            <FormErrorSummary message={error} autoFocus />
 
             <Button className="w-full mt-2" type="submit" disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
