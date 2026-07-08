@@ -140,11 +140,11 @@ export default function SlidingAuth() {
                         {/* If isSignUp is TRUE, Overlay is on Left. The "Sign In" option should appear to switch back. */}
                         <div
                             className={cn(
-                                "absolute flex flex-col items-start justify-center text-left top-0 left-0 h-full w-1/2 transform transition-transform duration-700 ease-in-out px-20",
+                                "absolute flex flex-col items-center justify-center text-center top-0 left-0 h-full w-1/2 transform transition-transform duration-700 ease-in-out px-20",
                                 isSignUp ? "translate-x-0" : "-translate-x-[20%]"
                             )}
                         >
-                            <div className="w-full max-w-md flex flex-col items-start">
+                            <div className="w-full max-w-md mx-auto flex flex-col items-center">
                                 <BrandLogo className="w-20 h-20 mb-6" />
                                 <h1 className="font-bold text-5xl mb-5 tracking-tight">Welcome back!</h1>
                                 <p className="text-lg mb-10 text-primary-foreground/80 font-light leading-relaxed max-w-xs">
@@ -163,11 +163,11 @@ export default function SlidingAuth() {
                         {/* Overlay Panel Right (Visible when isSignUp is FALSE - showing Sign Up Form) */}
                         <div
                             className={cn(
-                                "absolute flex flex-col items-start justify-center text-left top-0 h-full w-1/2 right-0 transform transition-transform duration-700 ease-in-out px-20",
+                                "absolute flex flex-col items-center justify-center text-center top-0 h-full w-1/2 right-0 transform transition-transform duration-700 ease-in-out px-20",
                                 isSignUp ? "translate-x-[20%]" : "translate-x-0"
                             )}
                         >
-                            <div className="w-full max-w-md flex flex-col items-start">
+                            <div className="w-full max-w-md mx-auto flex flex-col items-center">
                                 <BrandLogo className="w-20 h-20 mb-6" />
                                 <h1 className="font-bold text-5xl mb-5 tracking-tight">Hello, friend!</h1>
                                 <p className="text-lg mb-10 text-primary-foreground/80 font-light leading-relaxed max-w-xs">
