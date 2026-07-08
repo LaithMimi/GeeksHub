@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
-    FileText, Pencil, Trash2, ChevronDown, Loader2, Search,
+    FileText, Pencil, Trash2, Loader2, Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,8 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useAdminFiles, useAdminDeleteFile, useAdminUpdateFile } from "@/features/admin/hooks/useAdminFiles";
-import { useCourses, useMajors } from "@/features/courses/hooks/useCatalog";
+import { useCourses, useTypes } from "@/features/courses/hooks/useCatalog";
 import { useDirectoryLecturers } from "@/features/directory/hooks/useDirectory";
-import { useMaterialTypes } from "@/features/files/hooks/useRequests";
 import type { File } from "@/types/domain";
 import { Badge } from "@/components/ui/badge";
 
@@ -28,7 +27,7 @@ export default function FilesPage() {
     const { data: files = [], isLoading } = useAdminFiles();
     const { data: courses = [] } = useCourses({});
     const { data: lecturers = [] } = useDirectoryLecturers();
-    const { data: types = [] } = useMaterialTypes();
+    const { data: types = [] } = useTypes();
     const deleteFile = useAdminDeleteFile();
 
     const getCourseName = (id: string) => courses.find((c) => c.id === id)?.name ?? "Unknown Course";
