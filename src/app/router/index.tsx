@@ -63,12 +63,12 @@ export const router = createBrowserRouter([
     // Protected app routes
     {
         element: <ProtectedRoute />,
-        errorElement: <RouteError name="Auth" />,
+        errorElement: <RouteError name="sign-in page" />,
         children: [
             {
                 path: "/",
                 element: <AppShell />,
-                errorElement: <RouteError name="AppShell" />,
+                errorElement: <RouteError name="page" />,
                 children: [
                     {
                         index: true,
@@ -100,7 +100,7 @@ export const router = createBrowserRouter([
                             {
                                 path: ":courseId",
                                 element: <CourseShell />,
-                                errorElement: <RouteError name="CourseShell" />,
+                                errorElement: <RouteError name="course" />,
                                 children: [
                                     {
                                         index: true,
@@ -140,12 +140,12 @@ export const router = createBrowserRouter([
     {
         path: "/admin",
         element: <ProtectedRoute requiredRoles={["ADMIN", "MODERATOR"]} />,
-        errorElement: <RouteError name="Admin Auth" />,
+        errorElement: <RouteError name="admin area" />,
         children: [
             {
                 path: "",
                 element: <AdminShell />,
-                errorElement: <RouteError name="Admin" />,
+                errorElement: <RouteError name="admin area" />,
                 children: [
                     {
                         index: true,
@@ -179,12 +179,12 @@ export const router = createBrowserRouter([
     {
         path: "/moderator",
         element: <ProtectedRoute requiredRoles={["MODERATOR"]} />,
-        errorElement: <RouteError name="Moderator Auth" />,
+        errorElement: <RouteError name="moderator area" />,
         children: [
             {
                 path: "",
                 element: <ModeratorShell />,
-                errorElement: <RouteError name="Moderator" />,
+                errorElement: <RouteError name="moderator area" />,
                 children: [
                     {
                         index: true,

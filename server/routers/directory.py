@@ -394,7 +394,7 @@ def list_lecturers(
         ]
     except Exception as e:
         print("Error fetching lecturers:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="We couldn't load the lecturers right now. Please try again.")
 
 
 @router.post("/lecturers", status_code=201)

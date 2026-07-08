@@ -42,7 +42,7 @@ import {
     getRequestPreviewUrl,
 } from "@/features/files/api/requestService";
 import { toast } from "sonner";
-import { ApiError } from "@/lib/apiClient";
+import { toastError } from "@/lib/errors";
 import type { RejectReason, FileStatus } from "@/types/domain";
 import { queryKeys } from "@/lib/queryKeys";
 
@@ -80,8 +80,10 @@ export const useCreateRequest = () => {
             toast.success("File submitted successfully");
         },
         onError: (err) => {
-            const detail = err instanceof ApiError ? err.message : null;
-            toast.error(detail || "Failed to submit file. Try again.");
+            toastError(err, {
+                context: "upload",
+                fallbackMessage: "We couldn't submit your file. Please try again, or choose a smaller file.",
+            });
         },
     });
 };
@@ -99,8 +101,8 @@ export const useWithdrawRequest = () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.requests.mine() });
             toast.success("Request withdrawn");
         },
-        onError: () => {
-            toast.error("Failed to withdraw request. Try again.");
+        onError: (err) => {
+            toastError(err, { fallbackMessage: "We couldn't withdraw your request. Please try again." });
         },
     });
 };
@@ -181,8 +183,8 @@ export const useApproveRequest = () => {
                 });
             }
         },
-        onError: () => {
-            toast.error("Failed to approve request");
+        onError: (err) => {
+            toastError(err, { fallbackMessage: "We couldn't approve this request. Please try again." });
         },
     });
 };
@@ -226,8 +228,8 @@ export const useRejectRequest = () => {
                 });
             }
         },
-        onError: () => {
-            toast.error("Failed to reject request");
+        onError: (err) => {
+            toastError(err, { fallbackMessage: "We couldn't reject this request. Please try again." });
         },
     });
 };
@@ -249,8 +251,8 @@ export const useBulkApprove = () => {
                 (result.skipped > 0 ? ` (${result.skipped} skipped)` : "")
             );
         },
-        onError: () => {
-            toast.error("Failed to bulk approve");
+        onError: (err) => {
+            toastError(err, { fallbackMessage: "We couldn't approve those requests. Please try again." });
         },
     });
 };
@@ -278,8 +280,8 @@ export const useBulkReject = () => {
                 (result.skipped > 0 ? ` (${result.skipped} skipped)` : "")
             );
         },
-        onError: () => {
-            toast.error("Failed to bulk reject");
+        onError: (err) => {
+            toastError(err, { fallbackMessage: "We couldn't reject those requests. Please try again." });
         },
     });
 };
