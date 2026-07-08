@@ -684,9 +684,16 @@ def list_audit_logs(
             or None
         )
 
+        # Ensure the ISO string always carries UTC info so the browser
+        # doesn't misinterpret it as local time.
+        ts = log.timestamp
+        iso_ts = ts.isoformat()
+        if not iso_ts.endswith("Z") and "+" not in iso_ts and "-" not in iso_ts[10:]:
+            iso_ts += "Z"
+
         enriched.append({
             "id": str(log.id),
-            "timestamp": log.timestamp.isoformat(),
+            "timestamp": iso_ts,
             "actorId": str(log.actor_id),
             "actorName": log.actor_name,
             "action": log.action,
