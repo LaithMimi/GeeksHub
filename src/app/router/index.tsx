@@ -1,4 +1,4 @@
-﻿import React, { Suspense } from "react";
+import React, { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import RouteError from "@/shared/components/errors/RouteError";
@@ -44,6 +44,7 @@ const AuditLog = Loadable(React.lazy(() => import("@/features/admin/pages/AuditL
 const LecturersPage = Loadable(React.lazy(() => import("@/features/admin/pages/LecturersPage")));
 const CoursesPage = Loadable(React.lazy(() => import("@/features/admin/pages/CoursesPage")));
 const MajorsPage = Loadable(React.lazy(() => import("@/features/admin/pages/MajorsPage")));
+const FilesPage = Loadable(React.lazy(() => import("@/features/admin/pages/FilesPage")));
 
 // Moderator Pages
 const ModeratorShell = Loadable(React.lazy(() => import("@/app/layouts/ModeratorShell")));
@@ -170,6 +171,10 @@ export const router = createBrowserRouter([
                     {
                         path: "majors",
                         element: <MajorsPage />,
+                    },
+                    {
+                        path: "files",
+                        element: <FilesPage />,
                     },
                 ],
             },

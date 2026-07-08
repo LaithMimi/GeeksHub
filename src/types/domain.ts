@@ -331,6 +331,9 @@ export interface AuditLogEntry {
         newStatus?: FileStatus;
         from?: string; // rename: previous title
         to?: string;   // rename: new title
+        targetName?: string;
+        courseName?: string;
+        lecturerName?: string;
     };
 }
 

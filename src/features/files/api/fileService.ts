@@ -114,3 +114,25 @@ export const addRecentFile = async (file: { id: string }): Promise<void> => {
 export const clearRecentFiles = async (): Promise<void> => {
     await api("/me/recent-files", { method: "DELETE" });
 }
+
+/**
+ * Updates an existing file.
+ * @param fileId - The file ID to update
+ * @param data - The fields to update
+ * @backend PUT /api/v1/files/:fileId
+ */
+export const updateFile = async (fileId: string, data: Partial<File>): Promise<File> => {
+    return await api<File>(`/files/${fileId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+    });
+};
+
+/**
+ * Deletes a file.
+ * @param fileId - The file ID to delete
+ * @backend DELETE /api/v1/files/:fileId
+ */
+export const deleteFile = async (fileId: string): Promise<void> => {
+    await api(`/files/${fileId}`, { method: "DELETE" });
+};
