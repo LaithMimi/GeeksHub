@@ -656,11 +656,11 @@ def get_request_stats(
 def list_audit_logs(
     action: Optional[str] = Query(None),
     actorId: Optional[UUID] = Query(None),
-    limit: int = Query(default=50, ge=1, le=100),
+    limit: int = Query(default=100, ge=1, le=200),
     session: Session = Depends(get_session),
     admin: User = Depends(get_admin_user)
 ):
-    """Returns the history of admin moderation actions."""
+    """Returns enriched audit log entries with human-readable names."""
     statement = select(AuditLog).order_by(AuditLog.timestamp.desc())
     
     if action:
@@ -669,7 +669,43 @@ def list_audit_logs(
         statement = statement.where(AuditLog.actor_id == actorId)
         
     statement = statement.limit(limit)
-    return session.exec(statement).all()
+    logs = session.exec(statement).all()
+
+    enriched = []
+    for log in logs:
+        meta = log.meta_data or {}
+
+        # Derive the best human-readable target name from whatever we stored
+        target_name = (
+            meta.get("targetName")
+            or meta.get("title")
+            or meta.get("to")  # rename: new title
+            or (f"{len(log.target_ids)} items" if len(log.target_ids) > 1 else None)
+            or None
+        )
+
+        enriched.append({
+            "id": str(log.id),
+            "timestamp": log.timestamp.isoformat(),
+            "actorId": str(log.actor_id),
+            "actorName": log.actor_name,
+            "action": log.action,
+            "targetType": log.target_type,
+            "targetIds": log.target_ids,
+            "metaData": {
+                "targetName": target_name,
+                "courseName": meta.get("courseName"),
+                "lecturerName": meta.get("lecturerName"),
+                "reason": meta.get("reason"),
+                "note": meta.get("note"),
+                "pointsAwarded": meta.get("pointsAwarded"),
+                "from": meta.get("from"),
+                "to": meta.get("to"),
+                "filename": meta.get("filename"),
+            },
+        })
+
+    return enriched
 
 @router.get("/api/v1/admin/requests/{request_id}/url")
 def get_admin_request_preview_url(

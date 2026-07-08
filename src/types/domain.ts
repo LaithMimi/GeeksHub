@@ -306,7 +306,7 @@ export interface ActivitySummary {
 // ============================================================================
 
 /** Actions that can be performed by admins */
-export type AuditAction = "approve" | "reject" | "bulk_approve" | "bulk_reject" | "withdraw" | "undo_approve" | "undo_reject" | "rename";
+export type AuditAction = "approve" | "reject" | "bulk_approve" | "bulk_reject" | "withdraw" | "undo_approve" | "undo_reject" | "rename" | "Update" | "Delete";
 
 /** Standardized rejection reasons */
 export type RejectReason = "DUPLICATE" | "OUTDATED" | "INCORRECT_COURSE" | "BAD_QUALITY" | "OTHER";
@@ -334,6 +334,7 @@ export interface AuditLogEntry {
         targetName?: string;
         courseName?: string;
         lecturerName?: string;
+        filename?: string;
     };
 }
 
