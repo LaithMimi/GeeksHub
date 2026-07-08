@@ -528,6 +528,113 @@ body {
 }
 
 /* ============================================
+   AUTH — Enhanced Form & Overlay Utilities
+   ============================================ */
+
+/* Focus glow on form containers */
+.auth-focus-glow {
+  transition: box-shadow var(--motion-standard) var(--ease-standard);
+}
+
+.auth-focus-glow:focus-within {
+  box-shadow: 0 0 0 3px hsla(var(--primary), 0.15),
+    0 0 24px -4px hsla(var(--primary), 0.10);
+}
+
+/* Input focus ring enhancement */
+.auth-input:focus {
+  box-shadow: 0 0 0 3px hsla(var(--primary), 0.18);
+  border-color: hsl(var(--primary));
+}
+
+/* Password strength meter */
+.strength-meter {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  height: 3px;
+}
+
+.strength-meter-segment {
+  flex: 1;
+  border-radius: 999px;
+  background: hsl(var(--muted));
+  transition: background var(--motion-standard) var(--ease-standard);
+}
+
+.strength-meter-segment.weak {
+  background: hsl(0, 72%, 51%);
+}
+
+.strength-meter-segment.medium {
+  background: hsl(38, 92%, 50%);
+}
+
+.strength-meter-segment.strong {
+  background: hsl(142, 70%, 42%);
+}
+
+/* Floating shapes on overlay — CSS-only ambient motion */
+.auth-floating-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.08;
+  background: currentColor;
+  filter: blur(40px);
+  pointer-events: none;
+  animation: auth-float 12s var(--ease-standard) infinite alternate;
+}
+
+.auth-floating-shape:nth-child(2) {
+  animation-delay: -4s;
+  animation-duration: 16s;
+}
+
+.auth-floating-shape:nth-child(3) {
+  animation-delay: -8s;
+  animation-duration: 20s;
+}
+
+@keyframes auth-float {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(30px, -20px) scale(1.15);
+  }
+}
+
+/* Success icon pulse */
+@keyframes success-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 hsla(142, 70%, 42%, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 8px hsla(142, 70%, 42%, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 hsla(142, 70%, 42%, 0);
+  }
+}
+
+.auth-success-pulse {
+  animation: success-pulse 2s var(--ease-standard) 1;
+}
+
+/* Reduced motion: disable auth animations */
+@media (prefers-reduced-motion: reduce) {
+  .auth-floating-shape {
+    animation: none !important;
+  }
+  .auth-success-pulse {
+    animation: none !important;
+  }
+}
+
+/* ============================================
    SCROLLBAR — Glass Style
    ============================================ */
 ::-webkit-scrollbar {

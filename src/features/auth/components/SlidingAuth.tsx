@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import SignInForm from "@/features/auth/components/forms/SignInForm";
 import SignUpForm from "@/features/auth/components/forms/SignUpForm";
 import ForgotForm from "@/features/auth/components/forms/ForgotForm";
@@ -26,7 +26,7 @@ export default function SlidingAuth() {
                             variant="ghost"
                             onClick={() => setIsSignUp(false)}
                             className={cn(
-                                "w-1/2 pb-2 rounded-none h-auto px-0 hover:bg-transparent text-center text-sm font-medium transition-colors relative justify-center",
+                                "w-1/2 pb-2 rounded-none h-auto px-0 hover:bg-transparent text-center text-base font-medium transition-colors relative justify-center",
                                 !isSignUp ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
@@ -37,7 +37,7 @@ export default function SlidingAuth() {
                             variant="ghost"
                             onClick={() => setIsSignUp(true)}
                             className={cn(
-                                "w-1/2 pb-2 rounded-none h-auto px-0 hover:bg-transparent text-center text-sm font-medium transition-colors relative justify-center",
+                                "w-1/2 pb-2 rounded-none h-auto px-0 hover:bg-transparent text-center text-base font-medium transition-colors relative justify-center",
                                 isSignUp ? "text-primary hover:text-primary" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
@@ -65,7 +65,7 @@ export default function SlidingAuth() {
                     <div className="flex flex-col items-center justify-center h-full text-center bg-background px-12">
                         <div className="w-full max-w-md mx-auto flex flex-col items-center">
                             <BrandLogo className="w-16 h-16 mb-4" />
-                            <h1 className="font-bold text-3xl mb-4 text-foreground">Create Account</h1>
+                            <h1 className="font-bold text-4xl mb-4 text-foreground">Create Account</h1>
                             <div className="social-container mb-4">
                                 {/* Social Icons handled inside form */}
                             </div>
@@ -92,7 +92,7 @@ export default function SlidingAuth() {
                             ) : (
                                 <>
                                     <BrandLogo className="w-16 h-16 mb-4" />
-                                    <h1 className="font-bold text-3xl mb-4 text-foreground">Sign in</h1>
+                                    <h1 className="font-bold text-4xl mb-4 text-foreground">Sign in</h1>
                                     <div className="social-container mb-4">
                                         {/* Social Icons handled inside form */}
                                     </div>
@@ -130,11 +130,16 @@ export default function SlidingAuth() {
                             isSignUp && "transform translate-x-[50%]"
                         )}
                         style={{
-                            background: "linear-gradient(to right, hsl(var(--primary)), hsl(var(--ring)))",
+                            background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--ring)), hsl(var(--primary)))",
                             // Removed skew and counter-skew
                             backfaceVisibility: "hidden",
                         }}
                     >
+                        {/* Ambient floating shapes */}
+                        <div className="auth-floating-shape w-64 h-64 top-[-5%] left-[10%]" />
+                        <div className="auth-floating-shape w-48 h-48 bottom-[10%] right-[15%]" />
+                        <div className="auth-floating-shape w-32 h-32 top-[40%] left-[45%]" />
+
                         {/* Overlay Panel Left (Visible when isSignUp is TRUE - showing Sign In Form) */}
                         {/* If isSignUp is TRUE, Overlay is on Left. The "Sign In" option should appear to switch back. */}
                         <div
@@ -144,10 +149,10 @@ export default function SlidingAuth() {
                             )}
                         >
                             <div className="w-full max-w-md mx-auto flex flex-col items-center">
-                                <BrandLogo className="w-16 h-16 mb-6" />
-                                <h1 className="font-bold text-4xl mb-6 tracking-tight">Welcome Back!</h1>
-                                <p className="text-lg mb-10 text-primary-foreground/90 font-light leading-relaxed">
-                                    To keep connected with us please login with your personal info
+                                <BrandLogo className="w-20 h-20 mb-6" />
+                                <h1 className="font-bold text-5xl mb-6 tracking-tight">Welcome Back!</h1>
+                                <p className="text-lg mb-10 text-primary-foreground/80 font-light leading-relaxed max-w-xs">
+                                    Your courses, notes, and study groups are waiting. Pick up right where you left off.
                                 </p>
                                 <Button
                                     variant="outline"
@@ -167,10 +172,10 @@ export default function SlidingAuth() {
                             )}
                         >
                             <div className="w-full max-w-md mx-auto flex flex-col items-center">
-                                <BrandLogo className="w-16 h-16 mb-6" />
-                                <h1 className="font-bold text-4xl mb-6 tracking-tight">Hello, Friend!</h1>
-                                <p className="text-lg mb-10 text-primary-foreground/90 font-light leading-relaxed">
-                                    Enter your personal details and start journey with us
+                                <BrandLogo className="w-20 h-20 mb-6" />
+                                <h1 className="font-bold text-5xl mb-6 tracking-tight">Hello, Friend!</h1>
+                                <p className="text-lg mb-10 text-primary-foreground/80 font-light leading-relaxed max-w-xs">
+                                    Join Azrieli's student community. Share notes, ace your courses, and level up together.
                                 </p>
                                 <Button
                                     variant="outline"

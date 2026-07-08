@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormErrorSummary } from "@/shared/components/errors";
 import type { AuthError } from "@/features/auth/api/authService";
@@ -44,44 +44,46 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8" noValidate>
+        <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8 auth-focus-glow rounded-xl" noValidate>
 
             <div className="w-full space-y-3 mt-4">
                 <div>
-                    <label htmlFor="signin-email" className="sr-only">Email</label>
+                    <label htmlFor="signin-email" className="text-sm font-medium text-foreground mb-1.5 block">Email address</label>
                     <Input
                         id="signin-email"
                         name="email"
                         type="email"
-                        placeholder="Email"
-                        className="h-10"
+                        placeholder="you@post.jce.ac.il"
+                        className="h-11"
                         required
                         autoFocus
                         disabled={isLoading}
                         aria-invalid={!!fieldErrors.email || undefined}
                     />
                 </div>
-                <div className="relative">
-                    <label htmlFor="signin-password" className="sr-only">Password</label>
-                    <Input
-                        id="signin-password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password"
-                        className="h-10 pr-10"
-                        required
-                        disabled={isLoading}
-                        aria-invalid={!!fieldErrors.password || undefined}
-                    />
-                    <button
-                        type="button"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        disabled={isLoading}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                    >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                <div>
+                    <label htmlFor="signin-password" className="text-sm font-medium text-foreground mb-1.5 block">Password</label>
+                    <div className="relative">
+                        <Input
+                            id="signin-password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter your password"
+                            className="h-11 pr-10"
+                            required
+                            disabled={isLoading}
+                            aria-invalid={!!fieldErrors.password || undefined}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            disabled={isLoading}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -105,11 +107,11 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
 
             {/* Submit Button */}
             <Button
-                className="rounded-full w-full px-12 py-6 mt-6 font-bold uppercase text-xs tracking-wider transition-transform active:scale-95"
+                className="rounded-full w-full px-12 py-6 mt-6 font-semibold uppercase text-sm tracking-wider transition-all active:scale-95 group"
                 type="submit"
                 disabled={isLoading}
             >
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : "Sign In"}
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <><span>Sign In</span><ArrowRight className="ml-2 h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200" /></>}
             </Button>
         </form>
     );

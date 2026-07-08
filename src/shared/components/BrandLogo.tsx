@@ -18,8 +18,7 @@ export default function BrandLogo({ className, imgClassName }: BrandLogoProps) {
         <div
             className={cn(
                 "rounded-xl flex items-center justify-center shrink-0 overflow-hidden",
-                "bg-white shadow-lg",
-                "dark:bg-transparent dark:shadow-none",
+                "bg-transparent shadow-none",
                 className
             )}
         >

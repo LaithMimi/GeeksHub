@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authService, type AuthError } from "@/features/auth/api/authService";
-import { Loader2, CheckCircle2, Lock } from "lucide-react";
+import { Loader2, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
 import { Link } from "react-router-dom";
 import { FieldError, FormErrorSummary } from "@/shared/components/errors";
 
@@ -28,6 +28,8 @@ export default function ResetPasswordForm() {
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState("");
     const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirmPassword?: string }>({});
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,11 +70,11 @@ export default function ResetPasswordForm() {
     if (success) {
         return (
             <div className="flex flex-col items-center justify-center space-y-4 py-8 text-center animate-in fade-in zoom-in-95 duration-300">
-                <div className="rounded-full bg-green-100 p-3 text-green-600 dark:bg-green-900/20">
+                <div className="rounded-full bg-green-100 p-3 text-green-600 dark:bg-green-900/20 auth-success-pulse">
                     <CheckCircle2 className="h-8 w-8" />
                 </div>
                 <div className="space-y-2">
-                    <h3 className="text-xl font-semibold">Password Reset Complete</h3>
+                    <h3 className="text-2xl font-semibold">Password Reset Complete</h3>
                     <p className="text-muted-foreground text-sm max-w-[280px]">
                         Your password has been updated. You can now sign in with your new password.
                     </p>
@@ -90,9 +92,9 @@ export default function ResetPasswordForm() {
                 <div className="p-3 bg-red-100 rounded-full w-fit mx-auto text-red-600">
                     <Lock className="h-6 w-6" />
                 </div>
-                <h3 className="text-xl font-semibold">Invalid Link</h3>
-                <p className="text-muted-foreground text-sm">
-                    This password reset link is invalid or missing a token.
+                <h3 className="text-2xl font-semibold">Link Expired</h3>
+                <p className="text-muted-foreground text-base">
+                    This link has expired or is invalid. Request a new one from the sign-in page.
                 </p>
                 <Button variant="outline" asChild>
                     <Link to="/auth">Back to Sign In</Link>
@@ -104,38 +106,62 @@ export default function ResetPasswordForm() {
     return (
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4 animate-in fade-in duration-300 w-full max-w-sm mx-auto p-6 bg-card rounded-xl shadow-lg border">
             <div className="text-center mb-2">
-                <h2 className="text-2xl font-bold">Reset Password</h2>
-                <p className="text-sm text-muted-foreground">Enter a new secure password</p>
+                <h2 className="text-3xl font-bold">Reset Password</h2>
+                <p className="text-base text-muted-foreground">Choose a strong password for your account</p>
             </div>
 
             <div className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="password">New Password</Label>
-                    <Input
-                        id="password"
-                        name="password"
-                        type="password"
-                        className="h-10"
-                        required
-                        autoFocus
-                        disabled={isLoading}
-                        aria-invalid={!!fieldErrors.password || undefined}
-                        aria-describedby={fieldErrors.password ? "reset-password-error" : undefined}
-                    />
+                    <div className="relative">
+                        <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="At least 8 characters"
+                            className="h-11 pr-10"
+                            required
+                            autoFocus
+                            disabled={isLoading}
+                            aria-invalid={!!fieldErrors.password || undefined}
+                            aria-describedby={fieldErrors.password ? "reset-password-error" : undefined}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            disabled={isLoading}
+                            aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
                     <FieldError id="reset-password-error">{fieldErrors.password}</FieldError>
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        className="h-10"
-                        required
-                        disabled={isLoading}
-                        aria-invalid={!!fieldErrors.confirmPassword || undefined}
-                        aria-describedby={fieldErrors.confirmPassword ? "reset-confirm-error" : undefined}
-                    />
+                    <div className="relative">
+                        <Input
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Re-enter your password"
+                            className="h-11 pr-10"
+                            required
+                            disabled={isLoading}
+                            aria-invalid={!!fieldErrors.confirmPassword || undefined}
+                            aria-describedby={fieldErrors.confirmPassword ? "reset-confirm-error" : undefined}
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword((prev) => !prev)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            disabled={isLoading}
+                            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
                     <FieldError id="reset-confirm-error">{fieldErrors.confirmPassword}</FieldError>
                 </div>
             </div>

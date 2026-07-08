@@ -33,11 +33,11 @@ export default function ForgotForm({ onBack }: ForgotFormProps) {
     if (success) {
         return (
             <div className="flex flex-col items-center justify-center space-y-4 py-8 text-center animate-in fade-in zoom-in-95 duration-300">
-                <div className="rounded-full bg-emerald-500/15 p-3 text-emerald-400">
+                <div className="rounded-full bg-emerald-500/15 p-3 text-emerald-400 auth-success-pulse">
                     <CheckCircle2 className="h-8 w-8" />
                 </div>
                 <div className="space-y-2">
-                    <h3 className="text-xl font-semibold text-foreground">Check your email</h3>
+                    <h3 className="text-2xl font-semibold text-foreground">Check your email</h3>
                     <p className="text-muted-foreground text-sm max-w-[280px]">
                         We've sent a password reset link to your email address.
                     </p>
@@ -50,27 +50,30 @@ export default function ForgotForm({ onBack }: ForgotFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8 animate-in fade-in duration-300">
+        <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8 animate-in fade-in duration-300 auth-focus-glow rounded-xl">
             <div className="w-full text-center mb-6">
-                <h2 className="text-2xl font-bold mb-2">Forgot Password?</h2>
-                <p className="text-sm text-muted-foreground">Enter your email to reset it.</p>
+                <h2 className="text-3xl font-bold mb-2">Forgot Password?</h2>
+                <p className="text-base text-muted-foreground">We'll send a reset link to your Azrieli email.</p>
             </div>
 
             <div className="w-full space-y-3">
-                <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    className="h-10"
-                    required
-                    autoFocus
-                    disabled={isLoading}
-                />
+                <div>
+                    <label htmlFor="forgot-email" className="text-sm font-medium text-foreground mb-1.5 block">Email address</label>
+                    <Input
+                        id="forgot-email"
+                        name="email"
+                        type="email"
+                        placeholder="you@post.jce.ac.il"
+                        className="h-11"
+                        required
+                        autoFocus
+                        disabled={isLoading}
+                    />
+                </div>
             </div>
 
             <Button
-                className="rounded-full w-full px-12 py-6 mt-6 font-bold uppercase text-xs tracking-wider transition-transform active:scale-95"
+                className="rounded-full w-full px-12 py-6 mt-6 font-semibold uppercase text-sm tracking-wider transition-all active:scale-95"
                 type="submit"
                 disabled={isLoading}
             >
