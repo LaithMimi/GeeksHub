@@ -14,10 +14,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import {
-    LayoutDashboard, Users, GraduationCap,
+    LayoutDashboard, Users,
     Bell, Search,
     PanelLeftClose, PanelLeftOpen, Menu, Settings, ArrowLeft,
 } from "lucide-react";
+import BrandLogo from "@/shared/components/BrandLogo";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
@@ -157,9 +158,7 @@ function ModeratorGlassSidebar({
                     >
                         {!collapsed && (
                             <Link to="/" className="flex items-center gap-3 group">
-                                <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft group-hover:scale-105 transition-transform shrink-0">
-                                    <GraduationCap className="h-4 w-4 text-foreground" />
-                                </div>
+                                <BrandLogo className="w-8 h-8 glow-blue-soft group-hover:scale-105 transition-transform" />
                                 <div className="flex items-center gap-2">
                                     <span className="font-display text-[14px] font-bold text-foreground tracking-[0.15em] uppercase">
                                         GeeksHub
@@ -177,9 +176,9 @@ function ModeratorGlassSidebar({
                         {collapsed && (
                             <Link
                                 to="/"
-                                className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft hover:scale-105 transition-transform relative"
+                                className="relative hover:scale-105 transition-transform"
                             >
-                                <GraduationCap className="h-4 w-4 text-foreground" />
+                                <BrandLogo className="w-8 h-8 glow-blue-soft" />
                                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 border border-[hsl(225,30%,5%)]" />
                             </Link>
                         )}

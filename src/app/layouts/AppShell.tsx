@@ -35,10 +35,11 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import {
     Home, History, Settings, BookOpen, Upload,
-    Bell, Search, GraduationCap, Sparkles,
+    Bell, Search, Sparkles,
     PanelLeftClose, PanelLeftOpen, Shield, ShieldCheck, Menu,
     User,
 } from "lucide-react";
+import BrandLogo from "@/shared/components/BrandLogo";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
@@ -166,9 +167,7 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                     <div className={`flex items-center mb-8 ${collapsed ? "justify-center" : "justify-between px-1"}`}>
                         {!collapsed && (
                             <Link to="/" className="flex items-center gap-3 group">
-                                <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft group-hover:scale-105 transition-transform shrink-0">
-                                    <GraduationCap className="h-4 w-4 text-foreground" />
-                                </div>
+                                <BrandLogo className="w-8 h-8 glow-blue-soft group-hover:scale-105 transition-transform" />
                                 <span className="font-display text-[14px] font-bold text-foreground tracking-[0.15em] uppercase">
                                     GeeksHub
                                 </span>
@@ -176,8 +175,8 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                         )}
 
                         {collapsed && (
-                            <Link to="/" className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center shadow-lg glow-blue-soft hover:scale-105 transition-transform">
-                                <GraduationCap className="h-4 w-4 text-foreground" />
+                            <Link to="/" className="hover:scale-105 transition-transform">
+                                <BrandLogo className="w-8 h-8 glow-blue-soft" />
                             </Link>
                         )}
 

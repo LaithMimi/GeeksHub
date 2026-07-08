@@ -4,6 +4,7 @@ import SignUpForm from "@/features/auth/components/forms/SignUpForm";
 import ForgotForm from "@/features/auth/components/forms/ForgotForm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import BrandLogo from "@/shared/components/BrandLogo";
 
 export default function SlidingAuth() {
     const [isSignUp, setIsSignUp] = useState(false);
@@ -14,6 +15,12 @@ export default function SlidingAuth() {
             {/* Mobile View */}
             <div className="md:hidden min-h-screen w-full flex items-center justify-center bg-muted/20 p-4">
                 <div className="w-full max-w-sm bg-card rounded-lg shadow-xl p-6 flex flex-col animate-in fade-in zoom-in-95 duration-300 border border-border">
+                    <div className="flex flex-col items-center gap-2 mb-6">
+                        <BrandLogo className="w-14 h-14" />
+                        <span className="font-display text-sm font-bold text-foreground tracking-[0.15em] uppercase">
+                            GeeksHub
+                        </span>
+                    </div>
                     <div className="flex w-full mb-6 border-b z-10 relative">
                         <Button
                             variant="ghost"
@@ -57,6 +64,7 @@ export default function SlidingAuth() {
                 >
                     <div className="flex flex-col items-center justify-center h-full text-center bg-background px-12">
                         <div className="w-full max-w-md mx-auto flex flex-col items-center">
+                            <BrandLogo className="w-16 h-16 mb-4" />
                             <h1 className="font-bold text-3xl mb-4 text-foreground">Create Account</h1>
                             <div className="social-container mb-4">
                                 {/* Social Icons handled inside form */}
@@ -83,6 +91,7 @@ export default function SlidingAuth() {
                                 </div>
                             ) : (
                                 <>
+                                    <BrandLogo className="w-16 h-16 mb-4" />
                                     <h1 className="font-bold text-3xl mb-4 text-foreground">Sign in</h1>
                                     <div className="social-container mb-4">
                                         {/* Social Icons handled inside form */}
@@ -135,6 +144,7 @@ export default function SlidingAuth() {
                             )}
                         >
                             <div className="w-full max-w-md mx-auto flex flex-col items-center">
+                                <BrandLogo className="w-16 h-16 mb-6" />
                                 <h1 className="font-bold text-4xl mb-6 tracking-tight">Welcome Back!</h1>
                                 <p className="text-lg mb-10 text-primary-foreground/90 font-light leading-relaxed">
                                     To keep connected with us please login with your personal info
@@ -157,6 +167,7 @@ export default function SlidingAuth() {
                             )}
                         >
                             <div className="w-full max-w-md mx-auto flex flex-col items-center">
+                                <BrandLogo className="w-16 h-16 mb-6" />
                                 <h1 className="font-bold text-4xl mb-6 tracking-tight">Hello, Friend!</h1>
                                 <p className="text-lg mb-10 text-primary-foreground/90 font-light leading-relaxed">
                                     Enter your personal details and start journey with us
