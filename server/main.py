@@ -9,12 +9,15 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+import logging
+import traceback
 from pathlib import Path
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlmodel import Session, select
 from contextlib import asynccontextmanager
@@ -51,6 +54,30 @@ app = FastAPI(title="GeeksHub API", lifespan=lifespan)
 # @limiter.limit decorator surfaces as an unstyled error instead of a clean 429.
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+logger = logging.getLogger("geekshub")
+
+
+# Catch-all safety net: any exception a route forgot to handle would otherwise
+# bubble up as a bare 500. We log the full traceback server-side (for us) and
+# return a calm, generic message to the user — never the raw exception, SQL,
+# or stack trace. Handlers registered for HTTPException / RequestValidationError
+# still run first, so intentional 4xx responses keep their specific messages.
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        "Unhandled error on %s %s: %s\n%s",
+        request.method,
+        request.url.path,
+        exc,
+        "".join(traceback.format_exception(type(exc), exc, exc.__traceback__)),
+    )
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Something went wrong on our end. This is on us — please try again in a moment.",
+        },
+    )
 
 app.add_middleware(SecurityHeadersMiddleware)
 

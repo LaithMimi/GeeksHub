@@ -75,6 +75,10 @@ export function snakeToCamel<T>(data: unknown): T {
 
 /**
  * Typed API error with status code, message, and raw response data.
+ *
+ * A `status` of 0 is reserved for transport-level failures (the request never
+ * reached the server: offline, DNS, CORS, timeout). Use {@link isNetworkError}
+ * rather than checking the status directly.
  */
 export class ApiError extends Error {
     status: number;
@@ -85,6 +89,27 @@ export class ApiError extends Error {
         this.name = "ApiError";
         this.status = status;
         this.data = data;
+    }
+}
+
+/**
+ * True when a failure means "we never got a response" — an ApiError tagged with
+ * status 0, or a raw fetch `TypeError` that escaped the wrapper. The error layer
+ * turns these into a "Connection problem" message with a retry affordance.
+ */
+export function isNetworkError(err: unknown): boolean {
+    if (err instanceof ApiError) return err.status === 0;
+    // Native fetch rejects with a TypeError on network/CORS failure.
+    return err instanceof TypeError && /fetch|network|load failed/i.test(err.message);
+}
+
+/** Wrap the native fetch so transport failures become a status-0 ApiError. */
+async function safeFetch(input: string, init?: RequestInit): Promise<Response> {
+    try {
+        return await fetch(input, init);
+    } catch (err) {
+        if (err instanceof ApiError) throw err;
+        throw new ApiError(0, "Network request failed", err);
     }
 }
 
@@ -113,7 +138,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
         delete headers["Content-Type"];
     }
 
-    const res = await fetch(`${API_BASE_URL}${path}`, {
+    const res = await safeFetch(`${API_BASE_URL}${path}`, {
         ...init,
         headers,
         credentials: "include", // Ready for HTTP-only cookies
@@ -146,7 +171,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
+    const res = await safeFetch(`${API_BASE_URL}${path}`, {
         ...init,
         credentials: "include",
     });

@@ -1,10 +1,13 @@
 import { api, ApiError } from "@/lib/apiClient";
 import { logger } from "@/lib/logger";
+import { normalizeError } from "@/lib/errors";
 import type { Role } from "@/types/domain";
 
 export type AuthError = {
     message: string;
     field?: string;
+    /** field-name → message, for inline display beside the relevant input. */
+    fieldErrors?: Record<string, string>;
 };
 
 /** Shape returned by /signin after snake_case→camelCase conversion. */
@@ -104,9 +107,14 @@ export const authService = {
             return { user: data.user };
         } catch (err: unknown) {
             if (err instanceof ApiError && err.status === 403) {
-                throw { message: "Please check your email to verify your account before logging in." };
+                throw {
+                    message: "Please check your email and verify your account before signing in.",
+                } satisfies AuthError;
             }
-            throw { message: extractAuthErrorMessage(err, "Login failed") };
+            throw {
+                message: extractAuthErrorMessage(err, "We couldn't sign you in. Please try again."),
+                fieldErrors: normalizeError(err).fieldErrors,
+            } satisfies AuthError;
         }
     },
 
@@ -123,7 +131,10 @@ export const authService = {
                 }),
             });
         } catch (err: unknown) {
-            throw { message: extractAuthErrorMessage(err, "Signup failed") };
+            throw {
+                message: extractAuthErrorMessage(err, "We couldn't create your account. Please try again."),
+                fieldErrors: normalizeError(err).fieldErrors,
+            } satisfies AuthError;
         }
     },
 
