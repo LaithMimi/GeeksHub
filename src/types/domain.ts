@@ -306,7 +306,7 @@ export interface ActivitySummary {
 // ============================================================================
 
 /** Actions that can be performed by admins */
-export type AuditAction = "approve" | "reject" | "bulk_approve" | "bulk_reject" | "withdraw" | "undo_approve" | "undo_reject";
+export type AuditAction = "approve" | "reject" | "bulk_approve" | "bulk_reject" | "withdraw" | "undo_approve" | "undo_reject" | "rename";
 
 /** Standardized rejection reasons */
 export type RejectReason = "DUPLICATE" | "OUTDATED" | "INCORRECT_COURSE" | "BAD_QUALITY" | "OTHER";
@@ -329,6 +329,8 @@ export interface AuditLogEntry {
         pointsAwarded?: number;
         previousStatus?: FileStatus;
         newStatus?: FileStatus;
+        from?: string; // rename: previous title
+        to?: string;   // rename: new title
     };
 }
 

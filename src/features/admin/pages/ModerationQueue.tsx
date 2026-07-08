@@ -32,7 +32,7 @@ import {
 import { BulkActionBar } from "@/features/admin/components/BulkActionBar";
 import { RejectDialog } from "@/features/admin/components/RejectDialog";
 import { RequestDetailSheet } from "@/features/admin/components/RequestDetailSheet";
-import { useAllRequests, useApproveRequest, useRejectRequest, useBulkApprove, useBulkReject, useRequestStats } from "@/features/files/hooks/useRequests";
+import { useAllRequests, useApproveRequest, useRejectRequest, useRenameRequest, useBulkApprove, useBulkReject, useRequestStats } from "@/features/files/hooks/useRequests";
 import type { FileRequest, FileStatus, RejectReason } from "@/types/domain";
 
 export default function ModerationQueue() {
@@ -57,6 +57,7 @@ export default function ModerationQueue() {
     const { data: stats } = useRequestStats();
     const approveMutation = useApproveRequest();
     const rejectMutation = useRejectRequest();
+    const renameMutation = useRenameRequest();
     const bulkApproveMutation = useBulkApprove();
     const bulkRejectMutation = useBulkReject();
 
@@ -91,6 +92,18 @@ export default function ModerationQueue() {
             onSuccess: () => {
                 setDetailSheetOpen(false);
             }
+        });
+    };
+
+    const handleRename = (requestId: string, title: string) => {
+        renameMutation.mutate({ requestId, title }, {
+            onSuccess: () => {
+                // Keep the open detail sheet in sync — selectedRequest is a local
+                // snapshot, separate from the invalidated query cache.
+                setSelectedRequest(prev =>
+                    prev && prev.id === requestId ? { ...prev, title } : prev
+                );
+            },
         });
     };
 
@@ -320,8 +333,10 @@ export default function ModerationQueue() {
                 onOpenChange={setDetailSheetOpen}
                 onApprove={handleApprove}
                 onReject={handleReject}
+                onRename={handleRename}
                 isApproving={approveMutation.isPending}
                 isRejecting={rejectMutation.isPending}
+                isRenaming={renameMutation.isPending}
             />
 
             {/* Bulk Reject Dialog */}

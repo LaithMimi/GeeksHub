@@ -33,6 +33,7 @@ import {
     listPendingRequests,
     approveRequest,
     rejectRequest,
+    renameRequest,
     bulkApprove,
     bulkReject,
     withdrawRequest,
@@ -230,6 +231,30 @@ export const useRejectRequest = () => {
         },
         onError: (err) => {
             toastError(err, { fallbackMessage: "We couldn't reject this request. Please try again." });
+        },
+    });
+};
+
+/**
+ * Mutation to rename (edit the title of) a file request.
+ * Admin identity comes from the JWT — not passed as arguments.
+ */
+export const useRenameRequest = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ requestId, title }: { requestId: string; title: string }) =>
+            renameRequest(requestId, title),
+        onSuccess: (result) => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.requests.all() });
+            queryClient.invalidateQueries({ queryKey: queryKeys.audit.all() });
+            // If the request was already approved, the catalog file lists/detail
+            // carry the old title — invalidate the whole ["files"] prefix.
+            queryClient.invalidateQueries({ queryKey: ["files"] });
+            toast.success(`Renamed to "${result.title}"`);
+        },
+        onError: (err) => {
+            toastError(err, { fallbackMessage: "We couldn't rename this file. Please try again." });
         },
     });
 };
