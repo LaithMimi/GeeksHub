@@ -50,9 +50,9 @@ export default function ForgotForm({ onBack }: ForgotFormProps) {
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8 animate-in fade-in duration-300 auth-focus-glow rounded-xl">
-            <div className="w-full text-center mb-6">
-                <h2 className="text-3xl font-bold mb-2">Forgot Password?</h2>
+        <form onSubmit={handleSubmit} className="flex flex-col items-stretch w-full animate-in fade-in duration-300 auth-focus-glow rounded-xl">
+            <div className="w-full text-left mb-6">
+                <h2 className="text-3xl font-bold mb-2 tracking-tight">Forgot password?</h2>
                 <p className="text-base text-muted-foreground">We'll send a reset link to your Azrieli email.</p>
             </div>
 

@@ -44,9 +44,9 @@ export default function SignInForm({ onForgotPassword }: SignInFormProps) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center w-full px-8 auth-focus-glow rounded-xl" noValidate>
+        <form onSubmit={handleSubmit} className="flex flex-col items-stretch w-full auth-focus-glow rounded-xl" noValidate>
 
-            <div className="w-full space-y-3 mt-4">
+            <div className="w-full space-y-3">
                 <div>
                     <label htmlFor="signin-email" className="text-sm font-medium text-foreground mb-1.5 block">Email address</label>
                     <Input

@@ -15,9 +15,9 @@ export default function SlidingAuth() {
             {/* Mobile View */}
             <div className="md:hidden min-h-screen w-full flex items-center justify-center bg-muted/20 p-4">
                 <div className="w-full max-w-sm bg-card rounded-lg shadow-xl p-6 flex flex-col animate-in fade-in zoom-in-95 duration-300 border border-border">
-                    <div className="flex flex-col items-center gap-2 mb-6">
-                        <BrandLogo className="w-14 h-14" />
-                        <span className="font-display text-sm font-bold text-foreground tracking-[0.15em] uppercase">
+                    <div className="flex items-center gap-3 mb-6">
+                        <BrandLogo className="w-12 h-12" />
+                        <span className="font-display text-base font-bold text-foreground tracking-[0.15em] uppercase">
                             GeeksHub
                         </span>
                     </div>
@@ -62,13 +62,11 @@ export default function SlidingAuth() {
                         isSignUp && "transform translate-x-[100%] opacity-100 z-50 animate-show"
                     )}
                 >
-                    <div className="flex flex-col items-center justify-center h-full text-center bg-background px-12">
-                        <div className="w-full max-w-md mx-auto flex flex-col items-center">
-                            <BrandLogo className="w-16 h-16 mb-4" />
-                            <h1 className="font-bold text-4xl mb-4 text-foreground">Create Account</h1>
-                            <div className="social-container mb-4">
-                                {/* Social Icons handled inside form */}
-                            </div>
+                    <div className="flex flex-col items-center justify-center h-full text-left bg-background px-12">
+                        <div className="w-full max-w-md mx-auto flex flex-col items-start">
+                            <BrandLogo className="w-14 h-14 mb-5" />
+                            <h1 className="font-bold text-4xl text-foreground tracking-tight">Create account</h1>
+                            <p className="text-muted-foreground mt-2 mb-6">Join Azrieli's student community — it's free.</p>
                             <div className="w-full">
                                 <SignUpForm />
                             </div>
@@ -83,19 +81,17 @@ export default function SlidingAuth() {
                         isSignUp && "transform translate-x-[100%]"
                     )}
                 >
-                    <div className="flex flex-col items-center justify-center h-full text-center bg-background px-12">
-                        <div className="w-full max-w-md mx-auto flex flex-col items-center">
+                    <div className="flex flex-col items-center justify-center h-full text-left bg-background px-12">
+                        <div className="w-full max-w-md mx-auto flex flex-col items-start">
                             {isForgot ? (
                                 <div className="w-full animate-in fade-in zoom-in-95 duration-300">
                                     <ForgotForm onBack={() => setIsForgot(false)} />
                                 </div>
                             ) : (
                                 <>
-                                    <BrandLogo className="w-16 h-16 mb-4" />
-                                    <h1 className="font-bold text-4xl mb-4 text-foreground">Sign in</h1>
-                                    <div className="social-container mb-4">
-                                        {/* Social Icons handled inside form */}
-                                    </div>
+                                    <BrandLogo className="w-14 h-14 mb-5" />
+                                    <h1 className="font-bold text-4xl text-foreground tracking-tight">Welcome back</h1>
+                                    <p className="text-muted-foreground mt-2 mb-6">Sign in to pick up where you left off.</p>
                                     <div className="w-full">
                                         <SignInForm onForgotPassword={() => setIsForgot(true)} />
                                     </div>
@@ -144,13 +140,13 @@ export default function SlidingAuth() {
                         {/* If isSignUp is TRUE, Overlay is on Left. The "Sign In" option should appear to switch back. */}
                         <div
                             className={cn(
-                                "absolute flex flex-col items-center justify-center text-center top-0 left-0 h-full w-1/2 transform transition-transform duration-700 ease-in-out px-20", // Increased padding for better centering visual
+                                "absolute flex flex-col items-start justify-center text-left top-0 left-0 h-full w-1/2 transform transition-transform duration-700 ease-in-out px-20",
                                 isSignUp ? "translate-x-0" : "-translate-x-[20%]"
                             )}
                         >
-                            <div className="w-full max-w-md mx-auto flex flex-col items-center">
+                            <div className="w-full max-w-md flex flex-col items-start">
                                 <BrandLogo className="w-20 h-20 mb-6" />
-                                <h1 className="font-bold text-5xl mb-6 tracking-tight">Welcome Back!</h1>
+                                <h1 className="font-bold text-5xl mb-5 tracking-tight">Welcome back!</h1>
                                 <p className="text-lg mb-10 text-primary-foreground/80 font-light leading-relaxed max-w-xs">
                                     Your courses, notes, and study groups are waiting. Pick up right where you left off.
                                 </p>
@@ -167,13 +163,13 @@ export default function SlidingAuth() {
                         {/* Overlay Panel Right (Visible when isSignUp is FALSE - showing Sign Up Form) */}
                         <div
                             className={cn(
-                                "absolute flex flex-col items-center justify-center text-center top-0 h-full w-1/2 right-0 transform transition-transform duration-700 ease-in-out px-20",
+                                "absolute flex flex-col items-start justify-center text-left top-0 h-full w-1/2 right-0 transform transition-transform duration-700 ease-in-out px-20",
                                 isSignUp ? "translate-x-[20%]" : "translate-x-0"
                             )}
                         >
-                            <div className="w-full max-w-md mx-auto flex flex-col items-center">
+                            <div className="w-full max-w-md flex flex-col items-start">
                                 <BrandLogo className="w-20 h-20 mb-6" />
-                                <h1 className="font-bold text-5xl mb-6 tracking-tight">Hello, Friend!</h1>
+                                <h1 className="font-bold text-5xl mb-5 tracking-tight">Hello, friend!</h1>
                                 <p className="text-lg mb-10 text-primary-foreground/80 font-light leading-relaxed max-w-xs">
                                     Join Azrieli's student community. Share notes, ace your courses, and level up together.
                                 </p>
