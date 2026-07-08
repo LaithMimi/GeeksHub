@@ -13,7 +13,9 @@
  * ============================================================================
  */
 
+import './instrument' // Sentry — MUST be imported before any other app module
 import { createRoot } from 'react-dom/client'
+import { reactErrorHandler } from '@sentry/react'
 import './index.css'
 import { RouterProvider } from 'react-router-dom'
 import { router } from './app/router'
@@ -40,7 +42,13 @@ const queryClient = new QueryClient({
     },
 })
 
-createRoot(document.getElementById('root')!).render(
+createRoot(document.getElementById('root')!, {
+    // React 19: route render errors caught by boundaries (and uncaught ones)
+    // through to Sentry. Our own <ErrorBoundary> still renders the fallback UI.
+    onUncaughtError: reactErrorHandler(),
+    onCaughtError: reactErrorHandler(),
+    onRecoverableError: reactErrorHandler(),
+}).render(
     <ErrorBoundary>
       <AuthProvider>
         <ThemeProvider>

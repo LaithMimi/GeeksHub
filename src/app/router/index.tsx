@@ -1,8 +1,13 @@
 ﻿import React, { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import * as Sentry from "@sentry/react";
 import { Loader2 } from "lucide-react";
 import RouteError from "@/shared/components/errors/RouteError";
 import ProtectedRoute from "@/shared/components/routing/ProtectedRoute";
+
+// Wrap the data-router factory so Sentry names navigation transactions with the
+// matched route pattern and captures errors thrown in loaders/actions/render.
+const sentryCreateBrowserRouter = Sentry.wrapCreateBrowserRouterV7(createBrowserRouter);
 
 const PageLoader = () => (
     <div className="flex bg-background text-foreground h-full w-full items-center justify-center p-8 min-h-[50vh]">
@@ -50,7 +55,7 @@ const ModeratorShell = Loadable(React.lazy(() => import("@/app/layouts/Moderator
 const ModeratorHome = Loadable(React.lazy(() => import("@/features/moderator/pages/ModeratorHome")));
 const UsersPage = Loadable(React.lazy(() => import("@/features/moderator/pages/UsersPage")));
 
-export const router = createBrowserRouter([
+export const router = sentryCreateBrowserRouter([
     // Public auth routes
     {
         path: "/auth",
