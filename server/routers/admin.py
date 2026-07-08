@@ -9,7 +9,7 @@ from sqlmodel import Session, select, func
 from sqlalchemy import update, or_
 from database import get_session, engine
 from models import FileRequest, Course, Material, PointsTransaction, User, AuditLog, Lecturer, MaterialType, UserNotification, MaterialRequest
-from schemas import AdminRejectPayload, BulkActionPayload, BulkRejectPayload
+from schemas import AdminRejectPayload, AdminRequestUpdatePayload, BulkActionPayload, BulkRejectPayload
 from utils.auth_utils import get_admin_user
 from utils.shared import storage_client, BUCKET_NAME
 from utils.ai_utils import process_and_embed_pdf
@@ -285,6 +285,48 @@ def reject_request(
 
     session.commit()
     return {"message": "Request rejected and moved to trash for 3 days."}
+
+@router.patch("/api/v1/admin/requests/{request_id}")
+def rename_request(
+    request_id: UUID,
+    payload: AdminRequestUpdatePayload,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_admin_user)
+):
+    """Renames (edits the title of) a user-uploaded file request.
+
+    If the request has already been approved, the linked catalog Material is
+    kept in sync so the new title shows everywhere the file appears.
+    """
+    request = session.get(FileRequest, request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found.")
+
+    old_title = request.title
+    new_title = payload.title
+    if new_title == old_title:
+        return {"id": str(request.id), "title": request.title}
+
+    request.title = new_title
+
+    # Material.id == FileRequest.id (set explicitly at approval time). If this
+    # request was already approved, keep the published catalog entry in sync.
+    material = session.get(Material, request.id)
+    if material:
+        material.title = new_title
+
+    audit = AuditLog(
+        actor_id=admin.id,
+        actor_name=admin.name,
+        action="rename",
+        target_type="file_request",
+        target_ids=[str(request.id)],
+        meta_data={"from": old_title, "to": new_title}
+    )
+    session.add(audit)
+
+    session.commit()
+    return {"id": str(request.id), "title": request.title}
 
 # Gemini 1.5 free-tier limit: 15 RPM. We embed 1 API call per file,
 # so capping at 10 files/minute gives a comfortable safety buffer.

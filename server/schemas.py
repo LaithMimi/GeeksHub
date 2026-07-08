@@ -70,6 +70,18 @@ class FileRequestEnriched(BaseModel):
     admin_note: str | None = None
 
 # --- ADMIN PAYLOADS ---
+class AdminRequestUpdatePayload(BaseModel):
+    """Fields an admin may edit on a file request (currently just the title)."""
+    title: str = Field(min_length=1, max_length=200)
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def strip_title(cls, v: str) -> str:
+        stripped = v.strip() if isinstance(v, str) else v
+        if isinstance(stripped, str) and not stripped:
+            raise ValueError("Title must not be blank")
+        return stripped
+
 class BulkActionPayload(BaseModel):
     request_ids: List[UUID]
 

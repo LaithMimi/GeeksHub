@@ -117,6 +117,22 @@ export const rejectRequest = async (
 };
 
 /**
+ * Renames (edits the title of) a file request (admin only).
+ * Syncs the linked catalog Material title too if the request is already approved.
+ * Admin identity is derived from the JWT on the server — not sent in body.
+ * @backend PATCH /api/v1/admin/requests/:requestId
+ */
+export const renameRequest = async (
+    requestId: string,
+    title: string
+): Promise<{ id: string; title: string }> => {
+    return api<{ id: string; title: string }>(`/admin/requests/${requestId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ title }),
+    });
+};
+
+/**
  * Bulk approves multiple requests (admin only).
  * Admin identity is derived from the JWT on the server — not sent in body.
  * @backend POST /api/v1/admin/requests/bulk-approve

@@ -30,6 +30,7 @@ const actionConfig: Record<AuditAction, { label: string; variant: "default" | "s
     withdraw: { label: "Withdrawn", variant: "secondary" },
     undo_approve: { label: "Undo Approve", variant: "outline" },
     undo_reject: { label: "Undo Reject", variant: "outline" },
+    rename: { label: "Renamed", variant: "secondary" },
 };
 
 export default function AuditLog() {
@@ -43,6 +44,7 @@ export default function AuditLog() {
         if (meta.reason) parts.push(`Reason: ${meta.reason}`);
         if (meta.pointsAwarded) parts.push(`+${meta.pointsAwarded} pts`);
         if (meta.note) parts.push(`"${meta.note}"`);
+        if (meta.from || meta.to) parts.push(`"${meta.from ?? ""}" → "${meta.to ?? ""}"`);
         return parts.join(" · ");
     };
 

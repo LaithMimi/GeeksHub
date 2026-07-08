@@ -10,7 +10,7 @@
 
 import * as React from "react";
 import { formatDate } from "@/lib/formatDate";
-import { FileText, Calendar, User, BookOpen, Tag, AlertTriangle, CheckCircle2, XCircle, Maximize2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
+import { FileText, Calendar, User, BookOpen, Tag, AlertTriangle, CheckCircle2, XCircle, Maximize2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCw, Pencil, Check, X } from "lucide-react";
 import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
     Collapsible,
@@ -53,8 +54,10 @@ interface RequestDetailSheetProps {
     onOpenChange: (open: boolean) => void;
     onApprove: (requestId: string) => void;
     onReject: (requestId: string, reason: RejectReason, note?: string) => void;
+    onRename?: (requestId: string, title: string) => void;
     isApproving?: boolean;
     isRejecting?: boolean;
+    isRenaming?: boolean;
 }
 
 export function RequestDetailSheet({
@@ -63,8 +66,10 @@ export function RequestDetailSheet({
     onOpenChange,
     onApprove,
     onReject,
+    onRename,
     isApproving = false,
     isRejecting = false,
+    isRenaming = false,
 }: RequestDetailSheetProps) {
     const { data: previewData, isLoading: isLoadingPreview } = useRequestPreviewUrl(open && request ? request.id : undefined);
 
@@ -80,6 +85,16 @@ export function RequestDetailSheet({
     const [rejectDialogOpen, setRejectDialogOpen] = React.useState(false);
     const [duplicateWarningOpen, setDuplicateWarningOpen] = React.useState(false);
     const [fullscreenOpen, setFullscreenOpen] = React.useState(false);
+
+    // Inline title editing (admin rename)
+    const [isEditingTitle, setIsEditingTitle] = React.useState(false);
+    const [titleDraft, setTitleDraft] = React.useState("");
+
+    // Leaving edit mode whenever the sheet closes or a different request loads
+    // avoids a stale draft bleeding across requests.
+    React.useEffect(() => {
+        setIsEditingTitle(false);
+    }, [request?.id, open]);
 
     // Fullscreen viewer state
     const [numPages, setNumPages] = React.useState<number | null>(null);
@@ -108,6 +123,21 @@ export function RequestDetailSheet({
         setRejectDialogOpen(false);
     };
 
+    const startEditingTitle = () => {
+        setTitleDraft(request.title);
+        setIsEditingTitle(true);
+    };
+
+    const handleSaveTitle = () => {
+        const trimmed = titleDraft.trim();
+        if (!trimmed || trimmed === request.title) {
+            setIsEditingTitle(false);
+            return;
+        }
+        onRename?.(request.id, trimmed);
+        setIsEditingTitle(false);
+    };
+
     const statusBadge = {
         pending: <Badge variant="outline" className="bg-amber-500/15 text-amber-400 border-amber-500/30">Pending</Badge>,
         approved: <Badge variant="outline" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">Approved</Badge>,
@@ -122,7 +152,60 @@ export function RequestDetailSheet({
                         <div className="flex items-center gap-2">
                             {statusBadge[request.status]}
                         </div>
-                        <SheetTitle className="text-lg">{request.title}</SheetTitle>
+                        {isEditingTitle ? (
+                            <div className="flex items-center gap-2">
+                                {/* Radix requires a title for a11y; keep one mounted while editing. */}
+                                <SheetTitle className="sr-only">Rename {request.title}</SheetTitle>
+                                <Input
+                                    value={titleDraft}
+                                    onChange={(e) => setTitleDraft(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") { e.preventDefault(); handleSaveTitle(); }
+                                        if (e.key === "Escape") { e.preventDefault(); setIsEditingTitle(false); }
+                                    }}
+                                    autoFocus
+                                    maxLength={200}
+                                    disabled={isRenaming}
+                                    aria-label="File title"
+                                    className="h-9 text-base"
+                                />
+                                <Button
+                                    size="icon"
+                                    className="h-9 w-9 shrink-0 bg-green-600 hover:bg-green-700"
+                                    onClick={handleSaveTitle}
+                                    disabled={isRenaming || !titleDraft.trim()}
+                                    aria-label="Save title"
+                                >
+                                    <Check className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-9 w-9 shrink-0"
+                                    onClick={() => setIsEditingTitle(false)}
+                                    disabled={isRenaming}
+                                    aria-label="Cancel rename"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="flex items-start gap-2">
+                                <SheetTitle className="text-lg flex-1 break-words">{request.title}</SheetTitle>
+                                {onRename && (
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                                        onClick={startEditingTitle}
+                                        aria-label="Rename file"
+                                        title="Rename file"
+                                    >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                         <SheetDescription>
                             Request ID: {request.id}
                         </SheetDescription>
