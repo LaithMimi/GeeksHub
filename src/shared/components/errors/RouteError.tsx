@@ -47,6 +47,27 @@ export default function RouteError({ name = "page" }: RouteErrorProps) {
         );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const message = String((error as any)?.statusText || (error as any)?.message || "Unknown error");
+    const isStaleChunk = isStaleChunkError(message);
+
+    useEffect(() => {
+        if (!isStaleChunk) return;
+        const lastReload = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) || 0);
+        if (Date.now() - lastReload < CHUNK_RELOAD_COOLDOWN_MS) return;
+        sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+        window.location.reload();
+    }, [isStaleChunk]);
+
+    if (isStaleChunk) {
+        return (
+            <div className="p-8 flex flex-col items-center justify-center min-h-[50vh] text-center">
+                <h1 className="text-2xl font-bold text-foreground mb-4">Updating to the latest version…</h1>
+                <p className="text-slate-600">A new version of GeeksHub was just released. Reloading the page.</p>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-[60vh] flex items-center justify-center p-8" role="alert">
             <div className="text-center max-w-md">
