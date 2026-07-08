@@ -10,9 +10,9 @@ from fastapi import APIRouter, HTTPException, Depends, Query, Form, UploadFile, 
 from fastapi.responses import StreamingResponse
 from sqlmodel import Session, select
 from database import get_session
-from models import Material, FileRequest, Course, Lecturer, User, PointsTransaction, MaterialRequest, MaterialType, UserSettings, UserNotification
-from schemas import FileRequestEnriched, MaterialRequestCreate
-from utils.auth_utils import get_verified_user
+from models import Material, FileRequest, Course, Lecturer, User, PointsTransaction, MaterialRequest, MaterialType, UserSettings, UserNotification, AuditLog
+from schemas import FileRequestEnriched, MaterialRequestCreate, MaterialUpdatePayload
+from utils.auth_utils import get_verified_user, get_admin_user
 from utils.upload_utils import validate_uploaded_file
 from utils.shared import storage_client, BUCKET_NAME
 
@@ -150,6 +150,78 @@ def stream_file(
     except Exception as e:
         print(f"GCS Stream Error: {e}")
         raise HTTPException(status_code=500, detail="Failed to stream file.")
+
+@router.put("/api/v1/files/{file_id}")
+def update_file_metadata(
+    file_id: UUID,
+    payload: MaterialUpdatePayload,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_admin_user)
+):
+    material = session.get(Material, file_id)
+    if not material:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    if payload.title:
+        material.title = payload.title
+    if payload.courseId:
+        material.course_id = payload.courseId
+    if payload.lecturerId:
+        material.lecturer_id = payload.lecturerId
+    if payload.typeId:
+        material.type_id = payload.typeId
+        
+    session.add(material)
+    
+    # Audit log
+    session.add(AuditLog(
+        admin_id=admin.id,
+        action="Update",
+        target_type="Material",
+        target_id=str(material.id),
+        details=f"Admin {admin.name} updated file metadata.",
+        meta_data={"targetName": material.title}
+    ))
+    
+    session.commit()
+    session.refresh(material)
+    
+    response_data = material.model_dump()
+    response_data["courseId"] = material.course_id
+    response_data["typeId"] = material.type_id
+    response_data["lecturerId"] = material.lecturer_id
+    return response_data
+
+@router.delete("/api/v1/files/{file_id}")
+def delete_file_admin(
+    file_id: UUID,
+    session: Session = Depends(get_session),
+    admin: User = Depends(get_admin_user)
+):
+    material = session.get(Material, file_id)
+    if not material:
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    try:
+        bucket = storage_client.bucket(BUCKET_NAME)
+        bucket.blob(material.file_url).delete()
+    except Exception as e:
+        print(f"GCS Delete failed: {e}")
+        
+    session.delete(material)
+    
+    # Audit log
+    session.add(AuditLog(
+        admin_id=admin.id,
+        action="Delete",
+        target_type="Material",
+        target_id=str(file_id),
+        details=f"Admin {admin.name} deleted file.",
+        meta_data={"targetName": material.title}
+    ))
+    
+    session.commit()
+    return {"message": "File deleted successfully"}
 
 @router.get("/api/v1/me/requests", response_model=List[FileRequestEnriched])
 def get_my_requests(

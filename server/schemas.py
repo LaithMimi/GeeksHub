@@ -294,7 +294,207 @@ class TaskResponse(BaseModel):
     duration: float
     priority: str
     completed: bool
+class MyReputationResponse(BaseModel):
+    userId: UUID
+    totalPoints: int
+    badge: str
+    transactions: List[TransactionResponse]
+
+class LeaderboardEntry(BaseModel):
+    userId: UUID
+    name: str
+    totalPoints: int
+    badge: str
+
+class RecentFileResponse(BaseModel):
+    id: UUID
+    title: str
+    courseId: UUID
+    viewedAt: datetime
+
+class ViewerSessionStartPayload(BaseModel):
+    file_id: UUID
+
+class ViewerSessionEndPayload(BaseModel):
+    session_id: UUID
+
+class ViewerHeartbeatPayload(BaseModel):
+    session_id: UUID
+    visited_pages: List[int] = []
+    active_seconds_to_add: int = 10
+
+class NotePayload(BaseModel):
+    content: str = Field(max_length=50_000)
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=4000)
+
+class AIChatRequest(BaseModel):
+    fileId: UUID
+    message: str = Field(max_length=2000)
+    history: list[ChatMessage] = Field(default=[], max_length=20)
+
+# --- Notification Payloads ---
+class NotificationResponse(BaseModel):
+    id: UUID
+    title: str
+    message: str
+    read: bool
+    createdAt: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# --- Settings Payloads ---
+class SettingsResponse(BaseModel):
+    language: str
+    defaultMajorId: Optional[str]
+    defaultYearId: Optional[int]
+    notifyNewMaterials: bool
+    notifyAdminUpdates: bool
+    reduceMotion: bool
+    compactMode: bool
+
+class SettingsPatch(BaseModel):
+    language: Optional[Literal["en", "he", "ar"]] = None
+    defaultMajorId: Optional[str] = None
+    defaultYearId: Optional[int] = Field(default=None, ge=1, le=4)
+    notifyNewMaterials: Optional[bool] = None
+    notifyAdminUpdates: Optional[bool] = None
+    reduceMotion: Optional[bool] = None
+    compactMode: Optional[bool] = None
+
+
+# --- Moderator Payloads ---
+# NOTE: request bodies use camelCase to match the frontend convention
+# (the apiClient sends camelCase and converts snake_case responses back).
+class ModeratorUserUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    majorId: Optional[UUID] = None
+    role: Optional[Literal["STUDENT", "MODERATOR", "ADMIN"]] = None
+
+class LecturerCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+class LecturerUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+class CourseCreate(BaseModel):
+    code: str = Field(min_length=1, max_length=40)
+    name: str = Field(min_length=1, max_length=200)
+    majorId: UUID
+    yearId: int = Field(ge=1, le=4)
+    semester: int = Field(ge=1, le=3)
+    lecturerIds: List[UUID] = Field(min_length=1)
+
+    @field_validator("code", "name", mode="before")
+    @classmethod
+    def strip_whitespace(cls, v: str) -> str:
+        stripped = v.strip() if isinstance(v, str) else v
+        if isinstance(stripped, str) and not stripped:
+            raise ValueError("Field must not be blank")
+        return stripped
+
+    @field_validator("lecturerIds", mode="before")
+    @classmethod
+    def deduplicate_lecturers(cls, v: list) -> list:
+        seen: set = set()
+        unique: list = []
+        for lid in v:
+            if lid not in seen:
+                seen.add(lid)
+                unique.append(lid)
+        return unique
+
+class CourseUpdate(BaseModel):
+    code: Optional[str] = Field(default=None, min_length=1, max_length=40)
+    name: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    majorId: Optional[UUID] = None
+    yearId: Optional[int] = Field(default=None, ge=1, le=4)
+    semester: Optional[int] = Field(default=None, ge=1, le=3)
+    lecturerIds: Optional[List[UUID]] = Field(default=None, min_length=1)
+
+    @field_validator("code", "name", mode="before")
+    @classmethod
+    def strip_whitespace(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        stripped = v.strip() if isinstance(v, str) else v
+        if isinstance(stripped, str) and not stripped:
+            raise ValueError("Field must not be blank")
+        return stripped
+
+    @field_validator("lecturerIds", mode="before")
+    @classmethod
+    def deduplicate_lecturers(cls, v: list | None) -> list | None:
+        if v is None:
+            return v
+        seen: set = set()
+        unique: list = []
+        for lid in v:
+            if lid not in seen:
+                seen.add(lid)
+                unique.append(lid)
+        return unique
+
+class MajorCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+class MajorUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+
+# --- Material Request Payloads ---
+class MaterialRequestCreate(BaseModel):
+    typeId: Optional[UUID] = None  # None = request any material for the course
+
+
+# --- Tasks Payloads ---
+class TaskCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    date: str
+    priority: Literal["normal", "high", "urgent"] = "normal"
+    startHour: float = Field(default=12.0, ge=0, le=23.5)
+    duration: float = Field(default=1.0, gt=0, le=12)
+
+    @field_validator("date")
+    @classmethod
+    def valid_date(cls, v: str) -> str:
+        date.fromisoformat(v)
+        return v
+
+class TaskPatch(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    date: Optional[str] = None
+    priority: Optional[Literal["normal", "high", "urgent"]] = None
+    startHour: Optional[float] = Field(default=None, ge=0, le=23.5)
+    duration: Optional[float] = Field(default=None, gt=0, le=12)
+    completed: Optional[bool] = None
+
+    @field_validator("date")
+    @classmethod
+    def valid_date(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            date.fromisoformat(v)
+        return v
+
+class TaskResponse(BaseModel):
+    id: UUID
+    title: str
+    date: str
+    startHour: float
+    duration: float
+    priority: str
+    completed: bool
     createdAt: str
 
     class Config:
         from_attributes = True
+
+class MaterialUpdatePayload(BaseModel):
+    title: Optional[str] = None
+    courseId: Optional[UUID] = None
+    lecturerId: Optional[UUID] = None
+    typeId: Optional[UUID] = None
