@@ -8,10 +8,11 @@ from slowapi.util import get_remote_address
 from sqlmodel import Session, select
 from auth0.authentication import GetToken
 from auth0.management import Auth0
+from datetime import datetime, timezone
 from database import get_session
 from models import User
 from schemas import UserSignUp, UserSignIn, ForgotPassword
-from utils.auth_utils import get_verified_user
+from utils.auth_utils import get_verified_user, revoke_token
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -168,21 +169,25 @@ def sign_in(request: Request, payload: UserSignIn, response: Response, session: 
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
 @router.post("/api/v1/signout")
-def sign_out(request: Request, response: Response):
+def sign_out(request: Request, response: Response, session: Session = Depends(get_session)):
     token = request.cookies.get("auth_token")
 
     if token:
-        domain = os.getenv("AUTH0_DOMAIN")
+        # Auth0's /oauth/revoke only revokes refresh tokens, not bare access
+        # tokens — and login here never requests a refresh token (no
+        # offline_access scope), so that call was a silent no-op. Since the
+        # access token is a stateless signed JWT, the only way to actually
+        # invalidate it is to record it ourselves and reject it on future
+        # verification (see get_verified_user / RevokedToken).
         try:
-            requests.post(
-                f"https://{domain}/oauth/revoke",
-                json={
-                    "client_id": os.getenv("AUTH0_M2M_ID"),
-                    "client_secret": os.getenv("AUTH0_M2M_SECRET"),
-                    "token": token,
-                },
-                timeout=5,
+            payload = jwt.decode(token, options={"verify_signature": False})
+            exp = payload.get("exp")
+            expires_at = (
+                datetime.fromtimestamp(exp, tz=timezone.utc)
+                if exp
+                else datetime.now(timezone.utc)
             )
+            revoke_token(session, token, expires_at)
         except Exception:
             pass  # revocation is best-effort; always clear the cookie regardless
 

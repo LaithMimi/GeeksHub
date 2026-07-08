@@ -232,6 +232,21 @@ class UserNotification(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
 
+class RevokedToken(SQLModel, table=True):
+    """
+    Auth0's /oauth/revoke endpoint only revokes refresh tokens, not bare access
+    tokens — and this app's password-grant login never requests a refresh token
+    (no offline_access scope). Since the access token is a stateless RS256 JWT,
+    the only way to actually invalidate one on signout is to track it ourselves
+    and reject it during verification even though its signature still checks out.
+    """
+    __tablename__ = "revoked_tokens"
+
+    token_hash: str = Field(primary_key=True)
+    expires_at: datetime = Field(index=True)
+    revoked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class PinnedCourse(SQLModel, table=True):
     __tablename__ = "pinned_courses"
 
