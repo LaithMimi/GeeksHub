@@ -50,6 +50,7 @@ const FilesPage = Loadable(React.lazy(() => import("@/features/admin/pages/Files
 const ModeratorShell = Loadable(React.lazy(() => import("@/app/layouts/ModeratorShell")));
 const ModeratorHome = Loadable(React.lazy(() => import("@/features/moderator/pages/ModeratorHome")));
 const UsersPage = Loadable(React.lazy(() => import("@/features/moderator/pages/UsersPage")));
+const FeedbackDashboard = Loadable(React.lazy(() => import("@/features/feedback/pages/FeedbackDashboard")));
 
 export const router = createBrowserRouter([
     // Public auth routes
@@ -198,6 +199,10 @@ export const router = createBrowserRouter([
                     {
                         path: "users",
                         element: <UsersPage />,
+                    },
+                    {
+                        path: "feedback",
+                        element: <FeedbackDashboard />,
                     },
                 ],
             },

@@ -287,3 +287,22 @@ class UserTask(SQLModel, table=True):
     __table_args__ = (
         Index("idx_user_tasks_user_date", "user_id", "date"),
     )
+
+
+# Feedback & NPS
+class FeedbackSubmission(SQLModel, table=True):
+    """
+    A single user feedback / NPS response. `score` (0–10) is only present for NPS
+    answers; free-form feedback leaves it null. Enum-like `category`/`source` are
+    stored as plain strings (validated in the schemas), matching the rest of the app.
+    """
+    __tablename__ = "feedback_submissions"
+
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(foreign_key="users.id", index=True)
+    score: Optional[int] = Field(default=None)          # NPS 0–10; null for pure feedback
+    category: str = Field(default="other", index=True)  # bug | idea | praise | other
+    comment: Optional[str] = Field(default=None)
+    page: Optional[str] = Field(default=None)           # route/context captured client-side
+    source: str = Field(default="form")                 # form | nps_prompt
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)

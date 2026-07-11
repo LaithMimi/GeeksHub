@@ -14,7 +14,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import {
-    LayoutDashboard, Users,
+    LayoutDashboard, Users, MessageSquare,
     Bell, Search,
     PanelLeftClose, PanelLeftOpen, Menu, Settings, ArrowLeft,
 } from "lucide-react";
@@ -47,11 +47,13 @@ const languages = [
 const modNavItems = [
     { label: "Overview", icon: LayoutDashboard, href: "/moderator" },
     { label: "Users", icon: Users, href: "/moderator/users" },
+    { label: "Feedback", icon: MessageSquare, href: "/moderator/feedback" },
 ];
 
 const modLabelMap: Record<string, string> = {
     moderator: "Moderator",
     users: "Users",
+    feedback: "Feedback",
 };
 
 // -- Moderator Breadcrumbs -----------------------------------------------------

@@ -497,4 +497,51 @@ class MaterialUpdatePayload(BaseModel):
     title: Optional[str] = None
     courseId: Optional[UUID] = None
     lecturerId: Optional[UUID] = None
+
+
+# --- Feedback & NPS ---
+class FeedbackCreate(BaseModel):
+    """Incoming feedback/NPS from a user. camelCase to match the frontend client."""
+    score: Optional[int] = Field(default=None, ge=0, le=10)  # NPS 0–10; omit for pure feedback
+    category: Literal["bug", "idea", "praise", "other"] = "other"
+    comment: Optional[str] = None
+    page: Optional[str] = None
+    source: Literal["form", "nps_prompt"] = "form"
+
+    @field_validator("comment")
+    @classmethod
+    def blank_comment_to_none(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            v = v.strip()
+        return v or None
+
+
+class FeedbackResponse(BaseModel):
+    id: UUID
+    userId: UUID
+    userName: str
+    score: Optional[int]
+    category: str
+    comment: Optional[str]
+    page: Optional[str]
+    source: str
+    createdAt: datetime
+
+
+class NpsTrendPoint(BaseModel):
+    date: str          # ISO date of the bucket start (weekly)
+    npsScore: Optional[float]
+    count: int
+
+
+class FeedbackStats(BaseModel):
+    total: int                    # all submissions
+    responded: int                # submissions carrying an NPS score
+    npsScore: Optional[float]     # −100..100, null when no scored responses yet
+    promoters: int
+    passives: int
+    detractors: int
+    distribution: dict[int, int]  # score 0–10 → count
+    byCategory: dict[str, int]
+    trend: List[NpsTrendPoint]
     typeId: Optional[UUID] = None

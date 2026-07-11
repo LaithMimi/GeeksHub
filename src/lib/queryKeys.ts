@@ -46,4 +46,9 @@ export const queryKeys = {
         courseLecturers: (id?: string) => ["directory", "course", id, "lecturers"] as const,
         courses:         () => ["courses"] as const, // catalog course lists (shared root)
     },
+    feedback:   {
+        listRoot: () => ["feedback", "list"] as const, // prefix for invalidating all filtered lists
+        list:     (f?: object) => ["feedback", "list", f ?? {}] as const,
+        stats:    () => ["feedback", "stats"] as const,
+    },
 } as const;

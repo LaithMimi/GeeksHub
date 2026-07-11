@@ -22,7 +22,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from sqlmodel import Session, select
 from contextlib import asynccontextmanager
 from database import get_session, init_db
-from routers import auth, catalog, files, admin, gamification, activity, viewer, ai, tasks, settings, pinned_courses, notifications, directory
+from routers import auth, catalog, files, admin, gamification, activity, viewer, ai, tasks, settings, pinned_courses, notifications, directory, feedback
 
 limiter = Limiter(key_func=get_remote_address)
 # Resolve GCP key path relative to this file so it works from any CWD
@@ -104,6 +104,7 @@ app.include_router(settings.router)
 app.include_router(pinned_courses.router)
 app.include_router(notifications.router)
 app.include_router(directory.router)
+app.include_router(feedback.router)
 
 # --- Base System Routes ---
 @app.get("/api/v1/health", tags=["System"])

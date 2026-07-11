@@ -56,6 +56,39 @@ export function RejectDialog({
 }: RejectDialogProps) {
     const [reason, setReason] = React.useState<RejectReason | "">("");
     const [note, setNote] = React.useState("");
+    const radioRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+
+    // Roving-tabindex + arrow-key navigation for the radiogroup. The focused
+    // radio becomes the selected one, matching the WAI-ARIA radio pattern.
+    const focusRadioAt = (index: number) => {
+        const count = REJECT_REASONS.length;
+        const next = ((index % count) + count) % count;
+        setReason(REJECT_REASONS[next].value);
+        radioRefs.current[next]?.focus();
+    };
+
+    const handleRadioKeyDown = (e: React.KeyboardEvent, index: number) => {
+        switch (e.key) {
+            case "ArrowDown":
+            case "ArrowRight":
+                e.preventDefault();
+                focusRadioAt(index + 1);
+                break;
+            case "ArrowUp":
+            case "ArrowLeft":
+                e.preventDefault();
+                focusRadioAt(index - 1);
+                break;
+            case "Home":
+                e.preventDefault();
+                focusRadioAt(0);
+                break;
+            case "End":
+                e.preventDefault();
+                focusRadioAt(REJECT_REASONS.length - 1);
+                break;
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -97,16 +130,22 @@ export function RejectDialog({
                                 aria-labelledby="reject-reason-label"
                                 className="grid gap-2"
                             >
-                                {REJECT_REASONS.map((r) => {
+                                {REJECT_REASONS.map((r, index) => {
                                     const Icon = r.icon;
                                     const selected = reason === r.value;
+                                    // Roving tabindex: the selected radio is the single tab
+                                    // stop; when nothing is selected yet, the first radio is.
+                                    const tabbable = selected || (reason === "" && index === 0);
                                     return (
                                         <button
                                             key={r.value}
+                                            ref={(el) => { radioRefs.current[index] = el; }}
                                             type="button"
                                             role="radio"
                                             aria-checked={selected}
+                                            tabIndex={tabbable ? 0 : -1}
                                             onClick={() => setReason(r.value)}
+                                            onKeyDown={(e) => handleRadioKeyDown(e, index)}
                                             className={cn(
                                                 "flex items-center gap-3 rounded-xl border p-3 text-left transition-all",
                                                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40",

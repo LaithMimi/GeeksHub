@@ -37,7 +37,7 @@ import {
     Home, History, Settings, BookOpen, Upload,
     Bell, Search, Sparkles,
     PanelLeftClose, PanelLeftOpen, Shield, ShieldCheck, Menu,
-    User,
+    User, MessageSquare,
 } from "lucide-react";
 import BrandLogo from "@/shared/components/BrandLogo";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -58,6 +58,7 @@ import { isMac } from "@/lib/utils";
 import { useCourse } from "@/features/courses/hooks/useCatalog";
 import { useFile } from "@/features/files/hooks/useFiles";
 import { useInAppNotifications } from "@/shared/hooks/useInAppNotifications";
+import { FeedbackProvider, useFeedbackWidget } from "@/features/feedback/context/FeedbackContext";
 
 // -- Static config -------------------------------------------------------------
 
@@ -141,6 +142,7 @@ const Breadcrumbs = () => {
 function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
     const location = useLocation();
     const { user, signOut } = useAuth();
+    const { openFeedbackForm } = useFeedbackWidget();
 
     const isActive = (path: string) =>
         path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
@@ -373,6 +375,10 @@ function GlassSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: (
                                         <span>Settings</span>
                                     </Link>
                                 </DropdownMenuItem>
+                                <DropdownMenuItem className="cursor-pointer" onSelect={() => openFeedbackForm()}>
+                                    <MessageSquare className="mr-2 h-4 w-4" />
+                                    <span>Send feedback</span>
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-red-500 focus:text-red-500 cursor-pointer" onClick={signOut}>
                                     Sign out
@@ -482,6 +488,7 @@ export default function AppShell() {
     }, []);
 
     return (
+        <FeedbackProvider>
         <div className="flex h-screen overflow-hidden relative">
             <a
                 href="#main-content"
@@ -540,5 +547,6 @@ export default function AppShell() {
 
             <CommandPalette />
         </div>
+        </FeedbackProvider>
     );
 }

@@ -347,3 +347,49 @@ export interface RequestStats {
     rejectedToday: number;
 }
 
+// ============================================================================
+// FEEDBACK / NPS TYPES
+// ============================================================================
+
+/** Category a user tags their feedback with. */
+export type FeedbackCategory = "bug" | "idea" | "praise" | "other";
+
+/** Where the submission originated. */
+export type FeedbackSource = "form" | "nps_prompt";
+
+/**
+ * A single feedback / NPS response.
+ * @backend Table: feedback_submissions
+ */
+export interface FeedbackSubmission {
+    id: string;
+    userId: string;
+    userName: string;
+    score: number | null;      // NPS 0–10; null for pure feedback
+    category: FeedbackCategory;
+    comment: string | null;
+    page: string | null;
+    source: FeedbackSource;
+    createdAt: string;         // ISO
+}
+
+/** One weekly bucket of the NPS trend. */
+export interface NpsTrendPoint {
+    date: string;              // ISO date of the bucket start
+    npsScore: number | null;
+    count: number;
+}
+
+/** Aggregate feedback/NPS statistics for the moderator dashboard. */
+export interface FeedbackStats {
+    total: number;
+    responded: number;         // submissions carrying an NPS score
+    npsScore: number | null;   // −100..100, null when no scored responses yet
+    promoters: number;
+    passives: number;
+    detractors: number;
+    distribution: Record<number, number>; // score 0–10 → count
+    byCategory: Record<string, number>;
+    trend: NpsTrendPoint[];
+}
+
