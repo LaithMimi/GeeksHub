@@ -9,8 +9,7 @@ const KPI = ({
     label, value, hint, icon: Icon, loading,
 }: {
     label: string;
-    // string allows a "—" placeholder (e.g. NPS with no scored responses yet).
-    value?: number | string;
+    value?: number;
     hint: string;
     icon: typeof Users;
     loading: boolean;
@@ -54,7 +53,7 @@ export default function ModeratorHome() {
             <div className="grid gap-4 sm:grid-cols-3 mb-6">
                 <KPI label="Total Users" value={stats?.totalUsers} hint="Registered accounts" icon={Users} loading={isLoading} />
                 <KPI label="New This Week" value={stats?.newUsersThisWeek} hint="Joined in last 7 days" icon={UserPlus} loading={isLoading} />
-                <KPI label="NPS Score" value={feedback?.npsScore ?? "—"} hint={`${feedback?.responded ?? 0} scored responses`} icon={TrendingUp} loading={feedbackLoading} />
+                <KPI label="NPS Score" value={feedback?.npsScore ?? undefined} hint={`${feedback?.responded ?? 0} scored responses`} icon={TrendingUp} loading={feedbackLoading} />
             </div>
 
             {/* Quick links */}
@@ -76,7 +75,7 @@ export default function ModeratorHome() {
                 <div className="liquid-glass-subtle rounded-xl px-5 py-5 flex flex-col gap-4">
                     <MessageSquare className="h-8 w-8 text-amber-400/80 shrink-0" />
                     <div className="flex-1">
-                        <p className="text-[14px] font-semibold text-foreground mb-0.5">Feedback & NPS</p>
+                        <p className="text-[14px] font-semibold text-foreground mb-0.5">Feedback</p>
                         <p className="text-[12px] text-muted-foreground">See satisfaction trends and every user response.</p>
                     </div>
                     <Button asChild className="gap-2 w-full sm:w-auto sm:self-start">
