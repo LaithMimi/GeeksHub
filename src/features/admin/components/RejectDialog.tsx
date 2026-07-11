@@ -1,12 +1,13 @@
 /**
  * RejectDialog Component
- * 
+ *
  * A dialog for rejecting file requests with:
- * - Required reason category
+ * - Required reason category (friendly selectable cards)
  * - Optional note (visible to student)
  */
 
 import * as React from "react";
+import { Copy, CalendarX, FolderX, ImageOff, MoreHorizontal, Check } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -18,18 +19,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import type { RejectReason } from "@/types/domain";
 import { REJECT_REASON_LABELS } from "@/lib/constants";
 
+/** Per-reason presentation: icon + a short, plain-language hint for the moderator. */
+const REASON_META: Record<RejectReason, { icon: React.ElementType; hint: string }> = {
+    DUPLICATE: { icon: Copy, hint: "This material is already in the library." },
+    OUTDATED: { icon: CalendarX, hint: "The content is no longer current." },
+    INCORRECT_COURSE: { icon: FolderX, hint: "Filed under the wrong course or type." },
+    BAD_QUALITY: { icon: ImageOff, hint: "Unclear, incomplete, or low-quality file." },
+    OTHER: { icon: MoreHorizontal, hint: "Something else — please add a note below." },
+};
+
 const REJECT_REASONS = (Object.entries(REJECT_REASON_LABELS) as [RejectReason, string][])
-    .map(([value, label]) => ({ value, label }));
+    .map(([value, label]) => ({ value, label, ...REASON_META[value] }));
 
 interface RejectDialogProps {
     open: boolean;
@@ -74,35 +78,62 @@ export function RejectDialog({
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[480px]">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>{title}</DialogTitle>
                         <DialogDescription>
                             {isBulk
                                 ? `Reject ${selectedCount} selected request(s). The reason will be visible to students.`
-                                : "Provide a reason for rejection. This will be visible to the student."
+                                : "Pick a reason for rejection. This will be visible to the student."
                             }
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
-                            <Label htmlFor="reason">Reason *</Label>
-                            <Select
-                                value={reason}
-                                onValueChange={(value) => setReason(value as RejectReason)}
+                            <Label id="reject-reason-label">Reason <span className="text-destructive">*</span></Label>
+                            <div
+                                role="radiogroup"
+                                aria-labelledby="reject-reason-label"
+                                className="grid gap-2"
                             >
-                                <SelectTrigger id="reason">
-                                    <SelectValue placeholder="Select a reason" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {REJECT_REASONS.map((r) => (
-                                        <SelectItem key={r.value} value={r.value}>
-                                            {r.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                {REJECT_REASONS.map((r) => {
+                                    const Icon = r.icon;
+                                    const selected = reason === r.value;
+                                    return (
+                                        <button
+                                            key={r.value}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={selected}
+                                            onClick={() => setReason(r.value)}
+                                            className={cn(
+                                                "flex items-center gap-3 rounded-xl border p-3 text-left transition-all",
+                                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40",
+                                                selected
+                                                    ? "border-destructive/50 bg-destructive/10 ring-1 ring-destructive/30"
+                                                    : "border-border hover:border-border/80 hover:bg-muted/50",
+                                            )}
+                                        >
+                                            <span
+                                                className={cn(
+                                                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors",
+                                                    selected
+                                                        ? "bg-destructive/15 text-destructive"
+                                                        : "bg-muted text-muted-foreground",
+                                                )}
+                                            >
+                                                <Icon className="h-4 w-4" />
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="block text-sm font-medium text-foreground">{r.label}</span>
+                                                <span className="block text-xs text-muted-foreground">{r.hint}</span>
+                                            </span>
+                                            {selected && <Check className="h-4 w-4 shrink-0 text-destructive" />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="note">

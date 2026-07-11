@@ -26,9 +26,9 @@ def get_years():
 def get_semesters():
     """Returns static semesters for the frontend dropdowns/MyPath."""
     return [
-        {"id": "fall", "label": "Fall Semester"},
-        {"id": "spring", "label": "Spring Semester"},
-        {"id": "summer", "label": "Summer Semester"}
+        {"id": "fall", "label": "Semester A"},
+        {"id": "spring", "label": "Semester B"},
+        {"id": "summer", "label": "Summer"}
     ]
 
 @router.get("/api/v1/lecturers")

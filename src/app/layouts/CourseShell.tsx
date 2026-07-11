@@ -44,22 +44,25 @@ export default function CourseShell() {
 
     return (
         <div className="animate-fade-in">
-            {/* Course Header */}
-            <div className={`relative overflow-hidden rounded-xl bg-gradient-to-r ${course.color || "from-gray-500 to-gray-600"} p-6 mb-6 text-foreground`}>
-                <div className="absolute inset-0 bg-black/10" />
+            {/* Course Header — glass surface so it reads like the course cards in both light & dark */}
+            <div className="relative overflow-hidden rounded-xl liquid-glass p-6 mb-6">
+                {/* Colored accent bar — echoes the course-card accent (only when a course color is set) */}
+                {course.color && (
+                    <div className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${course.color} opacity-70`} />
+                )}
                 <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="secondary" className="bg-foreground/20 text-foreground border-0">
+                        <Badge variant="secondary" className="bg-blue-500/10 text-blue-500 border border-blue-500/20">
                             <GraduationCap className="h-3 w-3 mr-1" />
                             {course.code}
                         </Badge>
-                        <span className="text-foreground/80 text-sm">{course.term}</span>
+                        {course.term && <span className="text-muted-foreground text-sm">{course.term}</span>}
                     </div>
-                    <h1 className="text-2xl font-bold">{course.name}</h1>
+                    <h1 className="text-2xl font-bold text-foreground">{course.name}</h1>
                 </div>
 
-                {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-foreground/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
+                {/* Decorative glow */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
             </div>
 
             {/* Course Navigation */}

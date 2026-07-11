@@ -16,11 +16,13 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { rejectReasonLabel } from "@/lib/constants";
 import { ACADEMIC_YEARS, SEMESTER_LABELS } from "@/lib/catalog";
 
-/** Rank-circle styling — gold/silver/bronze for the top three, muted otherwise. */
+/** Rank-circle styling — gold/silver/bronze for the top three, muted otherwise.
+ *  Light-mode uses darker medal tones so the numeral stays legible on pale glass;
+ *  dark-mode keeps the brighter tints via `dark:` overrides. */
 const rankStyle = (index: number): string => {
-    if (index === 0) return "bg-yellow-400/15 text-yellow-300";
-    if (index === 1) return "bg-slate-300/15 text-slate-200";
-    if (index === 2) return "bg-amber-500/15 text-amber-400";
+    if (index === 0) return "bg-amber-400/25 text-amber-600 dark:bg-yellow-400/15 dark:text-yellow-300";
+    if (index === 1) return "bg-slate-400/25 text-slate-600 dark:bg-slate-300/15 dark:text-slate-200";
+    if (index === 2) return "bg-amber-600/20 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400";
     return "bg-foreground/5 text-muted-foreground/60";
 };
 
