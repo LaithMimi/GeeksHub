@@ -53,12 +53,3 @@ export const getActivitySummary = async (): Promise<ActivitySummary> => {
         })),
     };
 };
-
-/**
- * Fetches the canonical share URL for a file (no auth required).
- * @backend GET /api/v1/files/:file_id/share
- */
-export const getShareUrl = async (fileId: string): Promise<{ shareUrl: string }> => {
-    const response = await api<{ shareUrl: string }>(`/files/${fileId}/share`);
-    return { shareUrl: response.shareUrl };
-};
