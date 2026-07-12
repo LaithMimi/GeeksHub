@@ -7,8 +7,15 @@
  */
 
 import * as React from "react";
-import { FeedbackDialog } from "@/features/feedback/components/FeedbackDialog";
-import { NpsPrompt } from "@/features/feedback/components/NpsPrompt";
+
+// Lazy so the provider (imported eagerly by the router) doesn't drag the dialog
+// components — and their dependency tree — into the main bundle.
+const FeedbackDialog = React.lazy(() =>
+    import("@/features/feedback/components/FeedbackDialog").then((m) => ({ default: m.FeedbackDialog })),
+);
+const NpsPrompt = React.lazy(() =>
+    import("@/features/feedback/components/NpsPrompt").then((m) => ({ default: m.NpsPrompt })),
+);
 
 interface FeedbackContextValue {
     openFeedbackForm: () => void;
@@ -27,8 +34,10 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
     return (
         <FeedbackContext.Provider value={value}>
             {children}
-            <FeedbackDialog open={formOpen} onOpenChange={setFormOpen} />
-            <NpsPrompt />
+            <React.Suspense fallback={null}>
+                <FeedbackDialog open={formOpen} onOpenChange={setFormOpen} />
+                <NpsPrompt />
+            </React.Suspense>
         </FeedbackContext.Provider>
     );
 }

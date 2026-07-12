@@ -9,7 +9,8 @@ const KPI = ({
     label, value, hint, icon: Icon, loading,
 }: {
     label: string;
-    value?: number;
+    // string allows a "—" placeholder (e.g. NPS with no scored responses yet).
+    value?: number | string;
     hint: string;
     icon: typeof Users;
     loading: boolean;
@@ -53,7 +54,7 @@ export default function ModeratorHome() {
             <div className="grid gap-4 sm:grid-cols-3 mb-6">
                 <KPI label="Total Users" value={stats?.totalUsers} hint="Registered accounts" icon={Users} loading={isLoading} />
                 <KPI label="New This Week" value={stats?.newUsersThisWeek} hint="Joined in last 7 days" icon={UserPlus} loading={isLoading} />
-                <KPI label="NPS Score" value={feedback?.npsScore ?? undefined} hint={`${feedback?.responded ?? 0} scored responses`} icon={TrendingUp} loading={feedbackLoading} />
+                <KPI label="NPS Score" value={feedback?.npsScore ?? "—"} hint={`${feedback?.responded ?? 0} scored responses`} icon={TrendingUp} loading={feedbackLoading} />
             </div>
 
             {/* Quick links */}

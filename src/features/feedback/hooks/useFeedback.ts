@@ -9,13 +9,14 @@
  * ============================================================================
  */
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import { toastError, toastSuccess } from "@/lib/errors";
 import {
     submitFeedback,
     listFeedback,
     fetchFeedbackStats,
+    FEEDBACK_PAGE_SIZE,
     type FeedbackInput,
     type FeedbackFilters,
 } from "@/features/feedback/api/feedbackService";
@@ -39,8 +40,15 @@ export const useSubmitFeedback = () => {
 
 // -- Moderator views -----------------------------------------------------------
 
+/** Paginated responses list — a full page means there may be more to fetch. */
 export const useFeedbackList = (filters?: FeedbackFilters) =>
-    useQuery({ queryKey: k.list(filters), queryFn: () => listFeedback(filters) });
+    useInfiniteQuery({
+        queryKey: k.list(filters),
+        queryFn: ({ pageParam }) => listFeedback(filters, pageParam),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, allPages) =>
+            lastPage.length === FEEDBACK_PAGE_SIZE ? allPages.length * FEEDBACK_PAGE_SIZE : undefined,
+    });
 
 export const useFeedbackStats = () =>
     useQuery({ queryKey: k.stats(), queryFn: fetchFeedbackStats });

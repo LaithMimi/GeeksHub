@@ -497,15 +497,21 @@ class MaterialUpdatePayload(BaseModel):
     title: Optional[str] = None
     courseId: Optional[UUID] = None
     lecturerId: Optional[UUID] = None
+    typeId: Optional[UUID] = None
 
 
 # --- Feedback & NPS ---
+_UUID_IN_TEXT = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE
+)
+
+
 class FeedbackCreate(BaseModel):
     """Incoming feedback/NPS from a user. camelCase to match the frontend client."""
     score: Optional[int] = Field(default=None, ge=0, le=10)  # NPS 0–10; omit for pure feedback
     category: Literal["bug", "idea", "praise", "other"] = "other"
-    comment: Optional[str] = None
-    page: Optional[str] = None
+    comment: Optional[str] = Field(default=None, max_length=2000)
+    page: Optional[str] = Field(default=None, max_length=300)
     source: Literal["form", "nps_prompt"] = "form"
 
     @field_validator("comment")
@@ -513,6 +519,15 @@ class FeedbackCreate(BaseModel):
     def blank_comment_to_none(cls, v: Optional[str]) -> Optional[str]:
         if v is not None:
             v = v.strip()
+        return v or None
+
+    @field_validator("page")
+    @classmethod
+    def sanitize_page(cls, v: Optional[str]) -> Optional[str]:
+        """Strip UUID segments server-side so raw ids never reach storage,
+        regardless of client (the frontend also sanitizes, as UX)."""
+        if v is not None:
+            v = _UUID_IN_TEXT.sub("…", v.strip())
         return v or None
 
 
@@ -544,4 +559,3 @@ class FeedbackStats(BaseModel):
     distribution: dict[int, int]  # score 0–10 → count
     byCategory: dict[str, int]
     trend: List[NpsTrendPoint]
-    typeId: Optional[UUID] = None

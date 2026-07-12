@@ -58,7 +58,7 @@ import { isMac } from "@/lib/utils";
 import { useCourse } from "@/features/courses/hooks/useCatalog";
 import { useFile } from "@/features/files/hooks/useFiles";
 import { useInAppNotifications } from "@/shared/hooks/useInAppNotifications";
-import { FeedbackProvider, useFeedbackWidget } from "@/features/feedback/context/FeedbackContext";
+import { useFeedbackWidget } from "@/features/feedback/context/FeedbackContext";
 
 // -- Static config -------------------------------------------------------------
 
@@ -488,7 +488,6 @@ export default function AppShell() {
     }, []);
 
     return (
-        <FeedbackProvider>
         <div className="flex h-screen overflow-hidden relative">
             <a
                 href="#main-content"
@@ -547,6 +546,5 @@ export default function AppShell() {
 
             <CommandPalette />
         </div>
-        </FeedbackProvider>
     );
 }

@@ -40,6 +40,7 @@ from models import (
     PinnedCourse,
     UserSettings,
     UserTask,
+    FeedbackSubmission,
 )
 from utils.shared import get_bucket
 from schemas import (
@@ -230,6 +231,7 @@ def _purge_user_data(session: Session, user: User) -> set[str]:
         (UserTask, UserTask.user_id),
         (MaterialRequest, MaterialRequest.requested_by),
         (AuditLog, AuditLog.actor_id),
+        (FeedbackSubmission, FeedbackSubmission.user_id),
     ):
         session.execute(delete(model).where(col == user.id))
 

@@ -17,7 +17,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import {
     Home, ClipboardList, FileSearch, BookOpen, Layers,
     Bell, Search, GraduationCap, FileText,
-    PanelLeftClose, PanelLeftOpen, Menu, Settings, ArrowLeft,
+    PanelLeftClose, PanelLeftOpen, Menu, Settings, ArrowLeft, MessageSquare,
 } from "lucide-react";
 import BrandLogo from "@/shared/components/BrandLogo";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -36,6 +36,7 @@ import {
 import { CommandPalette } from "@/shared/components/CommandPalette";
 import { isMac } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useFeedbackWidget } from "@/features/feedback/context/FeedbackContext";
 
 // -- Static config -------------------------------------------------------------
 
@@ -139,6 +140,7 @@ function AdminGlassSidebar({
 }) {
     const location = useLocation();
     const { user, signOut } = useAuth();
+    const { openFeedbackForm } = useFeedbackWidget();
 
     const isActive = (path: string) =>
         path === "/admin"
@@ -415,6 +417,13 @@ function AdminGlassSidebar({
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Settings</span>
                                     </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() => openFeedbackForm()}
+                                >
+                                    <MessageSquare className="mr-2 h-4 w-4" />
+                                    <span>Send feedback</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem

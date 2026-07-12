@@ -35,6 +35,7 @@ import {
 import { CommandPalette } from "@/shared/components/CommandPalette";
 import { isMac } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useFeedbackWidget } from "@/features/feedback/context/FeedbackContext";
 
 // -- Static config -------------------------------------------------------------
 
@@ -127,6 +128,7 @@ function ModeratorGlassSidebar({
 }) {
     const location = useLocation();
     const { user, signOut } = useAuth();
+    const { openFeedbackForm } = useFeedbackWidget();
 
     const isActive = (path: string) =>
         path === "/moderator"
@@ -348,6 +350,13 @@ function ModeratorGlassSidebar({
                                         <Settings className="mr-2 h-4 w-4" />
                                         <span>Settings</span>
                                     </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    className="cursor-pointer"
+                                    onSelect={() => openFeedbackForm()}
+                                >
+                                    <MessageSquare className="mr-2 h-4 w-4" />
+                                    <span>Send feedback</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem

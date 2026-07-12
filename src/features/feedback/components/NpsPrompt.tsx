@@ -20,20 +20,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { useSubmitFeedback } from "@/features/feedback/hooks/useFeedback";
 import { sanitizePagePath } from "@/features/feedback/utils";
 import { ScoreSelector } from "./ScoreSelector";
 
-const LAST_SHOWN_KEY = "nps_prompt_last_shown";
-const ANSWERED_KEY = "nps_prompt_answered";
 const COOLDOWN_DAYS = 30;
 // Give a new session a moment before interrupting.
 const INITIAL_DELAY_MS = 45_000;
 
-const shouldShow = (): boolean => {
+// Keys are scoped per user id so shared machines don't leak "answered" across
+// accounts and signing out/in doesn't suppress (or re-trigger) the wrong user.
+const lastShownKey = (userId: string) => `nps_prompt_last_shown:${userId}`;
+const answeredKey = (userId: string) => `nps_prompt_answered:${userId}`;
+
+const shouldShow = (userId: string): boolean => {
     try {
-        if (localStorage.getItem(ANSWERED_KEY)) return false;
-        const last = localStorage.getItem(LAST_SHOWN_KEY);
+        if (localStorage.getItem(answeredKey(userId))) return false;
+        const last = localStorage.getItem(lastShownKey(userId));
         if (!last) return true;
         const elapsed = Date.now() - Number(last);
         return Number.isFinite(elapsed) && elapsed > COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
@@ -52,26 +56,30 @@ const stamp = (key: string) => {
 
 export function NpsPrompt() {
     const location = useLocation();
+    const { user } = useAuth();
     const submit = useSubmitFeedback();
     const [open, setOpen] = React.useState(false);
     const [score, setScore] = React.useState<number | null>(null);
     const [comment, setComment] = React.useState("");
+    const userId = user?.id;
 
     React.useEffect(() => {
-        if (!shouldShow()) return;
+        if (!userId) return;
         const t = setTimeout(() => {
-            if (shouldShow()) {
-                stamp(LAST_SHOWN_KEY);
+            // Checked inside the timeout so an answer in another tab during the
+            // delay still suppresses the prompt.
+            if (shouldShow(userId)) {
+                stamp(lastShownKey(userId));
                 setOpen(true);
             }
         }, INITIAL_DELAY_MS);
         return () => clearTimeout(t);
-    }, []);
+    }, [userId]);
 
     const close = () => setOpen(false);
 
     const handleSubmit = () => {
-        if (score === null) return;
+        if (score === null || !userId) return;
         submit.mutate(
             {
                 category: "other",
@@ -82,7 +90,7 @@ export function NpsPrompt() {
             },
             {
                 onSuccess: () => {
-                    stamp(ANSWERED_KEY);
+                    stamp(answeredKey(userId));
                     close();
                 },
             },

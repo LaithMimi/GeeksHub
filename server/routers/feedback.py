@@ -1,6 +1,8 @@
 from typing import List, Optional, Tuple
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlmodel import Session, select
 from sqlalchemy import func
 from database import get_session
@@ -8,11 +10,17 @@ from models import User, FeedbackSubmission
 from schemas import FeedbackCreate, FeedbackResponse, FeedbackStats, NpsTrendPoint
 from utils.auth_utils import get_verified_user, get_moderator_user
 
+limiter = Limiter(key_func=get_remote_address)
+
 router = APIRouter(tags=["Feedback"])
+
+TREND_WEEKS = 12
 
 
 @router.post("/api/v1/feedback", response_model=FeedbackResponse, status_code=201)
+@limiter.limit("10/minute")  # Rate limit so a scripted client can't flood rows and skew NPS
 def submit_feedback(
+    request: Request,
     payload: FeedbackCreate,
     session: Session = Depends(get_session),
     user: User = Depends(get_verified_user),
@@ -90,11 +98,13 @@ def feedback_stats(
     responded = promoters + passives + detractors
     nps = round((promoters - detractors) / responded * 100, 1) if responded else None
 
-    # For the trend we only need (created_at, score) for scored rows — two columns,
-    # not fully-hydrated ORM objects, and never the unscored feedback.
+    # For the trend we only need (created_at, score) for scored rows inside the
+    # trend window — two columns, bounded, never the full history.
+    trend_cutoff = datetime.now(timezone.utc) - timedelta(weeks=TREND_WEEKS)
     scored = session.exec(
         select(FeedbackSubmission.created_at, FeedbackSubmission.score)
         .where(FeedbackSubmission.score.is_not(None))
+        .where(FeedbackSubmission.created_at > trend_cutoff)
     ).all()
 
     return FeedbackStats(
@@ -106,7 +116,7 @@ def feedback_stats(
         detractors=detractors,
         distribution=distribution,
         byCategory=by_category,
-        trend=_weekly_trend(scored, weeks=12),
+        trend=_weekly_trend(scored, weeks=TREND_WEEKS),
     )
 
 
@@ -132,14 +142,19 @@ def _as_utc(dt: datetime) -> datetime:
 
 def _weekly_trend(scored: List[Tuple[datetime, int]], weeks: int) -> List[NpsTrendPoint]:
     """Bucket scored (created_at, score) pairs into the last `weeks` 7-day windows
-    and compute NPS per bucket."""
+    (aligned to `now`, not calendar weeks) and compute NPS per bucket. Single pass:
+    each row is assigned to its bucket by index arithmetic."""
     now = datetime.now(timezone.utc)
-    # Window aligned to `now`, not calendar week — keeps it simple.
+    buckets: List[List[int]] = [[] for _ in range(weeks)]
+    for created_at, score in scored:
+        age = now - _as_utc(created_at)
+        index = weeks - 1 - int(age / timedelta(weeks=1))  # newest window = last bucket
+        if 0 <= index < weeks:
+            buckets[index].append(score)
+
     points: List[NpsTrendPoint] = []
-    for i in range(weeks - 1, -1, -1):
-        end = now - timedelta(weeks=i)
-        start = end - timedelta(weeks=1)
-        bucket = [score for created_at, score in scored if start < _as_utc(created_at) <= end]
+    for i, bucket in enumerate(buckets):
+        start = now - timedelta(weeks=weeks - i)
         if bucket:
             promoters = sum(1 for s in bucket if s >= 9)
             detractors = sum(1 for s in bucket if s <= 6)

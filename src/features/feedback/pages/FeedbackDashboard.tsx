@@ -15,6 +15,7 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageErrorState } from "@/shared/components/errors";
 import { cn } from "@/lib/utils";
 import type { FeedbackCategory } from "@/types/domain";
 import { useFeedbackStats, useFeedbackList } from "@/features/feedback/hooks/useFeedback";
@@ -53,11 +54,18 @@ const scoreBandColor = (score: number) =>
 const pct = (part: number, total: number) => (total > 0 ? Math.round((part / total) * 100) : 0);
 
 export default function FeedbackDashboard() {
-    const { data: stats, isLoading: statsLoading } = useFeedbackStats();
+    const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useFeedbackStats();
     const [category, setCategory] = useState<FeedbackCategory | "all">("all");
-    const { data: responses, isLoading: listLoading } = useFeedbackList(
-        category === "all" ? undefined : { category },
-    );
+    const {
+        data: responsePages,
+        isLoading: listLoading,
+        error: listError,
+        refetch: refetchList,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useFeedbackList(category === "all" ? undefined : { category });
+    const responses = responsePages?.pages.flat();
 
     const distributionData = stats
         ? Object.entries(stats.distribution).map(([score, count]) => ({ score: Number(score), count }))
@@ -71,20 +79,34 @@ export default function FeedbackDashboard() {
 
     const responded = stats?.responded ?? 0;
 
+    const header = (
+        <div className="py-4 mb-8">
+            <div className="flex items-center gap-3 mb-1">
+                <MessageSquare className="h-5 w-5 text-amber-400" />
+                <h1 className="text-[28px] font-display font-bold text-foreground tracking-[-0.03em]">
+                    Feedback & NPS
+                </h1>
+            </div>
+            <p className="text-[13px] text-muted-foreground ms-8">
+                What users are telling us — satisfaction score, trends, and every response.
+            </p>
+        </div>
+    );
+
+    // Stats power every section above the list — a failed fetch must read as an
+    // error, not as "no feedback yet".
+    if (statsError) {
+        return (
+            <div className="animate-fade-in max-w-5xl mx-auto pb-20">
+                {header}
+                <PageErrorState error={statsError} onRetry={() => refetchStats()} />
+            </div>
+        );
+    }
+
     return (
         <div className="animate-fade-in max-w-5xl mx-auto pb-20">
-            {/* Header */}
-            <div className="py-4 mb-8">
-                <div className="flex items-center gap-3 mb-1">
-                    <MessageSquare className="h-5 w-5 text-amber-400" />
-                    <h1 className="text-[28px] font-display font-bold text-foreground tracking-[-0.03em]">
-                        Feedback & NPS
-                    </h1>
-                </div>
-                <p className="text-[13px] text-muted-foreground ms-8">
-                    What users are telling us — satisfaction score, trends, and every response.
-                </p>
-            </div>
+            {header}
 
             {/* KPIs */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -249,7 +271,25 @@ export default function FeedbackDashboard() {
                         ))}
                     </div>
                 </div>
-                <FeedbackResponsesList items={responses} loading={listLoading} />
+                {listError ? (
+                    <PageErrorState error={listError} onRetry={() => refetchList()} />
+                ) : (
+                    <>
+                        <FeedbackResponsesList items={responses} loading={listLoading} />
+                        {hasNextPage && (
+                            <div className="mt-3 flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => fetchNextPage()}
+                                    disabled={isFetchingNextPage}
+                                    className="rounded-lg border border-border px-4 py-1.5 text-[12px] font-medium text-muted-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+                                >
+                                    {isFetchingNextPage ? "Loading..." : "Load more"}
+                                </button>
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
         </div>
     );

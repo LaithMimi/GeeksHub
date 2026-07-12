@@ -27,6 +27,9 @@ export interface FeedbackFilters {
     hasScore?: boolean;
 }
 
+/** Page size for the moderator responses list (matches the backend default cap). */
+export const FEEDBACK_PAGE_SIZE = 50;
+
 // -- Submission (any user) -----------------------------------------------------
 
 export const submitFeedback = (data: FeedbackInput) =>
@@ -34,12 +37,13 @@ export const submitFeedback = (data: FeedbackInput) =>
 
 // -- Moderator views -----------------------------------------------------------
 
-export const listFeedback = (filters?: FeedbackFilters) => {
+export const listFeedback = (filters?: FeedbackFilters, offset = 0) => {
     const params = new URLSearchParams();
     if (filters?.category) params.append("category", filters.category);
     if (filters?.hasScore !== undefined) params.append("hasScore", String(filters.hasScore));
-    const qs = params.toString();
-    return api<FeedbackSubmission[]>(`/moderator/feedback${qs ? `?${qs}` : ""}`);
+    params.append("limit", String(FEEDBACK_PAGE_SIZE));
+    params.append("offset", String(offset));
+    return api<FeedbackSubmission[]>(`/moderator/feedback?${params.toString()}`);
 };
 
 export const fetchFeedbackStats = () => api<FeedbackStats>("/moderator/feedback/stats");
