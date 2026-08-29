@@ -24,6 +24,7 @@ import { AuthProvider } from "@/features/auth/context/AuthContext"
 import ErrorBoundary from "@/shared/components/ErrorBoundary"
 import { ApiError } from "@/lib/apiClient"
 import { MouseGlow } from "@/shared/components/MouseGlow"
+import { Analytics } from '@vercel/analytics/react'
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -49,6 +50,7 @@ createRoot(document.getElementById('root')!).render(
             <MouseGlow />
             <RouterProvider router={router} />
             <Toaster />
+            <Analytics />
           </QueryClientProvider>
         </ThemeProvider>
       </AuthProvider>
